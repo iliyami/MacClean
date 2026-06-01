@@ -10,14 +10,28 @@ import MacCleanTestSupport
 @MainActor
 final class SmartScanE2ETests: XCTestCase {
 
-    func testCoordinatorAggregatesAllRegisteredModules() async {
+    func testCoordinatorAggregatesAllRegisteredModules() async throws {
+        // Real files so the CleanFilter (which drops un-cleanable
+        // paths) keeps them in the aggregated results. The previous
+        // version used `/tmp/a.cache` / `/tmp/b.log` literally — those
+        // didn't exist, so the filter correctly dropped them and the
+        // aggregation assertions failed for the wrong reason.
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appending(path: "SmartScanE2E-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let aURL = dir.appending(path: "a.cache")
+        let bURL = dir.appending(path: "b.log")
+        FileManager.default.createFile(atPath: aURL.path, contents: Data(count: 100))
+        FileManager.default.createFile(atPath: bURL.path, contents: Data(count: 200))
+
         let coord = ScanCoordinator()
         coord.registerModules([
             ScanCoordinatorTests.FakeModule(
                 id: "a", name: "A",
                 result: [ScanResult(
                     category: .userCaches,
-                    items: [FileItem(url: URL(filePath: "/tmp/a.cache"),
+                    items: [FileItem(url: aURL,
                                      name: "a.cache", size: 100, allocatedSize: 100,
                                      isDirectory: false)]
                 )]
@@ -26,7 +40,7 @@ final class SmartScanE2ETests: XCTestCase {
                 id: "b", name: "B",
                 result: [ScanResult(
                     category: .userLogs,
-                    items: [FileItem(url: URL(filePath: "/tmp/b.log"),
+                    items: [FileItem(url: bURL,
                                      name: "b.log", size: 200, allocatedSize: 200,
                                      isDirectory: false)]
                 )]

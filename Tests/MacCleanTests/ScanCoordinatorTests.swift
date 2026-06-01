@@ -8,6 +8,20 @@ import MacCleanKit
 @MainActor
 final class ScanCoordinatorTests: XCTestCase {
 
+    private var tmpRoot: URL!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        tmpRoot = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appending(path: "ScanCoordinatorTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: tmpRoot, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(at: tmpRoot)
+        try super.tearDownWithError()
+    }
+
     // MARK: - Fake modules
 
     struct FakeModule: ScanModule {
@@ -34,11 +48,19 @@ final class ScanCoordinatorTests: XCTestCase {
         }
     }
 
+    /// Materializes real files of the requested size in `tmpRoot` so the
+    /// CleanFilter (which drops non-existent / non-writable paths) keeps
+    /// them in the aggregated results.
     private func makeItems(count: Int, eachSize: UInt64) -> [FileItem] {
-        (0..<count).map {
-            FileItem(
-                url: URL(filePath: "/tmp/f\($0)"),
-                name: "f\($0)", size: eachSize, allocatedSize: eachSize, isDirectory: false
+        (0..<count).map { idx in
+            let url = tmpRoot.appending(path: "f\(idx)")
+            FileManager.default.createFile(
+                atPath: url.path,
+                contents: Data(count: Int(eachSize))
+            )
+            return FileItem(
+                url: url,
+                name: "f\(idx)", size: eachSize, allocatedSize: eachSize, isDirectory: false
             )
         }
     }

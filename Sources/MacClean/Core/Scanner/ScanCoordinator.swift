@@ -94,7 +94,20 @@ public final class ScanCoordinator: @unchecked Sendable {
                 )
 
                 let start = Date()
-                let scanResults = await module.scan()
+                let rawResults = await module.scan()
+                // Drop items the current process couldn't trash even if it
+                // tried — root-owned children, data-vaulted Apple caches,
+                // stale paths. Users never see them, never click them,
+                // never see "X errors" on the completion screen for things
+                // nothing on this machine could clean anyway. See
+                // CleanFilter for the syscall-level reasoning.
+                let scanResults: [ScanResult] = rawResults.map { result in
+                    ScanResult(
+                        category: result.category,
+                        items: result.items.filter { CleanFilter.isCleanableByCurrentProcess($0.url) },
+                        autoSelect: result.autoSelect
+                    )
+                }
                 let duration = Date().timeIntervalSince(start)
 
                 let moduleResult = ModuleScanResult(
