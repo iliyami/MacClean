@@ -8,18 +8,16 @@ import MacCleanKit
 @MainActor
 final class ScanCoordinatorTests: XCTestCase {
 
-    private var tmpRoot: URL!
-
-    override func setUpWithError() throws {
-        try super.setUpWithError()
-        tmpRoot = URL(fileURLWithPath: NSTemporaryDirectory())
-            .appending(path: "ScanCoordinatorTests-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: tmpRoot, withIntermediateDirectories: true)
-    }
-
-    override func tearDownWithError() throws {
-        try? FileManager.default.removeItem(at: tmpRoot)
-        try super.tearDownWithError()
+    // Per-test sandbox. The classic setUpWithError/tearDownWithError
+    // approach trips Swift 6 strict concurrency on the CI macos-15
+    // runner — XCTestCase declares those as nonisolated, but reaching
+    // an @MainActor stored property from them violates isolation. We
+    // create+destroy the tmp dir inline per test instead.
+    private static func makeTmpRoot(for name: String = #function) throws -> URL {
+        let root = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appending(path: "ScanCoordinatorTests-\(name)-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        return root
     }
 
     // MARK: - Fake modules
@@ -48,12 +46,12 @@ final class ScanCoordinatorTests: XCTestCase {
         }
     }
 
-    /// Materializes real files of the requested size in `tmpRoot` so the
+    /// Materializes real files of the requested size in `inRoot` so the
     /// CleanFilter (which drops non-existent / non-writable paths) keeps
     /// them in the aggregated results.
-    private func makeItems(count: Int, eachSize: UInt64) -> [FileItem] {
+    private func makeItems(count: Int, eachSize: UInt64, inRoot: URL) -> [FileItem] {
         (0..<count).map { idx in
-            let url = tmpRoot.appending(path: "f\(idx)")
+            let url = inRoot.appending(path: "f\(idx)")
             FileManager.default.createFile(
                 atPath: url.path,
                 contents: Data(count: Int(eachSize))
@@ -74,18 +72,20 @@ final class ScanCoordinatorTests: XCTestCase {
         }
     }
 
-    func testScanAllCompletesAndAggregates() async {
+    func testScanAllCompletesAndAggregates() async throws {
+        let tmpRoot = try Self.makeTmpRoot()
+        defer { try? FileManager.default.removeItem(at: tmpRoot) }
         let c = ScanCoordinator()
         c.registerModules([
             FakeModule(
                 id: "a", name: "A",
                 result: [ScanResult(category: .userCaches,
-                                    items: makeItems(count: 5, eachSize: 100))]
+                                    items: makeItems(count: 5, eachSize: 100, inRoot: tmpRoot))]
             ),
             FakeModule(
                 id: "b", name: "B",
                 result: [ScanResult(category: .userLogs,
-                                    items: makeItems(count: 3, eachSize: 200))]
+                                    items: makeItems(count: 3, eachSize: 200, inRoot: tmpRoot))]
             ),
         ])
         c.scanAll()
@@ -104,17 +104,19 @@ final class ScanCoordinatorTests: XCTestCase {
         XCTAssertEqual(c.totalSizeFound, 5*100 + 3*200)
     }
 
-    func testScanAllExcludesHeavyModules() async {
+    func testScanAllExcludesHeavyModules() async throws {
+        let tmpRoot = try Self.makeTmpRoot()
+        defer { try? FileManager.default.removeItem(at: tmpRoot) }
         let c = ScanCoordinator()
         c.registerModules([
             FakeModule(
                 id: "light", name: "Light",
-                result: [ScanResult(category: .userCaches, items: makeItems(count: 1, eachSize: 1))]
+                result: [ScanResult(category: .userCaches, items: makeItems(count: 1, eachSize: 1, inRoot: tmpRoot))]
             ),
             FakeModule(
                 id: "heavy", name: "Heavy",
                 includedInSmartScan: false,
-                result: [ScanResult(category: .duplicates, items: makeItems(count: 100, eachSize: 1))]
+                result: [ScanResult(category: .duplicates, items: makeItems(count: 100, eachSize: 1, inRoot: tmpRoot))]
             ),
         ])
         c.scanAll()
