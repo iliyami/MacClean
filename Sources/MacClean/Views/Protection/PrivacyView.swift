@@ -33,6 +33,21 @@ struct PrivacyView: View {
             onCancelClean: { cleanTask?.cancel() },
             onReset: reset
         )
+        .onAppear {
+            if let e = appState.scanResultsStore.entry(for: .privacy) {
+                results = e.results
+                selectedItems = e.selection
+                scanComplete = e.scanComplete
+            }
+        }
+        .onDisappear {
+            appState.scanResultsStore.save(
+                results: results,
+                selection: selectedItems,
+                scanComplete: scanComplete,
+                for: .privacy
+            )
+        }
     }
 
     private func scan() {

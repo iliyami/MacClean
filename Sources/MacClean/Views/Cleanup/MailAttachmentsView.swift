@@ -34,6 +34,21 @@ struct MailAttachmentsView: View {
             onCancelClean: { cleanTask?.cancel() },
             onReset: reset
         )
+        .onAppear {
+            if let e = appState.scanResultsStore.entry(for: .mailAttachments) {
+                results = e.results
+                selectedItems = e.selection
+                scanComplete = e.scanComplete
+            }
+        }
+        .onDisappear {
+            appState.scanResultsStore.save(
+                results: results,
+                selection: selectedItems,
+                scanComplete: scanComplete,
+                for: .mailAttachments
+            )
+        }
     }
 
     private func scan() {

@@ -36,6 +36,21 @@ struct TrashBinsView: View {
             onGrantAccess: { PermissionManager.shared.openFullDiskAccessSettings() },
             confirmEmptyTrash: true
         )
+        .onAppear {
+            if let e = appState.scanResultsStore.entry(for: .trashBins) {
+                results = e.results
+                selectedItems = e.selection
+                scanComplete = e.scanComplete
+            }
+        }
+        .onDisappear {
+            appState.scanResultsStore.save(
+                results: results,
+                selection: selectedItems,
+                scanComplete: scanComplete,
+                for: .trashBins
+            )
+        }
     }
 
     @State private var scanProgress: Double = 0

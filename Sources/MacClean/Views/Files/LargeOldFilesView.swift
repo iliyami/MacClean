@@ -32,6 +32,21 @@ struct LargeOldFilesView: View {
             onCancelClean: { cleanTask?.cancel() },
             onReset: reset
         )
+        .onAppear {
+            if let e = appState.scanResultsStore.entry(for: .largeOldFiles) {
+                results = e.results
+                selectedItems = e.selection
+                scanComplete = e.scanComplete
+            }
+        }
+        .onDisappear {
+            appState.scanResultsStore.save(
+                results: results,
+                selection: selectedItems,
+                scanComplete: scanComplete,
+                for: .largeOldFiles
+            )
+        }
     }
 
     private func scan() {

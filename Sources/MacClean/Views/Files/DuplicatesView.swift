@@ -67,6 +67,21 @@ struct DuplicatesView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            if let e = appState.scanResultsStore.entry(for: .duplicates) {
+                results = e.results
+                selectedItems = e.selection
+                scanComplete = e.scanComplete
+            }
+        }
+        .onDisappear {
+            appState.scanResultsStore.save(
+                results: results,
+                selection: selectedItems,
+                scanComplete: scanComplete,
+                for: .duplicates
+            )
+        }
     }
 
     private var idleView: some View {
