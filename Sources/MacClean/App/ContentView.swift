@@ -9,6 +9,10 @@ struct ContentView: View {
 
         NavigationSplitView {
             SidebarView(selection: $state.selectedSidebarItem)
+                // The sidebar is the app's primary navigation and is always
+                // shown, so the toolbar's collapse-sidebar button is just
+                // dead weight (#21.4). Remove it.
+                .toolbar(removing: .sidebarToggle)
         } detail: {
             ZStack {
                 if let item = appState.selectedSidebarItem {
