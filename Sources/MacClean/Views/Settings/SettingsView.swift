@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage("showMenuBarWidget") private var showMenuBarWidget = true
     @State private var launcher = MenuBarLauncher.shared
     @State private var refreshTick = 0
+    @State private var keptLanguages: Set<String> = []
 
     var body: some View {
         Form {
@@ -32,10 +33,30 @@ struct SettingsView: View {
             } header: {
                 Text("Menu Bar")
             }
+            Section {
+                Text("English is always kept. Checked languages are preserved; unchecked language files can be removed by System Junk.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                ForEach(LanguagePreferences.commonLanguages, id: \.lproj) { lang in
+                    Toggle(lang.name, isOn: Binding(
+                        get: { keptLanguages.contains(lang.lproj) },
+                        set: { on in
+                            if on { keptLanguages.insert(lang.lproj) } else { keptLanguages.remove(lang.lproj) }
+                            LanguagePreferences.userKept = keptLanguages
+                        }
+                    ))
+                }
+            } header: {
+                Text("Language Cleanup")
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 480, height: 240)
+        .frame(width: 480, height: 420)
         .id(refreshTick)
+        .onAppear {
+            keptLanguages = LanguagePreferences.userKept
+        }
     }
 
     @ViewBuilder

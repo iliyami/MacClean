@@ -70,7 +70,7 @@ public struct LanguageFilesCategory: JunkCategory {
                 path: URL(filePath: "/Applications"),
                 recursive: true,
                 fileExtensions: ["lproj"],
-                excludePatterns: Array(MCConstants.preservedLanguages)
+                excludePatterns: Array(LanguagePreferences.effectivePreserved())
             ),
         ]
     }
