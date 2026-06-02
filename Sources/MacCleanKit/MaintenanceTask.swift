@@ -117,10 +117,18 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    public var requiresRoot: Bool {
+    /// True for tasks whose command needs root (purge, periodic, …). These
+    /// can't run from the unprivileged app; until they're routed through the
+    /// privileged helper they return an honest "needs admin" result rather
+    /// than a silent non-zero exit. (Helper routing is tracked separately.)
+    public var requiresPrivilegedHelper: Bool {
         switch self {
-        case .freeUpRAM, .speedUpMail: false
-        default: true
+        case .freeUpRAM, .runMaintenanceScripts, .repairDiskPermissions,
+             .verifyStartupDisk, .thinTimeMachineSnapshots:
+            true
+        case .freeUpPurgeableSpace, .speedUpMail, .rebuildLaunchServices,
+             .reindexSpotlight, .flushDNSCache:
+            false
         }
     }
 

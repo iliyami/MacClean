@@ -92,10 +92,17 @@ struct MaintenanceView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 3))
                     }
                 }
-                Text(task.description)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.45))
-                    .lineLimit(1)
+                if case .failed(let message) = taskStates[task] {
+                    Text(message)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.orange.opacity(0.8))
+                        .lineLimit(2)
+                } else {
+                    Text(task.description)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .lineLimit(1)
+                }
             }
 
             Spacer()
@@ -135,9 +142,10 @@ struct MaintenanceView: View {
         case .completed:
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.green)
-        case .failed:
-            Image(systemName: "xmark.circle.fill")
-                .foregroundStyle(.red)
+        case .failed(let message):
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .help(message)
         case .idle, .none:
             EmptyView()
         }

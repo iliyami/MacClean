@@ -29,6 +29,15 @@ public actor MaintenanceExecutor {
     public func execute(_ task: MaintenanceTask) async -> TaskResult {
         if case .speedUpMail = task { return await reindexMail() }
 
+        if task.requiresPrivilegedHelper {
+            return TaskResult(
+                task: task,
+                success: false,
+                output: "",
+                error: "Needs administrator access — this task isn't available yet without the privileged helper."
+            )
+        }
+
         guard let (command, args) = task.systemCommand else {
             return TaskResult(task: task, success: false, output: "",
                               error: "Task has no system command")
