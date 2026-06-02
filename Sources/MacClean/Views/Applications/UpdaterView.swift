@@ -68,7 +68,7 @@ struct UpdaterView: View {
 
                             Spacer()
 
-                            Button("Update") {}
+                            Button("Update") { UpdaterActions.perform(update) }
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
                         }

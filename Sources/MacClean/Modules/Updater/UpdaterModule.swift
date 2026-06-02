@@ -22,6 +22,7 @@ public actor AppUpdateChecker {
         public let app: AppInfo
         public let currentVersion: String
         public let availableVersion: String?
+        public let downloadURL: URL?
         public let updateSize: UInt64?
         public let hasUpdate: Bool
     }
@@ -62,7 +63,7 @@ public actor AppUpdateChecker {
         guard let (data, _) = try? await URLSession.shared.data(from: feedURL) else { return nil }
 
         let parser = AppcastParser()
-        let latestVersion = parser.parseLatestVersion(from: data)
+        let (latestVersion, downloadURL) = parser.parseLatestItem(from: data)
 
         let currentVersion = app.version ?? "0"
         let hasUpdate = latestVersion != nil && latestVersion != currentVersion
@@ -71,9 +72,65 @@ public actor AppUpdateChecker {
             app: app,
             currentVersion: currentVersion,
             availableVersion: latestVersion,
+            downloadURL: downloadURL,
             updateSize: nil,
             hasUpdate: hasUpdate
         )
+    }
+}
+
+// MARK: - Updater Actions
+
+/// What the "Update" button does, chosen by how the app was installed.
+public enum UpdaterRoute: Equatable {
+    case appStore
+    case download(URL)
+    case launchApp(URL)
+}
+
+public enum UpdaterActions {
+    public static func route(isMacAppStore: Bool, downloadURL: URL?, appPath: URL) -> UpdaterRoute {
+        if isMacAppStore { return .appStore }
+        if let downloadURL { return .download(downloadURL) }
+        return .launchApp(appPath)
+    }
+
+    /// A Mac App Store app ships a receipt at Contents/_MASReceipt/receipt.
+    public static func isMacAppStoreApp(at appPath: URL) -> Bool {
+        FileManager.default.fileExists(
+            atPath: appPath.appending(path: "Contents/_MASReceipt/receipt").path(percentEncoded: false))
+    }
+
+    @MainActor
+    public static func perform(_ update: AppUpdateChecker.AppUpdate) {
+        switch route(isMacAppStore: isMacAppStoreApp(at: update.app.path),
+                     downloadURL: update.downloadURL, appPath: update.app.path) {
+        case .appStore:
+            if let url = URL(string: "macappstore://showUpdatesPage") { NSWorkspace.shared.open(url) }
+        case .download(let url):
+            Task { await downloadAndReveal(url) }
+        case .launchApp(let appURL):
+            NSWorkspace.shared.openApplication(at: appURL, configuration: .init())
+        }
+    }
+
+    @MainActor
+    static func downloadAndReveal(_ url: URL) async {
+        do {
+            let (tmp, response) = try await URLSession.shared.download(from: url)
+            let name = response.suggestedFilename ?? url.lastPathComponent
+            let dest = MCConstants.downloads.appending(path: name)
+            // If the file is already there (a double-tap won the race, or the
+            // user downloaded it earlier) just reveal it — don't clobber it.
+            if FileManager.default.fileExists(atPath: dest.path(percentEncoded: false)) {
+                NSWorkspace.shared.activateFileViewerSelecting([dest])
+                return
+            }
+            try FileManager.default.moveItem(at: tmp, to: dest)
+            NSWorkspace.shared.activateFileViewerSelecting([dest])
+        } catch {
+            NSWorkspace.shared.open(url)
+        }
     }
 }
 

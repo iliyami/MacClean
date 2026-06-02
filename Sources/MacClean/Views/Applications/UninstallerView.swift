@@ -166,7 +166,7 @@ struct UninstallerView: View {
                         .tint(.red)
                         .controlSize(.small)
 
-                    Button("Reset") {}
+                    Button("Reset") { resetSelection() }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                 }
@@ -226,6 +226,13 @@ struct UninstallerView: View {
                 Spacer()
             }
         }
+    }
+
+    private func resetSelection() {
+        selectedApp = nil
+        associatedFiles = []
+        selectedFiles = []
+        isLoadingFiles = false
     }
 
     private func loadApps() async {
