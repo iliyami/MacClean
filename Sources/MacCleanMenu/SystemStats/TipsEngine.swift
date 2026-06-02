@@ -103,15 +103,28 @@ public actor TipsEngine {
     }
 }
 
-/// Click-to-act on a tip. For MVP we just bring the main Mac Clean app
-/// to the foreground — the user navigates to the relevant module from
-/// the sidebar. Future enhancement: URL-scheme deep links direct to
-/// `macclean://module/system-junk`.
+/// Click-to-act on a tip. `open()` brings the main Mac Clean app to the
+/// foreground; `open(moduleID:)` additionally deep-links straight to the
+/// relevant module via the `macclean://module/<id>` URL scheme.
 public enum TipAction {
     @MainActor
     public static func open() {
         if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: MCConstants.bundleIdentifier) {
             NSWorkspace.shared.openApplication(at: url, configuration: .init())
         }
+    }
+}
+
+public extension TipAction {
+    /// Foreground the main app and deep-link to a specific module via the
+    /// `macclean://module/<id>` URL scheme. Falls back to plainly opening
+    /// the app when no module id is available.
+    @MainActor
+    static func open(moduleID: String?) {
+        guard let moduleID, let url = URL(string: "macclean://module/\(moduleID)") else {
+            open()   // fallback: just foreground the app
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 }

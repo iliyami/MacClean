@@ -25,6 +25,16 @@ struct MacCleanApp: App {
                     }
                     syncMenuBarOnLaunch()
                 }
+                .onOpenURL { url in
+                    // Expect exactly macclean://module/<slug> — one path
+                    // segment (pathComponents is ["/", "<slug>"]). Reject
+                    // malformed multi-segment URLs rather than guessing.
+                    guard url.scheme == "macclean", url.host == "module",
+                          url.pathComponents.count == 2,
+                          let id = url.pathComponents.last,
+                          let item = SidebarItem(deepLinkID: id) else { return }
+                    appState.selectedSidebarItem = item
+                }
         }
         .windowStyle(.titleBar)
         .defaultSize(width: 960, height: 620)

@@ -92,6 +92,17 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" << PLIST
     <true/>
     <key>LSUIElement</key>
     <false/>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.macclean.deeplink</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>macclean</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>
 PLIST

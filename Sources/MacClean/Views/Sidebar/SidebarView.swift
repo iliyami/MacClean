@@ -29,6 +29,31 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
 
     public var id: String { rawValue }
 
+    /// Stable slug used in `macclean://module/<id>` deep links.
+    public var deepLinkID: String {
+        switch self {
+        case .smartScan: "smart-scan"
+        case .systemJunk: "system-junk"
+        case .mailAttachments: "mail-attachments"
+        case .trashBins: "trash-bins"
+        case .malwareRemoval: "malware"
+        case .privacy: "privacy"
+        case .optimization: "optimization"
+        case .maintenance: "maintenance"
+        case .uninstaller: "uninstaller"
+        case .updater: "updater"
+        case .spaceLens: "space-lens"
+        case .largeOldFiles: "large-old-files"
+        case .duplicates: "duplicates"
+        case .shredder: "shredder"
+        }
+    }
+
+    public init?(deepLinkID: String) {
+        guard let match = Self.allCases.first(where: { $0.deepLinkID == deepLinkID }) else { return nil }
+        self = match
+    }
+
     public var icon: String {
         switch self {
         case .smartScan: "sparkle.magnifyingglass"

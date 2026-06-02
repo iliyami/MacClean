@@ -293,7 +293,7 @@ struct MenuContentView: View {
                                 .background(Color.white.opacity(0.08), in: Circle())
                         }.buttonStyle(.plain).help("Dismiss for 30 days")
                     }
-                    Button { TipAction.open() } label: {
+                    Button { TipAction.open(moduleID: MenuTipRouting.moduleID(forTipID: tip.id)) } label: {
                         Text(tipCTA(tip)).font(.system(size: 11, weight: .bold)).foregroundStyle(Color(red:0.16,green:0.10,blue:0.30))
                             .frame(maxWidth: .infinity).padding(.vertical, 6)
                             .background(MenuPalette.yellow, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
