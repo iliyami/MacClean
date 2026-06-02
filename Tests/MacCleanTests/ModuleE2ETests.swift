@@ -185,7 +185,7 @@ final class ModuleE2ETests: XCTestCase {
         // SpaceLensModule itself only provides metadata (the View calls the
         // scanner directly). Exercise the actual aggregator here.
         let scanner = FileTreeScanner()
-        let node = scanner.scanWithSizeAggregation(root: root)
+        let node = await scanner.scanWithSizeAggregation(root: root)
 
         // 1024 + 10240 + 50000 = 61264 bytes total. The aggregator uses
         // allocated sizes from APFS which round up to block boundaries, so
