@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import MacCleanKit
 
 struct UninstallerView: View {
@@ -10,6 +11,7 @@ struct UninstallerView: View {
     @State private var isLoading = true
     @State private var isLoadingFiles = false
     @State private var isUninstalling = false
+    @State private var appPendingUninstall: AppInfo?
     @State private var filter: AppFilter = .all
     @State private var searchText = ""
 
@@ -21,6 +23,7 @@ struct UninstallerView: View {
 
     private let discovery = AppDiscovery()
     private let pathFinder = AppPathFinder()
+    private let safetyGuard = SafetyGuard()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -90,6 +93,20 @@ struct UninstallerView: View {
             }
         }
         .task { await loadApps() }
+        // Attached to the top-level body (not the conditionally-rendered
+        // detail pane) so the confirmation can't be torn down mid-present
+        // when selectedApp changes. `appPendingUninstall` is the anchor.
+        .alert("Move \(appPendingUninstall?.name ?? "this app") to the Trash?",
+               isPresented: Binding(get: { appPendingUninstall != nil },
+                                    set: { if !$0 { appPendingUninstall = nil } }),
+               presenting: appPendingUninstall) { app in
+            Button("Cancel", role: .cancel) { appPendingUninstall = nil }
+            Button("Move to Trash", role: .destructive) {
+                let target = app; appPendingUninstall = nil; uninstall(target)
+            }
+        } message: { app in
+            Text("\(app.name) and its associated files will be moved to the Trash. You can restore them from the Trash if needed.")
+        }
     }
 
     private var filteredApps: [AppInfo] {
@@ -116,9 +133,9 @@ struct UninstallerView: View {
                     loadAssociatedFiles(for: app)
                 } label: {
                     HStack(spacing: 10) {
-                        Image(systemName: app.isAppleApp ? "apple.logo" : "app.fill")
-                            .foregroundColor(app.isAppleApp ? .secondary : .blue)
-                            .frame(width: 22)
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: app.path.path(percentEncoded: false)))
+                            .resizable()
+                            .frame(width: 24, height: 24)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(app.name)
@@ -152,6 +169,10 @@ struct UninstallerView: View {
     private func appDetailView(_ app: AppInfo) -> some View {
         VStack(spacing: 12) {
             HStack {
+                Image(nsImage: NSWorkspace.shared.icon(forFile: app.path.path(percentEncoded: false)))
+                    .resizable()
+                    .frame(width: 32, height: 32)
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(app.name).font(.headline)
                     Text(app.bundleIdentifier).font(.caption).foregroundStyle(.secondary)
@@ -161,25 +182,27 @@ struct UninstallerView: View {
                 }
                 Spacer()
 
-                if !app.isAppleApp {
-                    if isUninstalling {
-                        // In-progress feedback: the button is gone (can't be
-                        // re-tapped) and a spinner shows the work is happening.
-                        ProgressView()
-                            .controlSize(.small)
-                        Text("Uninstalling…")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Button("Uninstall") { uninstall(app) }
-                            .buttonStyle(.borderedProminent)
-                            .tint(.red)
-                            .controlSize(.small)
+                if safetyGuard.isProtectedApp(app.bundleIdentifier) {
+                    Text("Protected system app — can't be removed")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.6))
+                } else if isUninstalling {
+                    // In-progress feedback: the button is gone (can't be
+                    // re-tapped) and a spinner shows the work is happening.
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Uninstalling…")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Button("Uninstall") { appPendingUninstall = app }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .controlSize(.small)
 
-                        Button("Reset") { resetSelection() }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                    }
+                    Button("Reset") { resetSelection() }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                 }
             }
             .padding()
