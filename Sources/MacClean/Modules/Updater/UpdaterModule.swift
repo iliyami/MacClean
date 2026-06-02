@@ -108,28 +108,15 @@ public enum UpdaterActions {
         case .appStore:
             if let url = URL(string: "macappstore://showUpdatesPage") { NSWorkspace.shared.open(url) }
         case .download(let url):
-            Task { await downloadAndReveal(url) }
+            // Open the download in the user's browser IMMEDIATELY. We used
+            // to URLSession.download the DMG in-app and reveal it, but that
+            // was a silent multi-minute wait with no feedback — users
+            // reasonably thought the button was broken. The browser opens
+            // instantly and shows its own download progress, which is what
+            // comparable updater tools do.
+            NSWorkspace.shared.open(url)
         case .launchApp(let appURL):
             NSWorkspace.shared.openApplication(at: appURL, configuration: .init())
-        }
-    }
-
-    @MainActor
-    static func downloadAndReveal(_ url: URL) async {
-        do {
-            let (tmp, response) = try await URLSession.shared.download(from: url)
-            let name = response.suggestedFilename ?? url.lastPathComponent
-            let dest = MCConstants.downloads.appending(path: name)
-            // If the file is already there (a double-tap won the race, or the
-            // user downloaded it earlier) just reveal it — don't clobber it.
-            if FileManager.default.fileExists(atPath: dest.path(percentEncoded: false)) {
-                NSWorkspace.shared.activateFileViewerSelecting([dest])
-                return
-            }
-            try FileManager.default.moveItem(at: tmp, to: dest)
-            NSWorkspace.shared.activateFileViewerSelecting([dest])
-        } catch {
-            NSWorkspace.shared.open(url)
         }
     }
 }

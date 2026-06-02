@@ -9,6 +9,7 @@ struct UninstallerView: View {
     @State private var selectedFiles: Set<URL> = []
     @State private var isLoading = true
     @State private var isLoadingFiles = false
+    @State private var isUninstalling = false
     @State private var filter: AppFilter = .all
     @State private var searchText = ""
 
@@ -161,14 +162,24 @@ struct UninstallerView: View {
                 Spacer()
 
                 if !app.isAppleApp {
-                    Button("Uninstall") { uninstall(app) }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .controlSize(.small)
+                    if isUninstalling {
+                        // In-progress feedback: the button is gone (can't be
+                        // re-tapped) and a spinner shows the work is happening.
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Uninstalling…")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Button("Uninstall") { uninstall(app) }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .controlSize(.small)
 
-                    Button("Reset") { resetSelection() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                        Button("Reset") { resetSelection() }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                    }
                 }
             }
             .padding()
@@ -252,6 +263,8 @@ struct UninstallerView: View {
     }
 
     private func uninstall(_ app: AppInfo) {
+        guard !isUninstalling else { return }   // ignore double-taps
+        isUninstalling = true
         Task {
             try? FileManager.default.trashItem(at: app.path, resultingItemURL: nil)
             _ = await CleanActions.executeUserClean(
@@ -260,6 +273,7 @@ struct UninstallerView: View {
                 engine: appState.cleaningEngine
             )
             await loadApps()
+            isUninstalling = false
             selectedApp = nil
             associatedFiles = []
         }
