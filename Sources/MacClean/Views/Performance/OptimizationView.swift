@@ -112,6 +112,15 @@ struct OptimizationView: View {
                             .padding(.vertical, 2)
                             .background(.orange.opacity(0.2))
                             .clipShape(Capsule())
+                    } else {
+                        Toggle("", isOn: Binding(
+                            get: { agent.isEnabled },
+                            set: { newVal in
+                                try? agentManager.toggleAgent(agent, enabled: newVal)
+                                refresh()
+                            }
+                        ))
+                        .toggleStyle(.switch)
                     }
                 }
             }

@@ -92,6 +92,27 @@ public final class LaunchAgentsManager: @unchecked Sendable {
         return agents
     }
 
+    public enum ToggleError: Error { case systemAgentReadOnly, unreadablePlist }
+
+    /// Enable/disable a *user* launch agent by flipping its `Disabled`
+    /// key — same mechanism as Login Items. System agents live in a
+    /// root-owned directory and are refused here.
+    ///
+    /// Read/parse failures are surfaced (not silently swallowed): the
+    /// function is `throws`, so a corrupt or unreadable plist throws
+    /// `unreadablePlist` rather than no-op'ing. We deliberately never
+    /// fall back to an empty dictionary — writing back `[Disabled: …]`
+    /// alone would wipe the agent's real contents.
+    public func toggleAgent(_ agent: LaunchAgent, enabled: Bool) throws {
+        if agent.isSystem { throw ToggleError.systemAgentReadOnly }
+        let data = try Data(contentsOf: agent.path)
+        guard var plist = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+        else { throw ToggleError.unreadablePlist }
+        plist["Disabled"] = !enabled
+        let newData = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+        try newData.write(to: agent.path)
+    }
+
     private func scanDirectory(_ dir: URL, isSystem: Bool) -> [LaunchAgent] {
         guard let contents = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)
         else { return [] }
