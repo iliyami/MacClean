@@ -6,6 +6,10 @@ struct SmartScanView: View {
     @State private var scanState: SmartScanState = .idle
     @State private var completedModules: [CompletedModule] = []
     @State private var currentModuleName: String = ""
+    @State private var selectedItems: Set<URL> = []
+    @State private var cleanResults: [ScanResult] = []
+    @State private var showCleanConfirm = false
+    @State private var cleanTask: Task<Void, Never>?
 
     struct CompletedModule: Identifiable {
         let id = UUID()
@@ -217,11 +221,10 @@ struct SmartScanView: View {
     // MARK: - Results
 
     private func resultsView(totalSize: UInt64) -> some View {
-        VStack(spacing: 28) {
-            Spacer()
-
+        VStack(spacing: 20) {
             SizeDisplay(size: totalSize, label: "of junk found")
                 .foregroundStyle(.white)
+                .padding(.top, 24)
 
             HStack(spacing: 24) {
                 if case .results(let cleanup, _, _, _, _) = scanState {
@@ -235,15 +238,28 @@ struct SmartScanView: View {
                 }
             }
 
-            Button("Clean") { runCleanup() }
+            FileListView(results: cleanResults, selectedItems: $selectedItems)
+                .frame(maxHeight: 280)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, 20)
+
+            Button("Clean") { showCleanConfirm = true }
                 .buttonStyle(SuperEllipseButtonStyle(
                     gradient: ModuleTheme.smartScan.buttonGradient,
                     size: CGSize(width: 140, height: 46)
                 ))
-
-            Spacer()
+                .disabled(selectedItems.isEmpty)
+                .opacity(selectedItems.isEmpty ? 0.5 : 1)
+                .alert("Clean \(selectedItems.count) item\(selectedItems.count == 1 ? "" : "s")?", isPresented: $showCleanConfirm) {
+                    Button("Cancel", role: .cancel) { }
+                    Button("Clean", role: .destructive) { runCleanup() }
+                } message: {
+                    Text("Selected items will be moved to the Trash so you can recover them if needed.")
+                }
+                .padding(.bottom, 24)
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, 20)
     }
 
     // MARK: - Empty / Done / Cleaning
@@ -260,7 +276,7 @@ struct SmartScanView: View {
             Text("No junk, threats, or performance issues found")
                 .font(.system(size: 14))
                 .foregroundStyle(.white.opacity(0.6))
-            Button("Done") { scanState = .idle }
+            Button("Done") { resetScan() }
                 .buttonStyle(.bordered)
                 .tint(.white)
                 .controlSize(.large)
@@ -272,6 +288,12 @@ struct SmartScanView: View {
         VStack(spacing: 20) {
             Spacer()
             ScanProgressRing(progress: progress, phase: "Cleaning your Mac...", theme: .smartScan)
+            // Cancel mid-clean — consistent with the per-module views. The
+            // CleaningEngine checks Task.isCancelled at each chunk boundary.
+            Button("Cancel") { cleanTask?.cancel(); resetScan() }
+                .buttonStyle(.bordered)
+                .tint(.white)
+                .controlSize(.large)
             Spacer()
         }
     }
@@ -282,14 +304,33 @@ struct SmartScanView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 52))
                 .foregroundStyle(.white)
-            SizeDisplay(size: freedSize, label: "freed up")
+            Text("Moved to the Trash")
+                .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.white)
-            Button("Done") { scanState = .idle }
+            SizeDisplay(size: freedSize, label: "ready to reclaim")
+                .foregroundStyle(.white)
+            Text("Your selected items are in the Trash — recover anything you need. To erase them for good, open Trash Bins and empty it.")
+                .font(.system(size: 13))
+                .foregroundStyle(.white.opacity(0.65))
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 420)
+            Button("Done") { resetScan() }
                 .buttonStyle(.bordered)
                 .tint(.white)
                 .controlSize(.large)
             Spacer()
         }
+        .padding(.horizontal, 40)
+    }
+
+    private func resetScan() {
+        cleanTask?.cancel()
+        cleanTask = nil
+        selectedItems = []
+        cleanResults = []
+        completedModules = []
+        currentModuleName = ""
+        scanState = .idle
     }
 
     // MARK: - Components
@@ -369,6 +410,8 @@ struct SmartScanView: View {
                     if totalSize == 0 && results.allSatisfy({ $0.totalFileCount == 0 }) {
                         scanState = .empty
                     } else {
+                        cleanResults = SmartScanCleanup.allResults(from: results)
+                        selectedItems = SmartScanCleanup.defaultSelection(from: results)
                         scanState = .results(
                             cleanup: totalSize,
                             protection: 0,
@@ -391,10 +434,24 @@ struct SmartScanView: View {
     }
 
     private func runCleanup() {
+        // Snapshot selection up-front so the background task can't observe a
+        // later mutation (the state machine moves to .cleaning immediately,
+        // but the explicit copy keeps that guarantee local and obvious).
+        let results = cleanResults
+        let selection = selectedItems
         scanState = .cleaning(progress: 0)
-        Task {
-            try? await Task.sleep(for: .seconds(1))
-            scanState = .done(freedSize: 0)
+        cleanTask = Task {
+            let result = await CleanActions.executeUserClean(
+                results: results,
+                selectedItems: selection,
+                engine: appState.cleaningEngine,
+                onProgress: { p in Task { @MainActor in
+                    scanState = .cleaning(progress: p.fraction)
+                } }
+            )
+            // MVP: surface only freedBytes; result.errors/skippedCount are
+            // reserved for a future detail screen.
+            scanState = .done(freedSize: result.freedBytes)
         }
     }
 }
