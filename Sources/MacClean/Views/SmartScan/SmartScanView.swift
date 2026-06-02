@@ -288,9 +288,12 @@ struct SmartScanView: View {
         VStack(spacing: 20) {
             Spacer()
             ScanProgressRing(progress: progress, phase: "Cleaning your Mac...", theme: .smartScan)
-            // Cancel mid-clean — consistent with the per-module views. The
-            // CleaningEngine checks Task.isCancelled at each chunk boundary.
-            Button("Cancel") { cleanTask?.cancel(); resetScan() }
+            // Cancel mid-clean — consistent with the per-module views: just
+            // cancel the task and let it land on .done with whatever was
+            // already freed (the CleaningEngine checks Task.isCancelled at
+            // each chunk boundary). We do NOT reset to .idle here, because
+            // the in-flight task would race that back to .done.
+            Button("Cancel") { cleanTask?.cancel() }
                 .buttonStyle(.bordered)
                 .tint(.white)
                 .controlSize(.large)
@@ -446,7 +449,12 @@ struct SmartScanView: View {
                 selectedItems: selection,
                 engine: appState.cleaningEngine,
                 onProgress: { p in Task { @MainActor in
-                    scanState = .cleaning(progress: p.fraction)
+                    // Ignore late progress that lands after we've left the
+                    // cleaning phase (cancel/done), so it can't resurrect
+                    // a stale .cleaning state.
+                    if case .cleaning = scanState {
+                        scanState = .cleaning(progress: p.fraction)
+                    }
                 } }
             )
             // MVP: surface only freedBytes; result.errors/skippedCount are
