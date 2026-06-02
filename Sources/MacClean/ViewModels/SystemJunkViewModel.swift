@@ -139,4 +139,22 @@ final class SystemJunkViewModel {
         filesFound = 0
         cleanTask = nil
     }
+
+    // MARK: - Navigation persistence
+
+    /// Rehydrate from a previously-cached scan (preserved across navigation).
+    func restore(results: [ScanResult], selection: Set<URL>, scanComplete: Bool) {
+        self.results = results
+        self.selectedItems = selection
+        self.filesFound = results.reduce(0) { $0 + $1.fileCount }
+        state = scanComplete ? (results.isEmpty ? .empty : .results) : .idle
+    }
+
+    /// True once a scan has produced a results/empty screen worth preserving.
+    var isScanComplete: Bool {
+        switch state {
+        case .results, .empty: return true
+        default: return false
+        }
+    }
 }

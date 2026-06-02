@@ -25,6 +25,19 @@ struct SystemJunkView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            if let e = appState.scanResultsStore.entry(for: .systemJunk) {
+                viewModel.restore(results: e.results, selection: e.selection, scanComplete: e.scanComplete)
+            }
+        }
+        .onDisappear {
+            appState.scanResultsStore.save(
+                results: viewModel.results,
+                selection: viewModel.selectedItems,
+                scanComplete: viewModel.isScanComplete,
+                for: .systemJunk
+            )
+        }
     }
 
     private var idleView: some View {
