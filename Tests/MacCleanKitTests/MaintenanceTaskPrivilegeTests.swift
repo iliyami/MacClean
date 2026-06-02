@@ -3,9 +3,9 @@ import XCTest
 
 final class MaintenanceTaskPrivilegeTests: XCTestCase {
     func testRootTasksAreFlaggedPrivileged() {
-        XCTAssertTrue(MaintenanceTask.freeUpRAM.requiresPrivilegedHelper)
-        XCTAssertTrue(MaintenanceTask.runMaintenanceScripts.requiresPrivilegedHelper)
-        XCTAssertFalse(MaintenanceTask.flushDNSCache.requiresPrivilegedHelper)
-        XCTAssertFalse(MaintenanceTask.freeUpPurgeableSpace.requiresPrivilegedHelper)
+        XCTAssertTrue(MaintenanceTask.freeUpRAM.requiresAdmin)
+        XCTAssertTrue(MaintenanceTask.runMaintenanceScripts.requiresAdmin)
+        XCTAssertFalse(MaintenanceTask.flushDNSCache.requiresAdmin)
+        XCTAssertFalse(MaintenanceTask.freeUpPurgeableSpace.requiresAdmin)
     }
 }

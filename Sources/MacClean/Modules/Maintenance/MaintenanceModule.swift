@@ -29,20 +29,40 @@ public actor MaintenanceExecutor {
     public func execute(_ task: MaintenanceTask) async -> TaskResult {
         if case .speedUpMail = task { return await reindexMail() }
 
-        if task.requiresPrivilegedHelper {
-            return TaskResult(
-                task: task,
-                success: false,
-                output: "",
-                error: "Needs administrator access — this task isn't available yet without the privileged helper."
-            )
-        }
-
         guard let (command, args) = task.systemCommand else {
             return TaskResult(task: task, success: false, output: "",
                               error: "Task has no system command")
         }
+
+        if task.requiresAdmin {
+            return await runAdminProcess(task: task, command: command, args: args)
+        }
         return await runProcess(task: task, command: command, args: args)
+    }
+
+    /// Run a root-requiring command via the standard macOS admin-auth prompt
+    /// (`do shell script … with administrator privileges`). macOS shows its
+    /// native password dialog and runs the command as root — no persistent
+    /// privileged helper needed. The command strings come from the fixed
+    /// `MaintenanceTask` enum (never user input); we still escape the
+    /// AppleScript string literal defensively.
+    private func runAdminProcess(task: MaintenanceTask, command: String, args: [String]) async -> TaskResult {
+        let shell = ([command] + args).joined(separator: " ")
+        let escaped = shell
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        let script = "do shell script \"\(escaped)\" with administrator privileges"
+        let result = await runProcess(task: task, command: "/usr/bin/osascript", args: ["-e", script])
+
+        // osascript returns -128 / "User canceled." when the user dismisses
+        // the auth dialog — surface that as a friendly note, not an error.
+        if !result.success,
+           let err = result.error,
+           err.contains("User canceled") || err.contains("-128") {
+            return TaskResult(task: task, success: false, output: "",
+                              error: "Cancelled — administrator access was not granted.")
+        }
+        return result
     }
 
     private func runProcess(task: MaintenanceTask, command: String, args: [String]) async -> TaskResult {

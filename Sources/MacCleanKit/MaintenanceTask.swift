@@ -117,11 +117,11 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    /// True for tasks whose command needs root (purge, periodic, …). These
-    /// can't run from the unprivileged app; until they're routed through the
-    /// privileged helper they return an honest "needs admin" result rather
-    /// than a silent non-zero exit. (Helper routing is tracked separately.)
-    public var requiresPrivilegedHelper: Bool {
+    /// True for tasks whose command needs root (purge, periodic, …). The
+    /// executor runs these via the standard macOS admin-auth prompt
+    /// (`do shell script … with administrator privileges`) so they actually
+    /// execute, instead of failing as a plain unprivileged `Process`.
+    public var requiresAdmin: Bool {
         switch self {
         case .freeUpRAM, .runMaintenanceScripts, .repairDiskPermissions,
              .verifyStartupDisk, .thinTimeMachineSnapshots:
@@ -139,7 +139,7 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
     public var systemCommand: (executable: String, arguments: [String])? {
         switch self {
         case .freeUpRAM:
-            ("/usr/bin/purge", [])
+            ("/usr/sbin/purge", [])
         case .freeUpPurgeableSpace:
             ("/usr/sbin/diskutil", ["apfs", "listSnapshots", "/"])
         case .runMaintenanceScripts:

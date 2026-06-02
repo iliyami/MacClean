@@ -17,7 +17,7 @@ final class MaintenanceTaskTests: XCTestCase {
     }
 
     func testSystemCommandsResolveCorrectly() {
-        XCTAssertEqual(MaintenanceTask.freeUpRAM.systemCommand?.executable, "/usr/bin/purge")
+        XCTAssertEqual(MaintenanceTask.freeUpRAM.systemCommand?.executable, "/usr/sbin/purge")
         XCTAssertEqual(MaintenanceTask.flushDNSCache.systemCommand?.executable, "/usr/bin/dscacheutil")
         XCTAssertEqual(MaintenanceTask.flushDNSCache.systemCommand?.arguments, ["-flushcache"])
         XCTAssertEqual(MaintenanceTask.reindexSpotlight.systemCommand?.executable, "/usr/bin/mdutil")
