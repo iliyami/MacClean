@@ -1,9 +1,11 @@
 import SwiftUI
+import AppKit
 import MacCleanKit
 
 public struct FileListView: View {
     let results: [ScanResult]
     @Binding var selectedItems: Set<URL>
+    @State private var expansion = FileListExpansion()
 
     public init(results: [ScanResult], selectedItems: Binding<Set<URL>>) {
         self.results = results
@@ -14,38 +16,53 @@ public struct FileListView: View {
         List {
             ForEach(results, id: \.category) { result in
                 Section {
-                    ForEach(result.items) { item in
-                        FileRowView(
-                            item: item,
-                            isSelected: selectedItems.contains(item.url),
-                            onToggle: {
-                                if selectedItems.contains(item.url) {
-                                    selectedItems.remove(item.url)
-                                } else {
-                                    selectedItems.insert(item.url)
-                                }
-                            }
-                        )
+                    if expansion.isExpanded(result.category) {
+                        ForEach(result.items) { item in
+                            FileRowView(
+                                item: item,
+                                isSelected: selectedItems.contains(item.url),
+                                onToggle: { toggle(item.url) }
+                            )
+                        }
                     }
                 } header: {
                     CategoryHeaderView(
                         category: result.category,
                         totalSize: result.totalSize,
                         fileCount: result.fileCount,
-                        allSelected: result.items.allSatisfy { selectedItems.contains($0.url) },
-                        onToggleAll: {
-                            let urls = Set(result.items.map(\.url))
-                            if urls.isSubset(of: selectedItems) {
-                                selectedItems.subtract(urls)
-                            } else {
-                                selectedItems.formUnion(urls)
+                        allSelected: !result.items.isEmpty && result.items.allSatisfy { selectedItems.contains($0.url) },
+                        isExpanded: expansion.isExpanded(result.category),
+                        onToggleExpand: {
+                            withAnimation {
+                                expansion.toggle(result.category)
                             }
-                        }
+                        },
+                        onToggleAll: { toggleAll(result) }
                     )
                 }
             }
         }
         .listStyle(.sidebar)
+    }
+
+    /// Toggle selection of a single file by URL.
+    private func toggle(_ url: URL) {
+        if selectedItems.contains(url) {
+            selectedItems.remove(url)
+        } else {
+            selectedItems.insert(url)
+        }
+    }
+
+    /// Select-all / deselect-all for a category: if every item is already
+    /// selected, deselect them; otherwise select them all.
+    private func toggleAll(_ result: ScanResult) {
+        let urls = Set(result.items.map(\.url))
+        if urls.isSubset(of: selectedItems) {
+            selectedItems.subtract(urls)
+        } else {
+            selectedItems.formUnion(urls)
+        }
     }
 }
 
@@ -54,19 +71,37 @@ struct CategoryHeaderView: View {
     let totalSize: UInt64
     let fileCount: Int
     let allSelected: Bool
+    let isExpanded: Bool
+    let onToggleExpand: () -> Void
     let onToggleAll: () -> Void
 
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
+            // Leading disclosure chevron — always visible, folds the category.
+            Button(action: onToggleExpand) {
+                Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 18)
+            }
+            .buttonStyle(.plain)
+
+            // Select-all checkbox (visual indicator + control).
             Toggle(isOn: Binding(get: { allSelected }, set: { _ in onToggleAll() })) {
-                HStack(spacing: 8) {
-                    Image(systemName: category.systemImage)
-                        .foregroundStyle(.secondary)
-                    Text(category.displayName)
-                        .font(.headline)
-                }
+                EmptyView()
             }
             .toggleStyle(.checkbox)
+            .labelsHidden()
+
+            // Icon + name. Tapping the name also folds the category.
+            HStack(spacing: 8) {
+                Image(systemName: category.systemImage)
+                    .foregroundStyle(.secondary)
+                Text(category.displayName)
+                    .font(.headline)
+            }
+            .contentShape(Rectangle())
+            .onTapGesture { onToggleExpand() }
 
             Spacer()
 
@@ -89,11 +124,15 @@ struct FileRowView: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            Toggle(isOn: Binding(get: { isSelected }, set: { _ in onToggle() })) {
+            // Purely visual — the whole row is the hit target (see onTapGesture
+            // below). Hit-testing is disabled so a click on the checkbox isn't
+            // counted twice (checkbox action + row tap).
+            Toggle(isOn: Binding(get: { isSelected }, set: { _ in })) {
                 EmptyView()
             }
             .toggleStyle(.checkbox)
             .labelsHidden()
+            .allowsHitTesting(false)
 
             Image(systemName: item.isDirectory ? "folder.fill" : fileIcon)
                 .foregroundStyle(.secondary)
@@ -118,6 +157,13 @@ struct FileRowView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .onTapGesture { onToggle() }
+        .contextMenu {
+            Button("Reveal in Finder") {
+                NSWorkspace.shared.activateFileViewerSelecting([item.url])
+            }
+        }
     }
 
     private var fileIcon: String {
