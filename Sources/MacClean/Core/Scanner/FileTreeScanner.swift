@@ -40,7 +40,7 @@ public actor FileTreeScanner {
         }
     }
 
-    public nonisolated func scanWithSizeAggregation(root: URL) -> FileNode {
+    public func scanWithSizeAggregation(root: URL) async -> FileNode {
         let keys = resourceKeys
         let rootNode = FileNode(url: root, name: root.lastPathComponent)
 
@@ -56,16 +56,33 @@ public actor FileTreeScanner {
         // parent paths line up. `URL.deletingLastPathComponent()` on a file
         // URL returns a directory URL whose `path(percentEncoded:)` ends
         // in "/" — that mismatched the root key unconditionally and
-        // silently produced an empty tree (SpaceLens treemap rendered
-        // nothing in that state).
+        // silently produced an empty tree.
         func key(_ url: URL) -> String {
-            let p = url.path(percentEncoded: false)
-            return (p.hasSuffix("/") && p.count > 1) ? String(p.dropLast()) : p
+            var p = url.path(percentEncoded: false)
+            if p.hasSuffix("/") && p.count > 1 { p = String(p.dropLast()) }
+            // Canonicalize macOS firmlinks as a pure string op: enumerator
+            // child URLs resolve through /private/var even when the root is
+            // the /var symlink (temp dir, firmlinked volumes), so map
+            // /private/{var,tmp,etc} back to /{var,tmp,etc} on both sides.
+            for firmlink in ["/private/var", "/private/tmp", "/private/etc"] {
+                if p == firmlink || p.hasPrefix(firmlink + "/") {
+                    return String(p.dropFirst("/private".count))
+                }
+            }
+            return p
         }
 
         var nodeMap: [String: FileNode] = [key(root): rootNode]
+        var iterationCount = 0
 
         while let obj = enumerator.nextObject() {
+            if Task.isCancelled { break }
+
+            iterationCount += 1
+            if iterationCount % 200 == 0 {
+                await Task.yield()
+            }
+
             guard let fileURL = obj as? URL else { continue }
             guard let values = try? fileURL.resourceValues(forKeys: keys) else { continue }
             let size = UInt64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? values.fileSize ?? 0)

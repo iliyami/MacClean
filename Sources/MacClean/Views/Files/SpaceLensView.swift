@@ -5,6 +5,7 @@ struct SpaceLensView: View {
     @State private var rootNode: FileNode?
     @State private var treemapRects: [TreemapRect] = []
     @State private var isScanning = false
+    @State private var scanTask: Task<Void, Never>?
     @State private var breadcrumbs: [URL] = []
     @State private var currentURL: URL = MCConstants.home
     @State private var selectedVolume: URL = URL(filePath: "/")
@@ -60,6 +61,13 @@ struct SpaceLensView: View {
             if isScanning {
                 Spacer()
                 ScanProgressRing(progress: 0.5, phase: "Scanning disk...", theme: .files)
+                Button("Cancel") {
+                    scanTask?.cancel()
+                    isScanning = false
+                }
+                .buttonStyle(.bordered)
+                .tint(.white)
+                .controlSize(.large)
                 Spacer()
             } else if !treemapRects.isEmpty {
                 GeometryReader { geo in
@@ -117,12 +125,17 @@ struct SpaceLensView: View {
     }
 
     private func startScan() {
+        // Cancel any in-flight scan first. Breadcrumb taps can fire while a
+        // scan is running; without this the old task would keep running and
+        // race the new one to overwrite rootNode/treemapRects/isScanning.
+        scanTask?.cancel()
         isScanning = true
         if breadcrumbs.isEmpty {
             breadcrumbs = [currentURL]
         }
-        Task {
+        scanTask = Task {
             let node = await scanner.scanWithSizeAggregation(root: currentURL)
+            guard !Task.isCancelled else { return }
             rootNode = node
 
             let treemapNodes = node.children
