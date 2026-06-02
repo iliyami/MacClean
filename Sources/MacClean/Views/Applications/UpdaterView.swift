@@ -6,6 +6,8 @@ struct UpdaterView: View {
     @State private var isChecking = false
     @State private var hasChecked = false
     @State private var apps: [AppInfo] = []
+    /// Update rows currently mid-action — drives the per-row spinner + disable.
+    @State private var updatingIDs: Set<UUID> = []
 
     private let discovery = AppDiscovery()
     private let checker = AppUpdateChecker()
@@ -68,9 +70,15 @@ struct UpdaterView: View {
 
                             Spacer()
 
-                            Button("Update") { UpdaterActions.perform(update) }
-                                .buttonStyle(.bordered)
-                                .controlSize(.small)
+                            if updatingIDs.contains(update.id) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .frame(width: 60)
+                            } else {
+                                Button("Update") { startUpdate(update) }
+                                    .buttonStyle(.bordered)
+                                    .controlSize(.small)
+                            }
                         }
                     }
                 }
@@ -101,6 +109,19 @@ struct UpdaterView: View {
             updates = await checker.checkForUpdates(apps: apps)
             isChecking = false
             hasChecked = true
+        }
+    }
+
+    /// Flip the row to a spinner + disable it the instant Update is tapped,
+    /// fire the action, then hold the indicator briefly so the user clearly
+    /// sees that the tap registered and something is happening.
+    private func startUpdate(_ update: AppUpdateChecker.AppUpdate) {
+        guard !updatingIDs.contains(update.id) else { return }
+        updatingIDs.insert(update.id)
+        Task {
+            UpdaterActions.perform(update)
+            try? await Task.sleep(for: .milliseconds(1200))
+            updatingIDs.remove(update.id)
         }
     }
 }
