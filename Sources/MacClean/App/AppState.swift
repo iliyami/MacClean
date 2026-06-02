@@ -6,6 +6,7 @@ public final class AppState {
     var selectedSidebarItem: SidebarItem? = .smartScan
     var scanCoordinator = ScanCoordinator()
     let cleaningEngine = CleaningEngine()
+    let scanResultsStore = ScanResultsStore()
 
     init() {
         registerModules()
