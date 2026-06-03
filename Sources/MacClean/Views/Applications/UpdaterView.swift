@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import MacCleanKit
 
 struct UpdaterView: View {
@@ -56,9 +57,9 @@ struct UpdaterView: View {
                 List {
                     ForEach(updates) { update in
                         HStack {
-                            Image(systemName: "app.fill")
-                                .foregroundStyle(.blue)
-                                .frame(width: 26)
+                            Image(nsImage: NSWorkspace.shared.icon(forFile: update.app.path.path(percentEncoded: false)))
+                                .resizable()
+                                .frame(width: 26, height: 26)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(update.app.name)
