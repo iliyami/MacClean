@@ -7,6 +7,7 @@ struct SettingsView: View {
     @State private var launcher = MenuBarLauncher.shared
     @State private var refreshTick = 0
     @State private var keptLanguages: Set<String> = []
+    @State private var selectable: [(name: String, lproj: String)] = []
 
     var body: some View {
         Form {
@@ -38,14 +39,20 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                ForEach(LanguagePreferences.commonLanguages, id: \.lproj) { lang in
-                    Toggle(lang.name, isOn: Binding(
-                        get: { keptLanguages.contains(lang.lproj) },
-                        set: { on in
-                            if on { keptLanguages.insert(lang.lproj) } else { keptLanguages.remove(lang.lproj) }
-                            LanguagePreferences.userKept = keptLanguages
-                        }
-                    ))
+                if selectable.isEmpty {
+                    Text("Detecting installed languages…")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(selectable, id: \.lproj) { lang in
+                        Toggle(lang.name, isOn: Binding(
+                            get: { keptLanguages.contains(lang.lproj) },
+                            set: { on in
+                                if on { keptLanguages.insert(lang.lproj) } else { keptLanguages.remove(lang.lproj) }
+                                LanguagePreferences.userKept = keptLanguages
+                            }
+                        ))
+                    }
                 }
             } header: {
                 Text("Language Cleanup")
@@ -56,6 +63,14 @@ struct SettingsView: View {
         .id(refreshTick)
         .onAppear {
             keptLanguages = LanguagePreferences.userKept
+            selectable = LanguagePreferences.selectableLanguages()
+            Task.detached(priority: .userInitiated) {
+                let found = LanguageScanner().discoverLproj(in: LanguageScanner.defaultRoots)
+                await MainActor.run {
+                    LanguagePreferences.discoveredLproj = found
+                    selectable = LanguagePreferences.selectableLanguages()
+                }
+            }
         }
     }
 
