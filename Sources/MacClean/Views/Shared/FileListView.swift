@@ -13,36 +13,42 @@ public struct FileListView: View {
     }
 
     public var body: some View {
+        // Flat rows (NOT `Section`): a `.sidebar` List makes Sections natively
+        // collapsible and steals header taps for its own collapse state, which
+        // fought our custom chevron and made folding unreliable. Rendering the
+        // header as a normal row means our chevron is the single, deterministic
+        // fold control and `expansion` is the single source of truth.
         List {
             ForEach(results, id: \.category) { result in
-                Section {
-                    if expansion.isExpanded(result.category) {
-                        ForEach(result.items) { item in
-                            FileRowView(
-                                item: item,
-                                isSelected: selectedItems.contains(item.url),
-                                onToggle: { toggle(item.url) }
-                            )
-                        }
+                CategoryHeaderView(
+                    category: result.category,
+                    totalSize: result.totalSize,
+                    fileCount: result.fileCount,
+                    allSelected: !result.items.isEmpty && result.items.allSatisfy { selectedItems.contains($0.url) },
+                    isExpanded: expansion.isExpanded(result.category),
+                    onToggleExpand: {
+                        withAnimation { expansion.toggle(result.category) }
+                    },
+                    onToggleAll: { toggleAll(result) }
+                )
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+
+                if expansion.isExpanded(result.category) {
+                    ForEach(result.items) { item in
+                        FileRowView(
+                            item: item,
+                            isSelected: selectedItems.contains(item.url),
+                            onToggle: { toggle(item.url) }
+                        )
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                     }
-                } header: {
-                    CategoryHeaderView(
-                        category: result.category,
-                        totalSize: result.totalSize,
-                        fileCount: result.fileCount,
-                        allSelected: !result.items.isEmpty && result.items.allSatisfy { selectedItems.contains($0.url) },
-                        isExpanded: expansion.isExpanded(result.category),
-                        onToggleExpand: {
-                            withAnimation {
-                                expansion.toggle(result.category)
-                            }
-                        },
-                        onToggleAll: { toggleAll(result) }
-                    )
                 }
             }
         }
-        .listStyle(.sidebar)
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
 
     /// Toggle selection of a single file by URL.
