@@ -142,8 +142,11 @@ public enum MCConstants {
 
     // MARK: - Preserved Languages
 
+    // English (in every form) and Base are never offered for deletion. Apps
+    // ship both modern code folders ("en.lproj") and the legacy NeXT-era
+    // full-word "English.lproj", so both English spellings are listed.
     public static let preservedLanguages: Set<String> = [
-        "en.lproj", "Base.lproj", "en_US.lproj", "en_GB.lproj",
+        "en.lproj", "English.lproj", "Base.lproj", "en_US.lproj", "en_GB.lproj",
     ]
 
     // MARK: - Log File Path

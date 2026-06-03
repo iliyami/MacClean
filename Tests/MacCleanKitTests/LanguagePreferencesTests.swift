@@ -68,6 +68,41 @@ final class LanguagePreferencesTests: XCTestCase {
         XCTAssertEqual(LanguagePreferences.displayName(forLproj: "fr"), "French")
     }
 
+    // MARK: - Legacy full-word lproj handling (#21.5 follow-up)
+    //
+    // macOS apps ship BOTH "en.lproj" and the legacy NeXT-era "English.lproj".
+    // English (in every form) must be always-kept, and code+legacy variants of
+    // the same language must collapse into a single toggle that keeps both.
+
+    func testEnglishLegacyFolderIsAlwaysKept() {
+        XCTAssertTrue(LanguagePreferences.alwaysKept.contains("English.lproj"),
+                      "Legacy English.lproj must be always-kept")
+        XCTAssertTrue(LanguagePreferences.effectivePreserved(userKept: []).contains("English.lproj"),
+                      "English.lproj must be excluded from cleanup")
+    }
+
+    func testEnglishNeverAppearsAsSelectable() {
+        let original = LanguagePreferences.discoveredLproj
+        defer { LanguagePreferences.discoveredLproj = original }
+
+        LanguagePreferences.discoveredLproj = ["en.lproj", "English.lproj", "Base.lproj", "fr.lproj"]
+        let names = LanguagePreferences.selectableLanguages().map(\.name)
+        XCTAssertFalse(names.contains("English"),
+                       "English must never be user-toggleable; got \(names)")
+    }
+
+    func testCodeAndLegacyVariantsGroupIntoOneEntry() {
+        let original = LanguagePreferences.discoveredLproj
+        defer { LanguagePreferences.discoveredLproj = original }
+
+        LanguagePreferences.discoveredLproj = ["fr.lproj", "French.lproj", "de.lproj"]
+        let selectable = LanguagePreferences.selectableLanguages()
+        let french = selectable.filter { $0.name == "French" }
+        XCTAssertEqual(french.count, 1, "French must be a single grouped row, not duplicated")
+        XCTAssertEqual(Set(french.first?.lprojs ?? []), ["fr.lproj", "French.lproj"],
+                       "the French toggle must cover BOTH the code and legacy folders")
+    }
+
     // MARK: - selectableLanguages: excludes alwaysKept
 
     func testSelectableExcludesAlwaysKept() {
@@ -77,7 +112,7 @@ final class LanguagePreferencesTests: XCTestCase {
 
         LanguagePreferences.discoveredLproj = ["fr.lproj", "en.lproj", "Base.lproj", "de.lproj"]
         let selectable = LanguagePreferences.selectableLanguages()
-        let lprojs = Set(selectable.map(\.lproj))
+        let lprojs = Set(selectable.flatMap(\.lprojs))
 
         XCTAssertTrue(lprojs.contains("fr.lproj"), "fr should be selectable")
         XCTAssertTrue(lprojs.contains("de.lproj"), "de should be selectable")

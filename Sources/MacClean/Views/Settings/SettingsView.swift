@@ -7,7 +7,14 @@ struct SettingsView: View {
     @State private var launcher = MenuBarLauncher.shared
     @State private var refreshTick = 0
     @State private var keptLanguages: Set<String> = []
-    @State private var selectable: [(name: String, lproj: String)] = []
+    @State private var selectable: [(name: String, lprojs: [String])] = []
+    @State private var languageSearch: String = ""
+
+    /// Selectable languages filtered by the search field (case-insensitive).
+    private var filteredLanguages: [(name: String, lprojs: [String])] {
+        guard !languageSearch.isEmpty else { return selectable }
+        return selectable.filter { $0.name.localizedCaseInsensitiveContains(languageSearch) }
+    }
 
     var body: some View {
         Form {
@@ -44,11 +51,22 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(selectable, id: \.lproj) { lang in
+                    TextField("Search languages", text: $languageSearch)
+                        .textFieldStyle(.roundedBorder)
+
+                    if filteredLanguages.isEmpty {
+                        Text("No languages match “\(languageSearch)”.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(filteredLanguages, id: \.name) { lang in
+                        // One toggle covers every folder variant of the
+                        // language (e.g. "fr.lproj" + legacy "French.lproj").
                         Toggle(lang.name, isOn: Binding(
-                            get: { keptLanguages.contains(lang.lproj) },
+                            get: { lang.lprojs.allSatisfy { keptLanguages.contains($0) } },
                             set: { on in
-                                if on { keptLanguages.insert(lang.lproj) } else { keptLanguages.remove(lang.lproj) }
+                                if on { keptLanguages.formUnion(lang.lprojs) }
+                                else { lang.lprojs.forEach { keptLanguages.remove($0) } }
                                 LanguagePreferences.userKept = keptLanguages
                             }
                         ))

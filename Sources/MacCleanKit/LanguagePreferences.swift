@@ -40,11 +40,16 @@ public enum LanguagePreferences {
     // MARK: - Selectable list for Settings
 
     /// Languages the user can choose to keep/remove: those actually found on
-    /// disk, minus the always-kept defaults. Sorted by display name.
-    public static func selectableLanguages() -> [(name: String, lproj: String)] {
-        discoveredLproj.subtracting(alwaysKept)
-            .map { (displayName(forLproj: $0), $0) }
-            .sorted { $0.0.localizedCaseInsensitiveCompare($1.0) == .orderedAscending }
+    /// disk, minus the always-kept defaults, GROUPED by display name. A single
+    /// language can ship under several folder names (e.g. modern "fr.lproj"
+    /// and legacy "French.lproj") — these collapse into one entry whose
+    /// `lprojs` covers every variant, so one toggle keeps/removes them all and
+    /// the list never shows duplicate rows. Sorted by display name.
+    public static func selectableLanguages() -> [(name: String, lprojs: [String])] {
+        let candidates = discoveredLproj.subtracting(alwaysKept)
+        return Dictionary(grouping: candidates) { displayName(forLproj: $0) }
+            .map { (name: $0.key, lprojs: $0.value.sorted()) }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     // MARK: - User-kept persistence
