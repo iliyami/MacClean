@@ -115,6 +115,10 @@ public struct SidebarView: View {
     @Binding var selection: SidebarItem?
     @AppStorage("showMenuBarWidget") private var showMenuBarWidget = true
     @State private var launcher = MenuBarLauncher.shared
+    /// Sections the user has collapsed. Native `.sidebar` Sections only reveal
+    /// a collapse chevron on hover and don't fold on a title click, so we render
+    /// our own header rows with an always-visible chevron that fold on tap.
+    @State private var collapsedSections: Set<SidebarSection> = []
 
     public init(selection: Binding<SidebarItem?>) {
         self._selection = selection
@@ -129,7 +133,8 @@ public struct SidebarView: View {
                             sidebarRow(item)
                         }
                     } else {
-                        Section(section.rawValue) {
+                        sectionHeader(section)
+                        if !collapsedSections.contains(section) {
                             ForEach(section.items) { item in
                                 sidebarRow(item)
                             }
@@ -144,6 +149,33 @@ public struct SidebarView: View {
             menuBarFooter
         }
         .frame(minWidth: 180, idealWidth: 200)
+    }
+
+    /// A collapsible section header: always-visible leading chevron + title;
+    /// the whole row folds/unfolds the section on tap. Not selectable (it isn't
+    /// a module), so clicking it never changes the detail pane.
+    private func sectionHeader(_ section: SidebarSection) -> some View {
+        let isCollapsed = collapsedSections.contains(section)
+        return HStack(spacing: 6) {
+            Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.secondary)
+                .frame(width: 14)
+            Text(section.rawValue.uppercased())
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.top, 6)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                if isCollapsed { collapsedSections.remove(section) }
+                else { collapsedSections.insert(section) }
+            }
+        }
+        .selectionDisabled()
+        .listRowSeparator(.hidden)
     }
 
     /// Always-visible footer at the bottom of the sidebar with the
