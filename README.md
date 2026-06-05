@@ -208,7 +208,7 @@ Some modules (Mail Attachments, Privacy, Malware) need Full Disk Access to scan 
 Apple charges **$99/year** for a Developer ID — the only way to bypass Gatekeeper warnings on macOS. Mac Clean is free, open-source, and built by volunteers. Paying Apple's annual gatekeeping tax just so users can open the app without a warning isn't worth it when:
 
 1. The source is right here for you to read
-2. Homebrew install handles it automatically — `brew install --cask mac-clean` and you're done
+2. Homebrew install handles it automatically: `brew tap iliyami/macclean && brew install --cask mac-clean` and you're done
 3. The one-line installer handles it automatically
 4. The whole "Gatekeeper warning" thing is just an extra `xattr` command for direct DMG installs
 
@@ -346,10 +346,11 @@ Inspired by the open-source Mac utility community:
 ## Star History
 
 <p align="center">
-  <a href="https://star-history.com/#iliyami/MacClean&Date">
+  <a href="https://www.star-history.com/?type=date&repos=iliyami%2FMacClean">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=iliyami/MacClean&type=Date&theme=dark" />
-      <img alt="Mac Clean Star History Chart" src="https://api.star-history.com/svg?repos=iliyami/MacClean&type=Date" width="600" />
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=iliyami/MacClean&type=date&theme=dark&legend=top-left" />
+      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=iliyami/MacClean&type=date&legend=top-left" />
+      <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=iliyami/MacClean&type=date&legend=top-left" />
     </picture>
   </a>
 </p>
