@@ -33,7 +33,7 @@ public final class MenuBarLauncher {
 
     public static let shared = MenuBarLauncher()
 
-    public private(set) var lastError: LauncherError?
+    public internal(set) var lastError: LauncherError?
 
     private let service = SMAppService.loginItem(identifier: MCConstants.menuBundleIdentifier)
 
@@ -118,14 +118,31 @@ public final class MenuBarLauncher {
 
     private func launchHelperIfNotRunning() {
         guard !isHelperRunning(), let url = helperAppURL() else { return }
+        Task { @MainActor in await openHelper(at: url) }
+    }
+
+    /// Launch the bundled helper at `url`, recording any failure in `lastError`.
+    ///
+    /// Deliberately uses the **async** `openApplication` overload, never the
+    /// completion-handler one. LaunchServices fires that completion handler on
+    /// its own dispatch queue (`com.apple.launchservices.open-queue`), and
+    /// because `MenuBarLauncher` is `@MainActor` the trailing closure is
+    /// inferred main-actor-isolated. On the macOS 26 runtime the closure's
+    /// main-actor executor assertion *traps* (SIGTRAP) the instant it runs
+    /// off-main — that is issue #58. Older runtimes silently tolerated it,
+    /// which is why the crash only surfaced for users on macOS 26.
+    ///
+    /// Awaiting inside this `@MainActor` method resumes the continuation back
+    /// on the main actor, so the `lastError` write is safe. Do NOT reintroduce
+    /// a completion handler that touches `@MainActor` state here.
+    func openHelper(at url: URL) async {
         let config = NSWorkspace.OpenConfiguration()
         config.activates = false   // Don't steal focus from the main app
         config.hides = false
-        NSWorkspace.shared.openApplication(at: url, configuration: config) { [weak self] _, error in
-            guard let self, let error else { return }
-            Task { @MainActor in
-                self.lastError = .registrationFailed(error.localizedDescription)
-            }
+        do {
+            _ = try await NSWorkspace.shared.openApplication(at: url, configuration: config)
+        } catch {
+            lastError = .registrationFailed(error.localizedDescription)
         }
     }
 

@@ -13,7 +13,7 @@
   <a href="https://github.com/iliyami/MacClean/stargazers"><img src="https://img.shields.io/github/stars/iliyami/MacClean?style=flat-square&color=gold" alt="GitHub stars" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%2014%2B-blue?style=flat-square" alt="macOS 14+" />
   <img src="https://img.shields.io/badge/swift-6.0-orange?style=flat-square" alt="Swift 6" />
-  <img src="https://img.shields.io/badge/tests-484%20passing-brightgreen?style=flat-square" alt="Tests" />
+  <img src="https://img.shields.io/badge/tests-485%20passing-brightgreen?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/license-BSD--3--Clause-green?style=flat-square" alt="License" />
   <img src="https://img.shields.io/badge/security-audited-purple?style=flat-square" alt="Security" />
   <img src="https://img.shields.io/badge/PRs-welcome-ff69b4?style=flat-square" alt="PRs Welcome" />
@@ -191,7 +191,7 @@ sudo xattr -dr com.apple.quarantine "/Applications/Mac Clean.app"
 git clone https://github.com/iliyami/MacClean.git
 cd MacClean
 swift build
-swift test                     # run 484 tests
+swift test                     # run 485 tests
 bash scripts/build-dmg.sh      # build local DMG
 ```
 
@@ -254,7 +254,7 @@ Sources/
 ├── MacCleanHelper/             # XPC privileged helper (root operations)
 └── MacCleanMenu/               # Menu bar system monitor
 
-Tests/                          # XCTest suite — 484 tests
+Tests/                          # XCTest suite — 485 tests
 ├── MacCleanTests/              # app-target tests
 ├── MacCleanKitTests/           # framework tests
 └── MacCleanTestSupport/        # fixtures (withTempHome, withFakeApp, …)

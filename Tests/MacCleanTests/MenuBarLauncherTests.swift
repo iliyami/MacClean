@@ -53,4 +53,32 @@ final class MenuBarLauncherTests: XCTestCase {
         // silently with `.notFound`. Catch the drift here.
         XCTAssertEqual(MCConstants.menuBundleIdentifier, "com.macclean.menu")
     }
+
+    // Regression coverage for issue #58 — "Crash On macOS 26.5.1".
+    //
+    // `openHelper(at:)` launches the menu-bar helper via
+    // `NSWorkspace.openApplication`, whose result is delivered off the main
+    // thread (LaunchServices' `com.apple.launchservices.open-queue`). The
+    // shipped 1.8.3 build handled that result in a main-actor-isolated
+    // completion closure; on the macOS 26 runtime the closure's main-actor
+    // executor assertion traps (SIGTRAP) the instant it fires off-main,
+    // crashing the app. The fix awaits the async overload so the continuation
+    // resumes on the main actor.
+    //
+    // This drives that path with a URL that can't be opened: the launch fails,
+    // the failure lands in `lastError`, and — the point of the test — the
+    // process does NOT trap. On macOS 26, a regression to off-main `@MainActor`
+    // access in this path would abort the test process instead of failing soft.
+    func testOpenHelperRecordsFailureWithoutTrappingOffMainActor() async {
+        let launcher = MenuBarLauncher.shared
+        defer { launcher.lastError = nil }   // don't pollute the shared singleton
+
+        let bogus = URL(fileURLWithPath:
+            "/private/var/empty/MacCleanMenu-\(UUID().uuidString).app")
+        await launcher.openHelper(at: bogus)
+
+        // Reaching this line at all proves we survived the off-main hop.
+        XCTAssertNotNil(launcher.lastError,
+                        "A failed helper launch should surface via lastError")
+    }
 }
