@@ -10,9 +10,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/iliyami/MacClean/stargazers"><img src="https://img.shields.io/github/stars/iliyami/MacClean?style=flat-square&color=gold" alt="GitHub stars" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%2014%2B-blue?style=flat-square" alt="macOS 14+" />
   <img src="https://img.shields.io/badge/swift-6.0-orange?style=flat-square" alt="Swift 6" />
-  <img src="https://img.shields.io/badge/tests-403%20passing-brightgreen?style=flat-square" alt="Tests" />
+  <img src="https://img.shields.io/badge/tests-484%20passing-brightgreen?style=flat-square" alt="Tests" />
   <img src="https://img.shields.io/badge/license-BSD--3--Clause-green?style=flat-square" alt="License" />
   <img src="https://img.shields.io/badge/security-audited-purple?style=flat-square" alt="Security" />
   <img src="https://img.shields.io/badge/PRs-welcome-ff69b4?style=flat-square" alt="PRs Welcome" />
@@ -125,8 +126,7 @@ Mac Clean
 ├── MacClean          — Main SwiftUI app (14 modules, 15 views)
 ├── MacCleanKit       — Shared framework (models, constants, protocols)
 ├── MacCleanHelper    — XPC privileged helper (LaunchDaemon for root ops)
-├── MacCleanMenu      — Menu bar monitor (independent process)
-└── MacCleanTestRunner — Standalone test suite (56 tests)
+└── MacCleanMenu      — Menu bar monitor (independent process)
 ```
 
 ### Tech Stack
@@ -191,7 +191,7 @@ sudo xattr -dr com.apple.quarantine "/Applications/Mac Clean.app"
 git clone https://github.com/iliyami/MacClean.git
 cd MacClean
 swift build
-swift run MacCleanTestRunner   # run 56 tests
+swift test                     # run 484 tests
 bash scripts/build-dmg.sh      # build local DMG
 ```
 
@@ -252,8 +252,12 @@ Sources/
 │   └── Utilities/              # SuperEllipse shape, extensions
 ├── MacCleanKit/                # Shared models, constants, protocols
 ├── MacCleanHelper/             # XPC privileged helper (root operations)
-├── MacCleanMenu/               # Menu bar system monitor
-└── MacCleanTestRunner/         # 56 standalone tests
+└── MacCleanMenu/               # Menu bar system monitor
+
+Tests/                          # XCTest suite — 484 tests
+├── MacCleanTests/              # app-target tests
+├── MacCleanKitTests/           # framework tests
+└── MacCleanTestSupport/        # fixtures (withTempHome, withFakeApp, …)
 ```
 
 ## Tests
@@ -317,7 +321,7 @@ We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING
 1. Fork the repo
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Run tests (`swift run MacCleanTestRunner`)
+4. Run tests (`swift test`)
 5. Commit (`git commit -m 'Add amazing feature'`)
 6. Push (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
@@ -338,6 +342,21 @@ Inspired by the open-source Mac utility community:
 - [Mole](https://github.com/tw93/Mole) — cleanup categories
 - [Tencent Lemon Cleaner](https://github.com/Tencent/lemon-cleaner) — modular architecture
 - Squarified Treemap algorithm by Bruls, Huizing & van Wijk (2000)
+
+## Star History
+
+<p align="center">
+  <a href="https://star-history.com/#iliyami/MacClean&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=iliyami/MacClean&type=Date&theme=dark" />
+      <img alt="Mac Clean Star History Chart" src="https://api.star-history.com/svg?repos=iliyami/MacClean&type=Date" width="600" />
+    </picture>
+  </a>
+</p>
+
+<p align="center">
+  <em>If Mac Clean saved you from a subscription, a ⭐ helps others find it.</em>
+</p>
 
 ---
 
