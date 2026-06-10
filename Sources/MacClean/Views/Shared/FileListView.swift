@@ -6,6 +6,7 @@ public struct FileListView: View {
     let results: [ScanResult]
     @Binding var selectedItems: Set<URL>
     @State private var expansion = FileListExpansion()
+    @State private var sort: FileListSort = .default
 
     public init(results: [ScanResult], selectedItems: Binding<Set<URL>>) {
         self.results = results
@@ -13,42 +14,76 @@ public struct FileListView: View {
     }
 
     public var body: some View {
-        // Flat rows (NOT `Section`): a `.sidebar` List makes Sections natively
-        // collapsible and steals header taps for its own collapse state, which
-        // fought our custom chevron and made folding unreliable. Rendering the
-        // header as a normal row means our chevron is the single, deterministic
-        // fold control and `expansion` is the single source of truth.
-        List {
-            ForEach(results, id: \.category) { result in
-                CategoryHeaderView(
-                    category: result.category,
-                    totalSize: result.totalSize,
-                    fileCount: result.fileCount,
-                    allSelected: !result.items.isEmpty && result.items.allSatisfy { selectedItems.contains($0.url) },
-                    isExpanded: expansion.isExpanded(result.category),
-                    onToggleExpand: {
-                        withAnimation { expansion.toggle(result.category) }
-                    },
-                    onToggleAll: { toggleAll(result) }
-                )
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
+        VStack(spacing: 0) {
+            sortBar
 
-                if expansion.isExpanded(result.category) {
-                    ForEach(result.items) { item in
-                        FileRowView(
-                            item: item,
-                            isSelected: selectedItems.contains(item.url),
-                            onToggle: { toggle(item.url) }
-                        )
-                        .listRowSeparator(.hidden)
-                        .listRowBackground(Color.clear)
+            // Flat rows (NOT `Section`): a `.sidebar` List makes Sections natively
+            // collapsible and steals header taps for its own collapse state, which
+            // fought our custom chevron and made folding unreliable. Rendering the
+            // header as a normal row means our chevron is the single, deterministic
+            // fold control and `expansion` is the single source of truth.
+            List {
+                ForEach(results, id: \.category) { result in
+                    CategoryHeaderView(
+                        category: result.category,
+                        totalSize: result.totalSize,
+                        fileCount: result.fileCount,
+                        allSelected: !result.items.isEmpty && result.items.allSatisfy { selectedItems.contains($0.url) },
+                        isExpanded: expansion.isExpanded(result.category),
+                        onToggleExpand: {
+                            withAnimation { expansion.toggle(result.category) }
+                        },
+                        onToggleAll: { toggleAll(result) }
+                    )
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+
+                    if expansion.isExpanded(result.category) {
+                        // Sort within each category so the biggest items in
+                        // that group surface first. Totals/counts in the header
+                        // are aggregates and unaffected by row order.
+                        ForEach(sort.sorted(result.items)) { item in
+                            FileRowView(
+                                item: item,
+                                isSelected: selectedItems.contains(item.url),
+                                onToggle: { toggle(item.url) }
+                            )
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                        }
                     }
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
+    }
+
+    /// Compact sort control above the list. Defaults to largest-first; lets the
+    /// user flip to smallest-first or name order.
+    private var sortBar: some View {
+        HStack(spacing: 6) {
+            Spacer()
+            Image(systemName: "arrow.up.arrow.down")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            Menu {
+                Picker("Sort by", selection: $sort) {
+                    ForEach(FileListSort.allCases, id: \.self) { option in
+                        Text(option.label).tag(option)
+                    }
+                }
+                .pickerStyle(.inline)
+            } label: {
+                Text(sort.label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .menuStyle(.borderlessButton)
+            .fixedSize()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
     }
 
     /// Toggle selection of a single file by URL.
