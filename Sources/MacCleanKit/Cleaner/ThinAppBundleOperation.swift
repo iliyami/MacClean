@@ -2,16 +2,23 @@ import Foundation
 import MacCleanKit
 import OSLog
 
-/// Walks an entire `.app` bundle, thins every fat Mach-O inside it via
-/// `ThinBinaryOperation`, then re-seals the outer bundle (and its nested
-/// `.framework` / `.xpc` / `.appex` bundles) with `codesign --deep`.
+/// Walks an entire `.app` bundle and thins every fat Mach-O inside it via
+/// `ThinBinaryOperation`, preserving each binary's original code signature.
 ///
-/// `ThinBinaryOperation` re-signs each Mach-O individually, but a nested
-/// bundle's `_CodeSignature/CodeResources` file references hashes of its
-/// contents — those hashes change when we lipo the inner binary, so the
-/// nested bundle's seal also has to be regenerated. `--deep` does that
-/// recursively in one shot. The flag is deprecated for *initial* signing,
-/// but it's the practical answer for re-signing after a binary mod.
+/// We deliberately do NOT re-sign the bundle. `lipo -thin` keeps the kept
+/// architecture slice signed exactly as the developer shipped it, so a
+/// normally-laid-out bundle stays validly signed by its original identity
+/// (Developer ID + Team ID + notarization) with no further work. Re-signing
+/// ad-hoc — what an earlier version did — strips the Team ID and bricks
+/// hardened-runtime apps (library validation kills them at launch) while also
+/// breaking keychain access and notarization.
+///
+/// The one hazard is a universal binary that the bundle seals as a plain
+/// resource (e.g. a helper nested under `Contents/Resources/`): thinning it
+/// invalidates the bundle signature and we can't fix that without the
+/// developer's private key. So if the bundle was validly signed before
+/// thinning and is no longer valid after, we roll the entire bundle back to
+/// its original state and fail — an unchanged app beats a broken one.
 public actor ThinAppBundleOperation {
 
     public struct Result: Sendable {
@@ -25,7 +32,6 @@ public actor ThinAppBundleOperation {
     public enum OpError: Error, LocalizedError, Sendable {
         case noFatBinariesFound
         case bundleInUse(pids: [String])
-        case bundleResignFailed(stderr: String)
         case bundleVerifyFailed(stderr: String)
 
         public var errorDescription: String? {
@@ -34,10 +40,8 @@ public actor ThinAppBundleOperation {
                 "no fat (universal) Mach-O binaries found in bundle"
             case .bundleInUse(let pids):
                 "bundle is in use by process(es) \(pids.joined(separator: ", ")) — quit the app and try again"
-            case .bundleResignFailed(let s):
-                "bundle re-sign failed: \(s)"
             case .bundleVerifyFailed(let s):
-                "bundle verification failed after re-sign: \(s)"
+                "thinning would have invalidated the app's code signature, so it was rolled back: \(s)"
             }
         }
     }
@@ -60,18 +64,32 @@ public actor ThinAppBundleOperation {
         let binaries = MachOWalker.fatBinaries(in: bundle)
         guard !binaries.isEmpty else { throw OpError.noFatBinariesFound }
 
+        // Was the bundle validly signed before we touched it? Only then do we
+        // owe it a post-thin validity guarantee. An unsigned/dev bundle has no
+        // signature to preserve or break, so thinning is best-effort there.
+        let bundleWasSigned = Self.codesignVerifiesDeep(bundle)
+
+        let fm = FileManager.default
+        let backupDir = fm.temporaryDirectory
+            .appending(path: "macclean-bundlethin-\(UUID().uuidString)")
+        try fm.createDirectory(at: backupDir, withIntermediateDirectories: true)
+        // Cleaned up explicitly on success and on rollback; defer is the
+        // backstop for any unexpected throw in between.
+        defer { try? fm.removeItem(at: backupDir) }
+
         let op = ThinBinaryOperation()
         var thinned = 0
         var saved: UInt64 = 0
         var perBin: [String: String] = [:]
+        var rollback: [(binary: URL, backup: URL)] = []
 
-        for binary in binaries {
+        for (index, binary) in binaries.enumerated() {
+            let backupURL = backupDir.appending(path: "\(index).original")
             do {
-                // thinOnly: skip the per-binary codesign step — we'll do
-                // one --deep pass over the whole bundle below.
-                let r = try await op.thinOnly(binary: binary, to: targetArch)
+                let r = try await op.thin(binary: binary, to: targetArch, backupTo: backupURL)
                 thinned += 1
                 saved += r.bytesSaved
+                rollback.append((binary: binary, backup: backupURL))
             } catch {
                 let path = binary.path(percentEncoded: false)
                 perBin[path] = error.localizedDescription
@@ -79,25 +97,30 @@ public actor ThinAppBundleOperation {
             }
         }
 
-        // Re-seal the outer bundle (and its nested bundles via --deep).
-        // Skip the seal step if every binary failed — the bundle is unchanged.
-        var verifyFailed = false
-        if thinned > 0 {
-            try Self.runCodesignDeep(bundle: bundle)
-            do {
-                try Self.runCodesignVerify(bundle: bundle)
-            } catch {
-                verifyFailed = true
-                throw OpError.bundleVerifyFailed(stderr: error.localizedDescription)
+        // Safety gate: a bundle that was validly signed must still be valid
+        // after thinning. If it isn't (a universal binary was sealed as a
+        // plain resource, say), restore every thinned binary from its backup
+        // and fail — we will not leave the user a broken app, and we will not
+        // "fix" it by re-signing it into a different identity.
+        if thinned > 0, bundleWasSigned, !Self.codesignVerifiesDeep(bundle) {
+            for entry in rollback {
+                try? fm.removeItem(at: entry.binary)
+                try? fm.moveItem(at: entry.backup, to: entry.binary)
             }
+            try? fm.removeItem(at: backupDir)
+            throw OpError.bundleVerifyFailed(
+                stderr: "bundle no longer passes codesign --verify after thinning"
+            )
         }
+
+        try? fm.removeItem(at: backupDir)
 
         return Result(
             binariesProcessed: binaries.count,
             binariesThinned: thinned,
             bytesSaved: saved,
             perBinaryErrors: perBin,
-            bundleVerifyFailed: verifyFailed
+            bundleVerifyFailed: false
         )
     }
 
@@ -124,24 +147,14 @@ public actor ThinAppBundleOperation {
 
     // MARK: - codesign helpers
 
-    private static func runCodesignDeep(bundle: URL) throws {
-        let (status, _, stderr) = try runProcess("/usr/bin/codesign", [
-            "--force",
-            "--deep",
-            "--sign", "-",
-            "--preserve-metadata=identifier,entitlements,requirements,flags,runtime",
-            bundle.path(percentEncoded: false),
-        ])
-        guard status == 0 else { throw OpError.bundleResignFailed(stderr: stderr) }
-    }
-
-    private static func runCodesignVerify(bundle: URL) throws {
-        let (status, _, stderr) = try runProcess("/usr/bin/codesign", [
-            "--verify",
-            "--deep",
-            bundle.path(percentEncoded: false),
-        ])
-        guard status == 0 else { throw OpError.bundleVerifyFailed(stderr: stderr) }
+    /// True if the whole bundle (including nested code) passes
+    /// `codesign --verify --deep`. Used both to learn whether the bundle was
+    /// validly signed before thinning and to confirm it still is afterward.
+    private static func codesignVerifiesDeep(_ bundle: URL) -> Bool {
+        guard let (status, _, _) = try? runProcess("/usr/bin/codesign", [
+            "--verify", "--deep", bundle.path(percentEncoded: false),
+        ]) else { return false }
+        return status == 0
     }
 
     private static func runProcess(

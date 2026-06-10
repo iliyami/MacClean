@@ -53,9 +53,10 @@ final class ThinBinaryOperationTests: XCTestCase {
         XCTAssertEqual(archsAfter, [BundleHostInfo.current.hostArch.lipoName],
                        "binary should be single-arch matching host after thinning")
 
-        // Codesign re-applied successfully.
+        // Signature preserved by lipo (NOT re-applied): the kept slice keeps
+        // its original embedded signature, so it still verifies.
         XCTAssertTrue(UniversalBinaryFixture.codesignVerifies(binary),
-                      "thinned binary must have a valid (re-signed) signature")
+                      "thinned binary must keep its original valid signature")
 
         // Still executable.
         let process = Process()
@@ -133,6 +134,6 @@ final class ThinBinaryOperationTests: XCTestCase {
         let modeAfter = try FileManager.default
             .attributesOfItem(atPath: binary.path(percentEncoded: false))[.posixPermissions] as? NSNumber
         XCTAssertEqual(modeAfter?.int16Value, 0o750,
-                       "file mode must be preserved through thin + resign")
+                       "file mode must be preserved through thinning")
     }
 }

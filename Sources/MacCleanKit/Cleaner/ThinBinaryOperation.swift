@@ -2,14 +2,25 @@ import Foundation
 import MacCleanKit
 import OSLog
 
-/// Strips redundant architecture slices from a Mach-O universal binary
-/// and re-signs it. Atomic per-binary: makes a backup on the same volume,
-/// promotes the thinned file by rename, re-signs in place, and rolls back
-/// the backup if anything fails.
+/// Strips redundant architecture slices from a Mach-O universal binary.
+///
+/// Critically, this does **not** re-sign. Each architecture slice in a fat
+/// Mach-O carries its own embedded code signature, so `lipo -thin` leaves the
+/// kept slice signed exactly as the developer shipped it (Developer ID, Team
+/// ID, notarization all intact). Re-signing would *destroy* that: an ad-hoc
+/// signature has no Team ID, which breaks library validation (hardened-runtime
+/// apps are killed at launch with "different Team IDs"), keychain access
+/// groups, and notarization. So we thin and leave the original signature
+/// alone.
+///
+/// Atomic per-binary: makes a backup, promotes the thinned file by rename, and
+/// rolls back the backup if the promote fails. The backup location is supplied
+/// by the caller (`backupTo:`) so an orchestrator can keep it for bundle-wide
+/// rollback; the convenience `thin(binary:to:)` manages its own throwaway
+/// backup for standalone use.
 ///
 /// Pure decision-making lives in `UniversalBinariesPolicy` in MacCleanKit;
-/// this type is the system-side actuator that actually invokes lipo +
-/// codesign.
+/// this type is the system-side actuator that actually invokes lipo.
 public actor ThinBinaryOperation {
 
     public struct Result: Sendable {
@@ -24,14 +35,7 @@ public actor ThinBinaryOperation {
         case notFat
         case raceDetected(String)
         case lipoFailed(stderr: String)
-        case codesignFailed(stderr: String)
-        case verifyFailed(stderr: String)
         case backupFailed(String)
-        /// The signing step failed AND the rollback failed too. This is the
-        /// scariest state — the original file is gone, the thinned file may
-        /// be unsigned. The error carries the backup URL so the caller can
-        /// surface it to the user for manual recovery.
-        case rollbackFailed(originalBackupAt: URL, underlying: String)
 
         public var errorDescription: String? {
             switch self {
@@ -41,15 +45,8 @@ public actor ThinBinaryOperation {
                 "binary changed under us while thinning: \(message)"
             case .lipoFailed(let stderr):
                 "lipo failed: \(stderr)"
-            case .codesignFailed(let stderr):
-                "codesign failed: \(stderr)"
-            case .verifyFailed(let stderr):
-                "codesign verification failed: \(stderr)"
             case .backupFailed(let message):
                 "atomic backup/promote failed: \(message)"
-            case .rollbackFailed(let url, let underlying):
-                "thinning failed AND rollback failed — manual recovery needed. " +
-                "Original backup is at: \(url.path(percentEncoded: false)). Details: \(underlying)"
             }
         }
     }
@@ -59,23 +56,24 @@ public actor ThinBinaryOperation {
 
     public init() {}
 
-    /// Thin a binary AND re-sign it ad-hoc. Use for standalone binaries
-    /// (not inside an app bundle whose other contents are mid-mutation).
+    /// Thin a standalone binary in place. Manages its own throwaway backup,
+    /// removed on success or used to roll back a failed promote.
     public func thin(binary: URL, to targetArch: BinaryArch) async throws -> Result {
-        try await thin(binary: binary, to: targetArch, resign: true)
+        let fm = FileManager.default
+        let backupDir = fm.temporaryDirectory
+            .appending(path: "macclean-thinning-\(UUID().uuidString)")
+        try fm.createDirectory(at: backupDir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: backupDir) }
+        let backupURL = backupDir.appending(path: "\(binary.lastPathComponent).original")
+        return try await thin(binary: binary, to: targetArch, backupTo: backupURL)
     }
 
-    /// Thin only — no codesign step. Use this when an outer orchestrator
-    /// (ThinAppBundleOperation) will do a single `codesign --deep` pass
-    /// over the whole bundle once every binary is in its final form. Inner
-    /// per-binary signing would otherwise fail because codesign validates
-    /// the parent bundle's subcomponents on the way through, and an
-    /// in-progress neighbor binary or framework would still be unsigned.
-    public func thinOnly(binary: URL, to targetArch: BinaryArch) async throws -> Result {
-        try await thin(binary: binary, to: targetArch, resign: false)
-    }
-
-    private func thin(binary: URL, to targetArch: BinaryArch, resign: Bool) async throws -> Result {
+    /// Thin `binary` to `targetArch` in place, moving the original aside to
+    /// `backupURL`. The caller owns `backupURL`: on success it should delete
+    /// it; for a multi-binary transaction it can keep every backup and restore
+    /// from them if a later step (e.g. a bundle-wide signature check) fails.
+    /// No code-signing happens here (see the type comment).
+    public func thin(binary: URL, to targetArch: BinaryArch, backupTo backupURL: URL) async throws -> Result {
         let fm = FileManager.default
         let path = binary.path(percentEncoded: false)
 
@@ -93,18 +91,17 @@ public actor ThinBinaryOperation {
         let originalMode = (originalAttrs[.posixPermissions] as? NSNumber)?.int16Value ?? 0o755
         let originalInode = (originalAttrs[.systemFileNumber] as? NSNumber)?.uint64Value ?? 0
 
-        // 2. Stage everything in a separate temp directory — NOT next to the
-        //    original. codesign walks the bundle subtree looking for
-        //    subcomponents to validate, so any stray backup file in the
-        //    binary's parent dir (e.g. Contents/MacOS/) would be flagged as
-        //    "code object is not signed at all" and abort the signing step.
+        // 2. Stage the thinned output in a separate temp directory — NOT next
+        //    to the original. codesign walks the bundle subtree looking for
+        //    subcomponents to validate, so a stray file in the binary's parent
+        //    dir (e.g. Contents/MacOS/) would be flagged when the bundle's
+        //    signature is later verified.
         let workDir = fm.temporaryDirectory
             .appending(path: "macclean-thinning-\(UUID().uuidString)")
         try fm.createDirectory(at: workDir, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: workDir) }
 
         let thinningURL = workDir.appending(path: "\(binary.lastPathComponent).thinned")
-        let backupURL = workDir.appending(path: "\(binary.lastPathComponent).original")
 
         // Race check: re-stat immediately before lipo. If the file has been
         // replaced (different inode) or grown/shrunk (different size), abort
@@ -129,7 +126,9 @@ public actor ThinBinaryOperation {
             ofItemAtPath: thinningURL.path(percentEncoded: false)
         )
 
-        // 3. Atomic-ish swap: move original out, move thinned in.
+        // 3. Atomic-ish swap: move original out to the caller's backup, move
+        //    thinned in. lipo already preserved the slice's signature, so no
+        //    re-signing is needed or wanted.
         do {
             try fm.moveItem(at: binary, to: backupURL)
         } catch {
@@ -140,26 +139,6 @@ public actor ThinBinaryOperation {
         } catch {
             try? fm.moveItem(at: backupURL, to: binary)
             throw OpError.backupFailed("could not promote thinned file: \(error.localizedDescription)")
-        }
-
-        // 4. Re-sign + verify (unless caller opted out — orchestrator will
-        //    deep-sign at the bundle level).
-        if resign {
-            do {
-                try Self.runCodesignAdhoc(at: path)
-                try Self.runCodesignVerify(at: path)
-            } catch {
-                do {
-                    try? fm.removeItem(at: binary)
-                    try fm.moveItem(at: backupURL, to: binary)
-                    throw error
-                } catch let restoreError {
-                    throw OpError.rollbackFailed(
-                        originalBackupAt: backupURL,
-                        underlying: "sign/verify failed: \(error.localizedDescription); rollback also failed: \(restoreError.localizedDescription)"
-                    )
-                }
-            }
         }
 
         let thinnedAttrs = try fm.attributesOfItem(atPath: path)
@@ -192,23 +171,6 @@ public actor ThinBinaryOperation {
             "/usr/bin/lipo", ["-thin", arch, input, "-output", output]
         )
         guard status == 0 else { throw OpError.lipoFailed(stderr: stderr) }
-    }
-
-    private static func runCodesignAdhoc(at path: String) throws {
-        let (status, _, stderr) = try runProcess("/usr/bin/codesign", [
-            "--force",
-            "--sign", "-",
-            "--preserve-metadata=identifier,entitlements,requirements,flags,runtime",
-            path,
-        ])
-        guard status == 0 else { throw OpError.codesignFailed(stderr: stderr) }
-    }
-
-    private static func runCodesignVerify(at path: String) throws {
-        let (status, _, stderr) = try runProcess(
-            "/usr/bin/codesign", ["-v", path]
-        )
-        guard status == 0 else { throw OpError.verifyFailed(stderr: stderr) }
     }
 
     /// Returns `(status, stdout, stderr)`. Throws only if the process can't

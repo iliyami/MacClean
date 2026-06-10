@@ -99,6 +99,12 @@ final class ThinAppBundleOperationTests: XCTestCase {
         let exec = bundleURL.appending(path: "Contents/MacOS/MainApp")
         XCTAssertEqual(Set(archs(exec)), Set(["x86_64", "arm64"]))
 
+        // Seal the bundle the way a real shipped app is sealed, so we can
+        // assert the signature SURVIVES thinning (lipo preserves each slice's
+        // signature; the operation must not re-sign).
+        try XCTSkipUnless(UniversalBinaryFixture.sealBundleAdHoc(at: bundleURL),
+                          "codesign sealing unavailable")
+
         let op = ThinAppBundleOperation()
         let result = try await op.thin(bundle: bundleURL, to: BundleHostInfo.current.hostArch)
 
@@ -107,7 +113,8 @@ final class ThinAppBundleOperationTests: XCTestCase {
         XCTAssertTrue(result.perBinaryErrors.isEmpty)
         XCTAssertGreaterThan(result.bytesSaved, 0)
         XCTAssertEqual(archs(exec), [BundleHostInfo.current.hostArch.lipoName])
-        XCTAssertTrue(UniversalBinaryFixture.codesignVerifies(exec))
+        XCTAssertTrue(UniversalBinaryFixture.codesignVerifiesDeep(bundleURL),
+                      "the bundle's signature must remain valid after thinning")
     }
 
     func testThinsAppWithEmbeddedFramework() async throws {
@@ -115,6 +122,9 @@ final class ThinAppBundleOperationTests: XCTestCase {
         try addFramework(named: "Helper")
         let exec = bundleURL.appending(path: "Contents/MacOS/HostApp")
         let fwBinary = bundleURL.appending(path: "Contents/Frameworks/Helper.framework/Versions/A/Helper")
+
+        try XCTSkipUnless(UniversalBinaryFixture.sealBundleAdHoc(at: bundleURL),
+                          "codesign sealing unavailable")
 
         let op = ThinAppBundleOperation()
         let result = try await op.thin(bundle: bundleURL, to: BundleHostInfo.current.hostArch)
@@ -128,6 +138,8 @@ final class ThinAppBundleOperationTests: XCTestCase {
 
         XCTAssertEqual(archs(exec), [BundleHostInfo.current.hostArch.lipoName])
         XCTAssertEqual(archs(fwBinary), [BundleHostInfo.current.hostArch.lipoName])
+        XCTAssertTrue(UniversalBinaryFixture.codesignVerifiesDeep(bundleURL),
+                      "bundle (including the framework) must stay validly signed after thinning")
     }
 
     func testRefusesWhenBundleHasAnOpenFile() async throws {
@@ -151,6 +163,45 @@ final class ThinAppBundleOperationTests: XCTestCase {
         // Binary still original (untouched).
         XCTAssertEqual(Set(archs(exec)), Set(["x86_64", "arm64"]),
                        "binary must remain untouched after refusal")
+    }
+
+    /// Regression for the "apps quit working after thinning" bug.
+    ///
+    /// When a universal binary lives somewhere the bundle seals as a plain
+    /// resource (e.g. a nested helper under Contents/Resources/), thinning it
+    /// breaks the bundle's signature. The operation must NOT paper over that by
+    /// re-signing (ad-hoc re-signing strips the original Team ID and bricks
+    /// hardened-runtime apps). Instead it must roll the whole bundle back and
+    /// report failure, leaving the app exactly as it was.
+    func testRollsBackWhenThinningWouldBreakSignedBundle() async throws {
+        try writeMinimalApp(name: "HostApp", bundleID: "com.acme.host")
+        // A fat Mach-O placed under Contents/Resources/ is sealed by the
+        // PARENT bundle as a resource (hashed in CodeResources), not as
+        // independently-signed nested code — so thinning it breaks the seal.
+        let resourceBinary = bundleURL.appending(path: "Contents/Resources/payload.bin")
+        let built = try UniversalBinaryFixture.build(at: resourceBinary)
+        try XCTSkipUnless(built, "cc not available")
+
+        // Seal the whole bundle the way a real shipped app is sealed.
+        try XCTSkipUnless(UniversalBinaryFixture.sealBundleAdHoc(at: bundleURL),
+                          "codesign sealing unavailable")
+        try XCTSkipUnless(UniversalBinaryFixture.codesignVerifiesDeep(bundleURL),
+                          "sealed fixture must verify before thinning")
+
+        let op = ThinAppBundleOperation()
+        do {
+            _ = try await op.thin(bundle: bundleURL, to: BundleHostInfo.current.hostArch)
+            XCTFail("must refuse: thinning broke the bundle signature and we don't re-sign")
+        } catch ThinAppBundleOperation.OpError.bundleVerifyFailed {
+            // Expected.
+        }
+
+        // The resource binary must be rolled back to its original fat form…
+        XCTAssertEqual(Set(archs(resourceBinary)), Set(["x86_64", "arm64"]),
+                       "resource binary must be restored to fat after rollback")
+        // …and the bundle must verify again (original signature intact).
+        XCTAssertTrue(UniversalBinaryFixture.codesignVerifiesDeep(bundleURL),
+                      "bundle signature must be intact after rollback")
     }
 
     func testThrowsWhenNoFatBinariesPresent() async throws {

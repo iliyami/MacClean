@@ -106,9 +106,30 @@ public enum UniversalBinaryFixture {
 
     /// True if codesign verifies the binary (exit 0).
     public static func codesignVerifies(_ binary: URL) -> Bool {
+        run(["/usr/bin/codesign", "-v", binary.path(percentEncoded: false)])
+    }
+
+    /// True if codesign verifies the whole bundle including nested code
+    /// (`--verify --deep`). Real signed apps and freshly sealed bundles pass;
+    /// a bundle whose sealed contents were modified out from under the
+    /// signature fails.
+    public static func codesignVerifiesDeep(_ bundle: URL) -> Bool {
+        run(["/usr/bin/codesign", "--verify", "--deep", bundle.path(percentEncoded: false)])
+    }
+
+    /// Seals an entire bundle with an ad-hoc signature (`--force --deep
+    /// --sign -`), the way a real app ships with a `_CodeSignature` /
+    /// `CodeResources` seal over its contents. Returns false if codesign fails.
+    @discardableResult
+    public static func sealBundleAdHoc(at bundle: URL) -> Bool {
+        run(["/usr/bin/codesign", "--force", "--deep", "--sign", "-",
+             bundle.path(percentEncoded: false)])
+    }
+
+    private static func run(_ argv: [String]) -> Bool {
         let process = Process()
-        process.executableURL = URL(filePath: "/usr/bin/codesign")
-        process.arguments = ["-v", binary.path(percentEncoded: false)]
+        process.executableURL = URL(filePath: argv[0])
+        process.arguments = Array(argv.dropFirst())
         process.standardOutput = Pipe()
         process.standardError = Pipe()
         guard (try? process.run()) != nil else { return false }

@@ -106,6 +106,10 @@ final class UniversalBinariesScannerTests: XCTestCase {
     /// bundle's codesign is still valid.
     func testScannerToCleanActions_endToEnd_thinsTheBinaryInPlace() async throws {
         let appURL = try makeFakeApp(name: "AcmeChat", bundleID: "com.acme.chat")
+        // Seal the bundle like a real shipped app so we can assert the
+        // signature survives thinning (lipo preserves it; we never re-sign).
+        try XCTSkipUnless(UniversalBinaryFixture.sealBundleAdHoc(at: appURL),
+                          "codesign sealing unavailable")
         let items = UniversalBinariesScanner.scan(in: root)
         XCTAssertEqual(items.count, 1)
         let item = items[0]
@@ -123,10 +127,10 @@ final class UniversalBinariesScannerTests: XCTestCase {
         let exec = appURL.appending(path: "Contents/MacOS/AcmeChat")
         XCTAssertEqual(UniversalBinaryFixture.architectures(of: exec),
                        [BundleHostInfo.current.hostArch.lipoName])
-        // Bundle (and its deep contents) verifies — the deep-resign at the
-        // bundle level worked.
-        XCTAssertTrue(UniversalBinaryFixture.codesignVerifies(appURL),
-                      "outer .app bundle should still pass codesign --verify")
+        // Bundle (and its deep contents) still verifies — thinning preserved
+        // the original signature without re-signing.
+        XCTAssertTrue(UniversalBinaryFixture.codesignVerifiesDeep(appURL),
+                      "outer .app bundle should still pass codesign --verify --deep")
 
         // App bundle still exists (just smaller).
         XCTAssertTrue(FileManager.default.fileExists(atPath: appURL.path(percentEncoded: false)))
