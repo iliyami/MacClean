@@ -7,10 +7,15 @@ public struct FileListView: View {
     @Binding var selectedItems: Set<URL>
     @State private var expansion = FileListExpansion()
     @State private var sort: FileListSort = .default
+    /// Results with each category's items already sorted. Computed off the main
+    /// thread (see `.task` below) so sorting a large scan never blocks the UI.
+    /// Seeded with the unsorted results so headers render immediately.
+    @State private var displayResults: [ScanResult]
 
     public init(results: [ScanResult], selectedItems: Binding<Set<URL>>) {
         self.results = results
         self._selectedItems = selectedItems
+        self._displayResults = State(initialValue: results)
     }
 
     public var body: some View {
@@ -23,7 +28,7 @@ public struct FileListView: View {
             // header as a normal row means our chevron is the single, deterministic
             // fold control and `expansion` is the single source of truth.
             List {
-                ForEach(results, id: \.category) { result in
+                ForEach(displayResults, id: \.category) { result in
                     CategoryHeaderView(
                         category: result.category,
                         totalSize: result.totalSize,
@@ -39,10 +44,10 @@ public struct FileListView: View {
                     .listRowBackground(Color.clear)
 
                     if expansion.isExpanded(result.category) {
-                        // Sort within each category so the biggest items in
-                        // that group surface first. Totals/counts in the header
-                        // are aggregates and unaffected by row order.
-                        ForEach(sort.sorted(result.items)) { item in
+                        // Items are already sorted (off-main) in displayResults;
+                        // body must never sort, or it repeats the work on every
+                        // render and beachballs on large scans.
+                        ForEach(result.items) { item in
                             FileRowView(
                                 item: item,
                                 isSelected: selectedItems.contains(item.url),
@@ -57,6 +62,24 @@ public struct FileListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
         }
+        // Re-sort off the main thread whenever the sort or the result set
+        // changes. Keyed on a cheap signature (category + count) so it doesn't
+        // re-run on unrelated renders like selection toggles.
+        .task(id: sortSignature) {
+            let snapshot = results
+            let order = sort
+            let sorted = await Task.detached(priority: .userInitiated) {
+                order.sorted(snapshot)
+            }.value
+            displayResults = sorted
+        }
+    }
+
+    /// Cheap key for `.task(id:)`: the sort plus each category's item count.
+    /// Computed per render but only O(number of categories).
+    private var sortSignature: String {
+        sort.rawValue + "#" + results.map { "\($0.category.rawValue):\($0.items.count)" }
+            .joined(separator: ",")
     }
 
     /// Compact sort control above the list. Defaults to largest-first; lets the

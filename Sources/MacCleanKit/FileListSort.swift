@@ -38,6 +38,21 @@ public enum FileListSort: String, CaseIterable, Sendable {
         }
     }
 
+    /// Sort every category's items, preserving category order and metadata.
+    /// Callers run this once when the results or sort change (ideally off the
+    /// main thread) rather than re-sorting inside a SwiftUI `body`, which would
+    /// repeat the work on every render and block the main thread for large
+    /// result sets.
+    public func sorted(_ results: [ScanResult]) -> [ScanResult] {
+        results.map { result in
+            ScanResult(
+                category: result.category,
+                items: sorted(result.items),
+                autoSelect: result.autoSelect
+            )
+        }
+    }
+
     /// Total, deterministic ordering used to break ties: case-insensitive
     /// name, then full path. Guarantees a stable result regardless of input
     /// order or the sort algorithm's stability.

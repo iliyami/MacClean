@@ -36,10 +36,35 @@ final class FileListSortTests: XCTestCase {
     }
 
     func testEmptyInputReturnsEmpty() {
-        XCTAssertTrue(FileListSort.sizeDescending.sorted([]).isEmpty)
+        XCTAssertTrue(FileListSort.sizeDescending.sorted([] as [FileItem]).isEmpty)
     }
 
     func testDefaultIsLargestFirst() {
         XCTAssertEqual(FileListSort.default, .sizeDescending)
+    }
+
+    // Sorting whole results (used so the view sorts once off the main thread
+    // instead of inside SwiftUI's body on every render).
+    func testSortedResultsSortsEachCategoryAndPreservesMetadata() {
+        let r1 = ScanResult(
+            category: .userCaches,
+            items: [item("a", size: 10), item("b", size: 300)],
+            autoSelect: false
+        )
+        let r2 = ScanResult(
+            category: .userLogs,
+            items: [item("c", size: 5), item("d", size: 50)],
+            autoSelect: true
+        )
+
+        let sorted = FileListSort.sizeDescending.sorted([r1, r2])
+
+        // Category order preserved.
+        XCTAssertEqual(sorted.map(\.category), [.userCaches, .userLogs])
+        // Items sorted largest-first within each category.
+        XCTAssertEqual(sorted[0].items.map(\.name), ["b", "a"])
+        XCTAssertEqual(sorted[1].items.map(\.name), ["d", "c"])
+        // autoSelect preserved.
+        XCTAssertEqual(sorted.map(\.autoSelect), [false, true])
     }
 }
