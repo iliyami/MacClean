@@ -6,6 +6,13 @@ public struct LargeOldFilesModule: ScanModule {
     public let name = "Large & Old Files"
     public let category = ModuleCategory.files
 
+    // Excluded from Smart Scan's "junk found" total: large media (music,
+    // videos, project files) is not junk, and folding it into the headline
+    // number is misleading. It stays discoverable in its own dedicated
+    // section, which runs its own scan. Mirrors the other `.files` modules
+    // (Duplicates, SpaceLens, Shredder), which are opt-in for the same reason.
+    public let includedInSmartScan = false
+
     private let scanner = TargetedScanner()
     private let minSize: UInt64
     private let minAge: TimeInterval?

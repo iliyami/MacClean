@@ -46,6 +46,10 @@ final class ModuleMetadataTests: XCTestCase {
         XCTAssertEqual(m["duplicates"], false)
         XCTAssertEqual(m["space_lens"], false)
         XCTAssertEqual(m["shredder"], false)
+        // Large & Old Files must NOT feed the Smart Scan "junk found" total:
+        // big media (music, videos, project files) is not junk. It stays
+        // discoverable in its own dedicated section, which scans on its own.
+        XCTAssertEqual(m["large_old_files"], false)
     }
 
     func testCleanupCategoryModules() {
