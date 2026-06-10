@@ -56,7 +56,8 @@ public actor AppUpdateChecker {
 
         // Look for SUFeedURL (Sparkle update feed)
         guard let feedURLString = plist["SUFeedURL"] as? String,
-              let feedURL = URL(string: feedURLString)
+              let feedURL = URL(string: feedURLString),
+              UpdaterActions.isAcceptableFeedURL(feedURL)
         else { return nil }
 
         // Fetch and parse the appcast XML
@@ -89,6 +90,19 @@ public enum UpdaterRoute: Equatable {
 }
 
 public enum UpdaterActions {
+    /// Sparkle feeds must be fetched over TLS; an http feed is trivially
+    /// MITM-able into pointing the user at a malicious download.
+    public static func isAcceptableFeedURL(_ url: URL) -> Bool {
+        url.scheme?.lowercased() == "https"
+    }
+
+    /// The download URL parsed from a third-party appcast is opened in the
+    /// user's browser; restrict it to https so a tampered feed can't hand
+    /// the browser a file://, ftp://, or custom-scheme target.
+    public static func isSafeDownloadURL(_ url: URL) -> Bool {
+        url.scheme?.lowercased() == "https"
+    }
+
     public static func route(isMacAppStore: Bool, downloadURL: URL?, appPath: URL) -> UpdaterRoute {
         if isMacAppStore { return .appStore }
         if let downloadURL { return .download(downloadURL) }
@@ -114,6 +128,13 @@ public enum UpdaterActions {
             // reasonably thought the button was broken. The browser opens
             // instantly and shows its own download progress, which is what
             // comparable updater tools do.
+            //
+            // Only over https: the URL is parsed from a third-party appcast,
+            // so a tampered or MITM'd feed must not be able to hand the
+            // browser a file://, ftp://, or custom-scheme target. A non-https
+            // URL is refused silently here; this only fires for a malicious
+            // or misconfigured feed, never for a well-formed Sparkle release.
+            guard isSafeDownloadURL(url) else { return }
             NSWorkspace.shared.open(url)
         case .launchApp(let appURL):
             NSWorkspace.shared.openApplication(at: appURL, configuration: .init())
