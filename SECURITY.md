@@ -1,6 +1,6 @@
 # Security Policy
 
-Mac Sai deletes files on your Mac and runs a privileged XPC helper, so security matters more here than for most apps.
+Mac Sai deletes files on your Mac (at your user's privilege level) and can run a few maintenance commands via the standard macOS administrator prompt, so security matters more here than for most apps.
 
 ## Reporting a vulnerability
 
@@ -27,11 +27,11 @@ Only the latest release on `main` is supported. Please upgrade rather than askin
 
 Reports about the following areas get priority:
 
-- **`Sources/MacClean/Core/Cleaner/SafetyGuard.swift`**: bypasses of the protected-paths blocklist, the 10,000-file cap, or the symlink TOCTOU re-resolution
+- **`Sources/MacCleanKit/SafetyGuard.swift`**: bypasses of the protected-paths blocklist, the 10,000-file cap, or the symlink TOCTOU re-resolution
 - **`Sources/MacClean/Core/Cleaner/CleaningEngine.swift`**: anything that causes data loss outside the intended scan results
-- **`Sources/MacCleanHelper/`**: unauthorized callers reaching the privileged XPC helper, privilege escalation, or arbitrary command execution via the helper
-- **`Sources/MacClean/Services/XPCClient.swift`**: code-signature validation bypass on either side of the XPC connection
-- **Network exfiltration**: Mac Sai makes zero network calls by design; report any network activity you observe
+- **`Sources/MacClean/Modules/Maintenance/MaintenanceModule.swift`**: anything that turns the administrator-prompt maintenance commands into arbitrary command execution
+- **Update checks**: a tampered third-party update feed steering the user to a malicious download
+- **Network exfiltration**: Mac Sai's only outbound calls are its own update check (the GitHub releases API) and reading third-party apps' update feeds; report any other network activity you observe
 - **TCC / Full Disk Access**: any path to silently gain or abuse FDA
 
 ## Out of scope
