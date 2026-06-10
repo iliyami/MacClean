@@ -31,6 +31,7 @@ public struct SystemJunkModule: ScanModule {
         DeletedUsersCategory(),
         UnusedDiskImagesCategory(),
         IncompleteDownloadsCategory(),
+        AppLeftoversCategory(),
     ]
 
     public func scan() async -> [ScanResult] {
@@ -47,6 +48,17 @@ public struct SystemJunkModule: ScanModule {
                         guard !items.isEmpty else { return nil }
                         return ScanResult(
                             category: .universalBinaries,
+                            items: items,
+                            autoSelect: cat.scanCategory.autoSelect
+                        )
+                    }
+                    // App leftovers: enumerates the safe Library subdirs for
+                    // bundle-id-named entries whose owning app is uninstalled.
+                    if cat.scanCategory == .appLeftovers {
+                        let items = AppLeftoversScanner.scan()
+                        guard !items.isEmpty else { return nil }
+                        return ScanResult(
+                            category: .appLeftovers,
                             items: items,
                             autoSelect: cat.scanCategory.autoSelect
                         )

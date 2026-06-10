@@ -18,6 +18,7 @@ public enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
     case deletedUsers = "deleted_users"
     case unusedDiskImages = "unused_disk_images"
     case incompleteDownloads = "incomplete_downloads"
+    case appLeftovers = "app_leftovers"
 
     // Mail
     case mailAttachments = "mail_attachments"
@@ -55,6 +56,7 @@ public enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
         case .deletedUsers: "Deleted Users"
         case .unusedDiskImages: "Unused Disk Images"
         case .incompleteDownloads: "Incomplete Downloads"
+        case .appLeftovers: "Leftovers from Deleted Apps"
         case .mailAttachments: "Mail Attachments"
         case .trashBins: "Trash Bins"
         case .malware: "Malware"
@@ -81,6 +83,7 @@ public enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
         case .xcodeJunk: "hammer"
         case .deletedUsers: "person.crop.circle.badge.minus"
         case .unusedDiskImages: "opticaldisc"
+        case .appLeftovers: "shippingbox.and.arrow.backward"
         case .mailAttachments: "paperclip"
         case .trashBins: "trash"
         case .malware: "shield.lefthalf.filled.trianglebadge.exclamationmark"
@@ -95,7 +98,9 @@ public enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
     public var autoSelect: Bool {
         switch self {
         case .unusedDiskImages, .largeFiles, .oldFiles, .duplicates,
-             .universalBinaries:
+             .universalBinaries, .appLeftovers:
+            // appLeftovers: deletes another app's leftover data; detection is
+            // conservative but never auto-checked — the user reviews first.
             // universalBinaries: thinning rewrites the app's binaries in
             // place (lipo preserves their signatures; we never re-sign).
             // Still only reversible by re-downloading the app, so don't
