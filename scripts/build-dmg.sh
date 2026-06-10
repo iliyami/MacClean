@@ -185,14 +185,6 @@ cat > "${DMG_DIR}/entitlements.plist" << ENTITLEMENTS
 <dict>
     <key>com.apple.security.automation.apple-events</key>
     <true/>
-    <key>com.apple.security.files.user-selected.read-write</key>
-    <true/>
-    <key>com.apple.security.cs.allow-jit</key>
-    <true/>
-    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-    <true/>
-    <key>com.apple.security.cs.disable-library-validation</key>
-    <true/>
 </dict>
 </plist>
 ENTITLEMENTS
