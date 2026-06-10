@@ -47,7 +47,10 @@ public actor MaintenanceExecutor {
     /// `MaintenanceTask` enum (never user input); we still escape the
     /// AppleScript string literal defensively.
     private func runAdminProcess(task: MaintenanceTask, command: String, args: [String]) async -> TaskResult {
-        let shell = ([command] + args).joined(separator: " ")
+        // Each argv element is single-quoted (MaintenanceShell.quote) so sh
+        // can't re-split or interpret it; the assembled command is then
+        // escaped as an AppleScript string literal for `do shell script`.
+        let shell = MaintenanceShell.commandLine(command, args)
         let escaped = shell
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
