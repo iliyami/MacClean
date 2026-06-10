@@ -242,12 +242,6 @@ final class ConstantsTests: XCTestCase {
     }
 }
 
-final class HelperProtocolTests: XCTestCase {
-    func testProtocolExists() {
-        let _: MacCleanHelperProtocol.Type = MacCleanHelperProtocol.self
-    }
-}
-
 final class FileSizeFormatterTests: XCTestCase {
 
     func testFormatNonEmpty() {

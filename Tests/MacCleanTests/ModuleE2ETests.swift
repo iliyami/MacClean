@@ -11,9 +11,9 @@ import MacCleanTestSupport
 /// Privacy / Maintenance / Updater are intentionally NOT here:
 ///  - Privacy targets real browser data dirs (Safari, Chrome) — planting
 ///    fixtures means touching the user's actual browser data.
-///  - Maintenance dispatches shell commands via the XPC helper; the
-///    helper-side logic is covered by HelperThinningTests' pattern,
-///    and the per-command dispatch is unit-tested in MaintenanceTaskTests.
+///  - Maintenance dispatches shell commands via the standard macOS
+///    administrator prompt; the per-command dispatch is unit-tested in
+///    MaintenanceTaskTests.
 ///  - Updater parses Sparkle XML appcasts; that's covered in AppcastParserTests.
 final class ModuleE2ETests: XCTestCase {
 
