@@ -15,7 +15,9 @@ cask "mac-sai" do
     strategy :github_latest
   end
 
-  depends_on macos: ">= :sonoma"
+  # Symbol form means "this release or newer"; the old comparison-string
+  # form (">= :sonoma") is deprecated by Homebrew and warns on every install.
+  depends_on macos: :sonoma
 
   app "Mac Sai.app"
 
