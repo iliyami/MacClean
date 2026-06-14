@@ -14,4 +14,30 @@ public enum MaintenanceShell {
     public static func commandLine(_ executable: String, _ arguments: [String]) -> String {
         ([executable] + arguments).map(quote).joined(separator: " ")
     }
+
+    /// Turn an osascript `do shell script` failure into the underlying message.
+    ///
+    /// osascript surfaces failures as `"<line>:<col>: execution error: <message>
+    /// (<code>)"` — the cryptic `1:92: execution error: …` users saw in issue
+    /// #82. Strip the offset prefix and the trailing AppleScript error code so
+    /// the UI shows the real message (e.g. the actual `diskutil` complaint)
+    /// instead of the wrapper. Non-osascript strings pass through unchanged.
+    public static func humanReadableError(_ raw: String) -> String {
+        var message = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Leading "[N:M: ]execution error: " — the line:col offset is optional.
+        if let prefix = message.range(
+            of: #"^(\d+:\d+:\s*)?execution error:\s*"#,
+            options: .regularExpression
+        ) {
+            message.removeSubrange(prefix)
+        }
+        // Trailing " (<code>)" AppleScript error number.
+        if let suffix = message.range(
+            of: #"\s*\(-?\d+\)\s*$"#,
+            options: .regularExpression
+        ) {
+            message.removeSubrange(suffix)
+        }
+        return message.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }

@@ -167,23 +167,30 @@ struct MaintenanceView: View {
         }
     }
 
-    private func runTask(_ task: MaintenanceTask) {
+    private func executeAndStore(_ task: MaintenanceTask) async {
         taskStates[task] = .running
-        Task {
-            let result = await executor.execute(task)
-            if result.success {
-                taskStates[task] = .completed(result.output)
-            } else {
-                taskStates[task] = .failed(result.error ?? "Unknown error")
-            }
+        let result = await executor.execute(task)
+        if result.success {
+            taskStates[task] = .completed(result.output)
+        } else {
+            taskStates[task] = .failed(result.error ?? "Unknown error")
         }
     }
 
-    /// Bulk button now runs ONLY safe tasks. Advanced tasks must be
-    /// explicitly individually confirmed.
+    private func runTask(_ task: MaintenanceTask) {
+        Task { await executeAndStore(task) }
+    }
+
+    /// Bulk button runs ONLY safe tasks, and runs them SEQUENTIALLY. Several
+    /// safe tasks need admin (purge, periodic); firing them in parallel popped
+    /// multiple macOS password dialogs at once (issue #82). Awaiting each in
+    /// turn means at most one auth prompt is on screen at a time.
     private func runSafeTasks() {
-        for task in MaintenanceTask.allCases where task.severity == .safe {
-            runTask(task)
+        let safeTasks = MaintenanceTask.allCases.filter { $0.severity == .safe }
+        Task {
+            for task in safeTasks {
+                await executeAndStore(task)
+            }
         }
     }
 }

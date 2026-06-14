@@ -4,8 +4,37 @@ import Foundation
 
 final class MaintenanceTaskTests: XCTestCase {
 
-    func testTenTasksExist() {
-        XCTAssertEqual(MaintenanceTask.allCases.count, 10)
+    func testNineTasksExist() {
+        // "Repair Disk Permissions" was removed (issue #82): the `diskutil
+        // repairPermissions` verb was deleted by Apple in OS X 10.11, so the
+        // task could only ever fail on supported macOS.
+        XCTAssertEqual(MaintenanceTask.allCases.count, 9)
+    }
+
+    func testRepairDiskPermissionsRemoved() {
+        XCTAssertFalse(
+            MaintenanceTask.allCases.contains { $0.rawValue == "Repair Disk Permissions" },
+            "Repair Disk Permissions must be gone — diskutil's repairPermissions verb no longer exists (issue #82)"
+        )
+    }
+
+    func testNoTaskUsesRemovedDiskutilVerb() {
+        for task in MaintenanceTask.allCases {
+            guard let cmd = task.systemCommand else { continue }
+            XCTAssertFalse(cmd.arguments.contains("repairPermissions"),
+                           "\(task) still invokes the removed diskutil repairPermissions verb")
+        }
+    }
+
+    func testFreeUpPurgeableSpaceActuallyReclaims() {
+        // It used to run `diskutil apfs listSnapshots /`, which only LISTS
+        // snapshots and frees nothing. It must now thin purgeable local
+        // snapshots so it does what its name promises (issue #82).
+        let cmd = MaintenanceTask.freeUpPurgeableSpace.systemCommand
+        XCTAssertEqual(cmd?.executable, "/usr/bin/tmutil")
+        XCTAssertEqual(cmd?.arguments.first, "thinlocalsnapshots")
+        XCTAssertNotEqual(cmd?.arguments.first, "apfs",
+                          "must not be the old list-only diskutil command")
     }
 
     func testAllTasksHaveDescriptionAndIcon() {

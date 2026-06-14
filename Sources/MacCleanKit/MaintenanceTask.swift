@@ -7,7 +7,12 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
     case freeUpRAM = "Free Up RAM"
     case freeUpPurgeableSpace = "Free Up Purgeable Space"
     case runMaintenanceScripts = "Run Maintenance Scripts"
-    case repairDiskPermissions = "Repair Disk Permissions"
+    // NOTE: "Repair Disk Permissions" was removed (issue #82). Apple deleted
+    // the `diskutil repairPermissions` verb in OS X 10.11 El Capitan, so the
+    // task could only ever fail on supported macOS. Repairing system
+    // permissions is obsolete under SIP + the sealed System volume, and the
+    // home-folder alternative (`diskutil resetUserPermissions`) is undocumented,
+    // Apple-deprecated, slow, and ACL-incomplete — not fit for a one-click tool.
     case verifyStartupDisk = "Verify Startup Disk"
     case speedUpMail = "Speed Up Mail"
     case rebuildLaunchServices = "Rebuild Launch Services"
@@ -22,7 +27,6 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
         case .freeUpRAM: "memorychip"
         case .freeUpPurgeableSpace: "internaldrive"
         case .runMaintenanceScripts: "terminal"
-        case .repairDiskPermissions: "lock.shield"
         case .verifyStartupDisk: "checkmark.shield"
         case .speedUpMail: "envelope"
         case .rebuildLaunchServices: "arrow.triangle.2.circlepath"
@@ -37,11 +41,9 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
         case .freeUpRAM:
             "Purge inactive memory to give active apps more breathing room"
         case .freeUpPurgeableSpace:
-            "Remove temporary system files and Time Machine snapshots marked as purgeable"
+            "Reclaim purgeable disk space by thinning low-priority local snapshots"
         case .runMaintenanceScripts:
             "Execute macOS built-in daily, weekly, and monthly maintenance routines"
-        case .repairDiskPermissions:
-            "Verify and restore file permissions corrupted by improper shutdowns"
         case .verifyStartupDisk:
             "Check file system integrity of the boot disk"
         case .speedUpMail:
@@ -79,8 +81,7 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
             .safe
 
         // Real side effects — must show the user what to expect.
-        case .repairDiskPermissions,    // slow; no-op on modern macOS
-             .speedUpMail,              // rebuilds Mail envelope index
+        case .speedUpMail,              // rebuilds Mail envelope index
              .rebuildLaunchServices,    // wipes app/file-type DB — hours of broken double-clicks
              .reindexSpotlight,         // wipes Spotlight index — search dies for hours
              .thinTimeMachineSnapshots: // deletes local TM snapshots
@@ -100,8 +101,6 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
             "Time Machine local snapshots that macOS already flagged for cleanup are removed; nothing the user actively needs is deleted."
         case .runMaintenanceScripts:
             "No visible effect — these are the same scripts macOS runs on its own overnight."
-        case .repairDiskPermissions:
-            "Several minutes of disk activity. On modern macOS (post-El Capitan) this is essentially a no-op since SIP manages permissions automatically."
         case .verifyStartupDisk:
             "A few minutes of disk activity. Read-only — nothing on disk is changed regardless of the outcome."
         case .speedUpMail:
@@ -123,11 +122,16 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
     /// execute, instead of failing as a plain unprivileged `Process`.
     public var requiresAdmin: Bool {
         switch self {
-        case .freeUpRAM, .runMaintenanceScripts, .repairDiskPermissions,
-             .verifyStartupDisk, .thinTimeMachineSnapshots:
+        // Need root to actually run. `tmutil thinlocalsnapshots` and
+        // `mdutil -E` both silently fail without it (issue #82: reindex was
+        // wrongly unprivileged, which is the report's likely second error).
+        case .freeUpRAM, .freeUpPurgeableSpace, .runMaintenanceScripts,
+             .reindexSpotlight, .thinTimeMachineSnapshots:
             true
-        case .freeUpPurgeableSpace, .speedUpMail, .rebuildLaunchServices,
-             .reindexSpotlight, .flushDNSCache:
+        // `diskutil verifyVolume /` runs read-only without root, so don't
+        // burden the user with a password prompt for it (issue #82).
+        case .verifyStartupDisk, .speedUpMail, .rebuildLaunchServices,
+             .flushDNSCache:
             false
         }
     }
@@ -141,11 +145,13 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
         case .freeUpRAM:
             ("/usr/sbin/purge", [])
         case .freeUpPurgeableSpace:
-            ("/usr/sbin/diskutil", ["apfs", "listSnapshots", "/"])
+            // Thin low-urgency (1) local snapshots to actually reclaim
+            // purgeable space. The old `diskutil apfs listSnapshots /` only
+            // listed them and freed nothing (issue #82). Aggressive thinning
+            // lives in `thinTimeMachineSnapshots` (urgency 4).
+            ("/usr/bin/tmutil", ["thinlocalsnapshots", "/", "999999999999", "1"])
         case .runMaintenanceScripts:
             ("/usr/sbin/periodic", ["daily", "weekly", "monthly"])
-        case .repairDiskPermissions:
-            ("/usr/sbin/diskutil", ["repairPermissions", "/"])
         case .verifyStartupDisk:
             ("/usr/sbin/diskutil", ["verifyVolume", "/"])
         case .speedUpMail:

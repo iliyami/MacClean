@@ -59,11 +59,15 @@ public actor MaintenanceExecutor {
 
         // osascript returns -128 / "User canceled." when the user dismisses
         // the auth dialog — surface that as a friendly note, not an error.
-        if !result.success,
-           let err = result.error,
-           err.contains("User canceled") || err.contains("-128") {
+        if !result.success, let err = result.error {
+            if err.contains("User canceled") || err.contains("-128") {
+                return TaskResult(task: task, success: false, output: "",
+                                  error: "Cancelled — administrator access was not granted.")
+            }
+            // Otherwise strip osascript's "1:92: execution error: … (1)" wrapper
+            // so the user sees the real underlying message (issue #82).
             return TaskResult(task: task, success: false, output: "",
-                              error: "Cancelled — administrator access was not granted.")
+                              error: MaintenanceShell.humanReadableError(err))
         }
         return result
     }
