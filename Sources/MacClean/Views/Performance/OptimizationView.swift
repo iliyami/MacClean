@@ -2,6 +2,7 @@ import SwiftUI
 import MacCleanKit
 
 struct OptimizationView: View {
+    @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
     @State private var loginItems: [LoginItemsManager.LoginItem] = []
     @State private var launchAgents: [LaunchAgentsManager.LaunchAgent] = []
     @State private var selectedTab = 0
@@ -53,7 +54,10 @@ struct OptimizationView: View {
                         launchAgentsList
                     }
                 }
-                .background(.ultraThinMaterial)
+                .background {
+                    if removeBackgroundColors { Color.clear }
+                    else { Rectangle().fill(.ultraThinMaterial) }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)

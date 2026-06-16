@@ -3,6 +3,7 @@ import MacCleanKit
 
 struct SmartScanView: View {
     @Environment(AppState.self) private var appState
+    @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
     @State private var scanState: SmartScanState = .idle
     @State private var completedModules: [CompletedModule] = []
     @State private var currentModuleName: String = ""
@@ -130,7 +131,10 @@ struct SmartScanView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
             }
-            .background(.ultraThinMaterial.opacity(0.5))
+            .background {
+                if removeBackgroundColors { Color.clear }
+                else { Rectangle().fill(.ultraThinMaterial.opacity(0.5)) }
+            }
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
@@ -240,7 +244,10 @@ struct SmartScanView: View {
 
             FileListView(results: cleanResults, selectedItems: $selectedItems)
                 .frame(maxHeight: 280)
-                .background(.ultraThinMaterial)
+                .background {
+                    if removeBackgroundColors { Color.clear }
+                    else { Rectangle().fill(.ultraThinMaterial) }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 20)
 

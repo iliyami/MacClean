@@ -4,6 +4,7 @@ import MacCleanKit
 
 struct UninstallerView: View {
     @Environment(AppState.self) private var appState
+    @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
     @State private var apps: [AppInfo] = []
     @State private var selectedApp: AppInfo?
     @State private var associatedFiles: [FileItem] = []
@@ -86,7 +87,10 @@ struct UninstallerView: View {
                         .frame(maxWidth: .infinity)
                     }
                 }
-                .background(.ultraThinMaterial)
+                .background {
+                    if removeBackgroundColors { Color.clear }
+                    else { Rectangle().fill(.ultraThinMaterial) }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)

@@ -2,6 +2,7 @@ import SwiftUI
 import MacCleanKit
 
 struct ShredderView: View {
+    @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
     @State private var filesToShred: [URL] = []
     @State private var eraseMode: SecureEraser.EraseMode = .standard
     @State private var isProcessing = false
@@ -105,7 +106,10 @@ struct ShredderView: View {
                     }
                     .listStyle(.inset)
                     .frame(maxHeight: 200)
-                    .background(.ultraThinMaterial)
+                    .background {
+                        if removeBackgroundColors { Color.clear }
+                        else { Rectangle().fill(.ultraThinMaterial) }
+                    }
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .padding(.horizontal, 40)
 

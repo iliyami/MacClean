@@ -3,6 +3,7 @@ import MacCleanKit
 
 struct SystemJunkView: View {
     @Environment(AppState.self) private var appState
+    @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
     @State private var viewModel = SystemJunkViewModel()
     @State private var showLargeSelectionConfirm = false
     @State private var showActivityLog = false
@@ -134,7 +135,10 @@ struct SystemJunkView: View {
                 results: viewModel.results,
                 selectedItems: $viewModel.selectedItems
             )
-            .background(.ultraThinMaterial)
+            .background {
+                if removeBackgroundColors { Color.clear }
+                else { Rectangle().fill(.ultraThinMaterial) }
+            }
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
