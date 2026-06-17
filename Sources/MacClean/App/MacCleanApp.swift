@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import MacCleanKit
 
 @main
 struct MacCleanApp: App {
@@ -8,15 +9,24 @@ struct MacCleanApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("showMenuBarWidget") private var showMenuBarWidget = true
     @AppStorage("menuBarFirstLaunchDone") private var menuBarFirstLaunchDone = false
+    @AppStorage(AppLanguage.defaultsKey, store: SharedAppState.defaults) private var appLanguageRaw = AppLanguage.fallback.rawValue
     @State private var showOnboarding = false
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRaw) ?? .fallback
+    }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environment(appState)
+                .environment(\.locale, Locale(identifier: appLanguage.localeIdentifier))
+                .id(appLanguage.rawValue)
                 .frame(minWidth: 800, minHeight: 550)
                 .sheet(isPresented: $showOnboarding) {
                     OnboardingView(isPresented: $showOnboarding)
+                        .environment(\.locale, Locale(identifier: appLanguage.localeIdentifier))
+                        .id(appLanguage.rawValue)
                 }
                 .onAppear {
                     if !hasCompletedOnboarding {
@@ -42,7 +52,7 @@ struct MacCleanApp: App {
         // them to the in-app page (the separate Settings window is gone).
         .commands {
             CommandGroup(replacing: .appSettings) {
-                Button("Settings…") {
+                Button(L10n.tr("设置…", "Settings…")) {
                     appState.selectedSidebarItem = .settings
                 }
                 .keyboardShortcut(",", modifiers: .command)

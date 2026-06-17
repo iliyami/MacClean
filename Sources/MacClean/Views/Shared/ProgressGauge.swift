@@ -52,7 +52,7 @@ public struct SizeDisplay: View {
     let size: UInt64
     let label: String
 
-    public init(size: UInt64, label: String = "to clean up") {
+    public init(size: UInt64, label: String = L10n.tr("待清理", "to clean up")) {
         self.size = size
         self.label = label
     }

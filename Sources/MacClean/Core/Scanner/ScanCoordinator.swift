@@ -14,11 +14,11 @@ public extension ScanModule {
 }
 
 public enum ModuleCategory: String, CaseIterable, Sendable {
-    case cleanup = "Cleanup"
-    case protection = "Protection"
-    case performance = "Performance"
-    case applications = "Applications"
-    case files = "Files"
+    case cleanup = "清理"
+    case protection = "防护"
+    case performance = "性能"
+    case applications = "应用"
+    case files = "文件"
 }
 
 @Observable

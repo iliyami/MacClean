@@ -30,15 +30,15 @@ struct LogViewerView: View {
     private var header: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Activity Log")
+                Text(L10n.tr("活动日志", "Activity Log"))
                     .font(.system(size: 18, weight: .semibold))
-                Text("~/Library/Logs/MacClean/operations.log — pruned after 30 days")
+                Text(L10n.tr("~/Library/Logs/MacClean/operations.log — 30 天后自动清理", "~/Library/Logs/MacClean/operations.log — pruned after 30 days"))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
             }
             Spacer()
-            Toggle("Errors only", isOn: $errorsOnly)
+            Toggle(L10n.tr("仅显示错误", "Errors only"), isOn: $errorsOnly)
                 .toggleStyle(.switch)
                 .controlSize(.small)
         }
@@ -53,8 +53,8 @@ struct LogViewerView: View {
                         .font(.system(size: 32))
                         .foregroundStyle(.secondary)
                     Text(errorsOnly
-                         ? "No errors logged."
-                         : "Log is empty. Nothing has been cleaned yet.")
+                         ? L10n.tr("没有记录到错误。", "No errors logged.")
+                         : L10n.tr("日志为空。尚未执行过清理。", "Log is empty. Nothing has been cleaned yet."))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -76,23 +76,23 @@ struct LogViewerView: View {
             Button {
                 revealInFinder()
             } label: {
-                Label("Reveal in Finder", systemImage: "folder")
+                Label(L10n.tr("在 Finder 中显示", "Reveal in Finder"), systemImage: "folder")
             }
             .buttonStyle(.bordered)
 
             Button {
                 copyAll()
             } label: {
-                Label(copied ? "Copied" : "Copy All",
+                Label(copied ? L10n.tr("已复制", "Copied") : L10n.tr("复制全部", "Copy All"),
                       systemImage: copied ? "checkmark" : "doc.on.doc")
             }
             .buttonStyle(.bordered)
             .disabled(displayedText.isEmpty)
-            .help("Copy what you see to the clipboard — paste into a GitHub issue")
+            .help(L10n.tr("将当前内容复制到剪贴板，可粘贴到 GitHub issue 中", "Copy what you see to the clipboard — paste into a GitHub issue"))
 
             Spacer()
 
-            Button("Done") { dismiss() }
+            Button(L10n.tr("完成", "Done")) { dismiss() }
                 .keyboardShortcut(.defaultAction)
         }
         .padding(14)

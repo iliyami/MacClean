@@ -110,13 +110,13 @@ public enum CleanActions {
                 savedBytes += r.bytesSaved
                 for (path, msg) in r.perBinaryErrors {
                     errors.append(CleaningEngine.CleanError(
-                        path: path, error: "binary thin failed: \(msg)"
+                        path: path, error: L10n.tr("二进制精简失败：\(msg)", "binary thin failed: \(msg)")
                     ))
                 }
             } catch {
                 errors.append(CleaningEngine.CleanError(
                     path: item.url.path(percentEncoded: false),
-                    error: "bundle thin failed: \(error.localizedDescription)"
+                    error: L10n.tr("应用包精简失败：\(error.localizedDescription)", "bundle thin failed: \(error.localizedDescription)")
                 ))
             }
         }

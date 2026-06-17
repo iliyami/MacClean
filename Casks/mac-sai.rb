@@ -1,14 +1,14 @@
 cask "mac-sai" do
-  version "1.9.0"
+  version "1.11.7"
   # Set to the published DMG's hash at release time. build-dmg.sh prints
   # "SHA256:" at the end; the release workflow fills this in automatically.
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  sha256 "e91ad9ef5cbd08c17e14fadbef9e9d3ca952855c987c74e108c3d8bb9c66ae0a"
 
-  url "https://github.com/iliyami/MacSai/releases/download/v#{version}/MacSai-#{version}.dmg",
-      verified: "github.com/iliyami/MacSai/"
+  url "https://github.com/499403698/MacSai/releases/download/v#{version}/MacSai-#{version}.dmg",
+      verified: "github.com/499403698/MacSai/"
   name "Mac Sai"
-  desc "Open-source Mac cleaner, optimizer, and malware scanner"
-  homepage "https://github.com/iliyami/MacSai"
+  desc "开源 Mac 清理、优化与恶意软件扫描工具"
+  homepage "https://github.com/499403698/MacSai"
 
   livecheck do
     url :url
@@ -30,7 +30,7 @@ cask "mac-sai" do
   ]
 
   caveats <<~EOS
-    Some features (Mail, Safari, Privacy scans) require Full Disk Access:
-      System Settings → Privacy & Security → Full Disk Access
+    部分功能（邮件、Safari、隐私扫描）需要授予完全磁盘访问权限：
+      系统设置 → 隐私与安全性 → 完全磁盘访问权限
   EOS
 end

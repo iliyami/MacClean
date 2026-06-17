@@ -70,7 +70,7 @@ public enum UpdateChecker {
         do {
             let (data, _) = try await session.data(for: request)
             guard let (version, url) = parseLatestRelease(data) else {
-                return .failed(message: "Unexpected response from GitHub.")
+                return .failed(message: L10n.tr("GitHub 返回了无法识别的响应。", "Unexpected response from GitHub."))
             }
             return isNewer(version, than: currentVersion)
                 ? .updateAvailable(version: version, url: url)

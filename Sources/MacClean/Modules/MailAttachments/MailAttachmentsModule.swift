@@ -3,7 +3,7 @@ import MacCleanKit
 
 public struct MailAttachmentsModule: ScanModule {
     public let id = "mail_attachments"
-    public let name = "Mail Attachments"
+    public var name: String { L10n.tr("邮件附件", "Mail Attachments") }
     public let category = ModuleCategory.cleanup
 
     private let scanner = TargetedScanner()

@@ -36,6 +36,11 @@ struct MacCleanMenuApp: App {
     @State private var tips: [TipsEngine.Tip] = []
     @State private var pollingTask: Task<Void, Never>?
     @State private var slowTickCount = 0
+    @AppStorage(AppLanguage.defaultsKey, store: SharedAppState.defaults) private var appLanguageRaw = AppLanguage.fallback.rawValue
+
+    private var appLanguage: AppLanguage {
+        AppLanguage(rawValue: appLanguageRaw) ?? .fallback
+    }
 
     /// Menu-bar label icon: the Mac Sai vacuum, in color, at 18px.
     /// Rendered as a normal (non-template) image so it shows the brand
@@ -60,6 +65,8 @@ struct MacCleanMenuApp: App {
                     tips.removeAll { $0.id == tipId }
                 }
             )
+            .environment(\.locale, Locale(identifier: appLanguage.localeIdentifier))
+            .id(appLanguage.rawValue)
             .onAppear { startPolling() }
             .onDisappear { stopPolling() }
         } label: {
@@ -212,7 +219,7 @@ struct MenuContentView: View {
                 Text(MCConstants.appName)
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(MenuPalette.textPrimary)
-                Text("Live system stats")
+                Text(L10n.tr("实时系统状态", "Live system stats"))
                     .font(.system(size: 10))
                     .foregroundStyle(MenuPalette.textSecondary)
             }
@@ -228,15 +235,15 @@ struct MenuContentView: View {
             ringCard(icon: "cpu", label: "CPU",
                      value: s.cpuUsage, center: "\(Int((s.cpuUsage*100).rounded()))%",
                      sub: nil)
-            ringCard(icon: "memorychip", label: "Memory",
+            ringCard(icon: "memorychip", label: L10n.tr("内存", "Memory"),
                      value: s.memoryPressure, center: "\(Int((s.memoryPressure*100).rounded()))%",
                      sub: FileSizeFormatter.format(s.memoryUsed))
-            ringCard(icon: "internaldrive", label: "Disk",
+            ringCard(icon: "internaldrive", label: L10n.tr("磁盘", "Disk"),
                      value: diskUsed, center: "\(Int((diskUsed*100).rounded()))%",
-                     sub: "\(FileSizeFormatter.format(s.diskFree)) free")
+                     sub: L10n.tr("\(FileSizeFormatter.format(s.diskFree)) 可用", "\(FileSizeFormatter.format(s.diskFree)) free"))
             if let level = s.batteryLevel {
                 ringCard(icon: s.batteryIsCharging ? "battery.100.bolt" : "battery.75",
-                         label: s.batteryIsCharging ? "Charging" : "Battery",
+                         label: s.batteryIsCharging ? L10n.tr("充电中", "Charging") : L10n.tr("电池", "Battery"),
                          value: level, center: "\(Int((level*100).rounded()))%",
                          sub: nil, forceColor: level > 0.2 ? MenuPalette.teal : Color(red:0.98,green:0.42,blue:0.45))
             } else {
@@ -265,7 +272,7 @@ struct MenuContentView: View {
 
     private func uptimeCard(_ s: SystemStatsCollector.SystemStats) -> some View {
         VStack(spacing: 12) {
-            statHeader(icon: "clock", label: "Uptime", tint: MenuPalette.teal)
+            statHeader(icon: "clock", label: L10n.tr("运行时间", "Uptime"), tint: MenuPalette.teal)
             Text(formatUptime(s.uptime))
                 .font(.system(size: 22, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
@@ -322,7 +329,7 @@ struct MenuContentView: View {
 
     private var recommendationsCard: some View {
         VStack(alignment: .leading, spacing: 9) {
-            sectionHeader(icon: "sparkles", title: "Recommendations", tint: MenuPalette.yellow)
+            sectionHeader(icon: "sparkles", title: L10n.tr("建议", "Recommendations"), tint: MenuPalette.yellow)
             ForEach(tips.prefix(3)) { tip in
                 VStack(alignment: .leading, spacing: 7) {
                     HStack(alignment: .top, spacing: 8) {
@@ -336,7 +343,7 @@ struct MenuContentView: View {
                             Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
                                 .foregroundStyle(MenuPalette.textSecondary).padding(4)
                                 .background(Color.white.opacity(0.08), in: Circle())
-                        }.buttonStyle(.plain).help("Dismiss for 30 days")
+                        }.buttonStyle(.plain).help(L10n.tr("30 天内不再显示", "Dismiss for 30 days"))
                     }
                     Button { TipAction.open(moduleID: MenuTipRouting.moduleID(forTipID: tip.id)) } label: {
                         Text(tipCTA(tip)).font(.system(size: 11, weight: .bold)).foregroundStyle(Color(red:0.16,green:0.10,blue:0.30))
@@ -352,9 +359,9 @@ struct MenuContentView: View {
 
     private func tipCTA(_ tip: TipsEngine.Tip) -> String {
         switch tip.id {
-        case "trash_large": return "Empty Trash"
-        case "caches_large": return "Free Up Space"
-        default: return "Open \(MCConstants.appName)"
+        case "trash_large": return L10n.tr("清空废纸篓", "Empty Trash")
+        case "caches_large": return L10n.tr("释放空间", "Free Up Space")
+        default: return L10n.tr("打开 \(MCConstants.appName)", "Open \(MCConstants.appName)")
         }
     }
 
@@ -369,9 +376,9 @@ struct MenuContentView: View {
                     .font(.system(size: 14, weight: .semibold)).foregroundStyle(tint)
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text(p.threatsFound > 0 ? "\(p.threatsFound) threat\(p.threatsFound == 1 ? "" : "s") found" : "Protected")
+                Text(p.threatsFound > 0 ? L10n.tr("发现 \(p.threatsFound) 个威胁", "\(p.threatsFound) threat\(p.threatsFound == 1 ? "" : "s") found") : L10n.tr("已防护", "Protected"))
                     .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
-                Text("Scanned \(relativeTime(p.lastScanDate)) · \(p.scanDepth)")
+                Text(L10n.tr("上次扫描：\(relativeTime(p.lastScanDate)) · \(p.scanDepth)", "Scanned \(relativeTime(p.lastScanDate)) · \(p.scanDepth)"))
                     .font(.system(size: 10)).foregroundStyle(MenuPalette.textSecondary)
             }
             Spacer()
@@ -383,19 +390,19 @@ struct MenuContentView: View {
 
     private func devicesCard(_ d: ConnectedDevices) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader(icon: "externaldrive.connected.to.line.below", title: "Connected", tint: MenuPalette.teal)
+            sectionHeader(icon: "externaldrive.connected.to.line.below", title: L10n.tr("已连接", "Connected"), tint: MenuPalette.teal)
             ForEach(d.externalVolumes) { v in
                 HStack(spacing: 7) {
                     Image(systemName: "externaldrive.fill").font(.system(size: 10)).foregroundStyle(MenuPalette.teal.opacity(0.8))
                     Text(v.name).font(.system(size: 11)).foregroundStyle(.white).lineLimit(1)
                     Spacer(minLength: 6)
-                    Text("\(FileSizeFormatter.format(v.freeBytes)) free").font(.system(size: 10, design: .monospaced)).foregroundStyle(MenuPalette.textSecondary)
+                    Text(L10n.tr("\(FileSizeFormatter.format(v.freeBytes)) 可用", "\(FileSizeFormatter.format(v.freeBytes)) free")).font(.system(size: 10, design: .monospaced)).foregroundStyle(MenuPalette.textSecondary)
                 }
             }
             if d.externalDisplays > 0 {
                 HStack(spacing: 7) {
                     Image(systemName: "display").font(.system(size: 10)).foregroundStyle(MenuPalette.teal.opacity(0.8))
-                    Text("\(d.externalDisplays) external display\(d.externalDisplays == 1 ? "" : "s")").font(.system(size: 11)).foregroundStyle(.white)
+                    Text(L10n.tr("\(d.externalDisplays) 台外接显示器", "\(d.externalDisplays) external display\(d.externalDisplays == 1 ? "" : "s")")).font(.system(size: 11)).foregroundStyle(.white)
                     Spacer()
                 }
             }
@@ -411,12 +418,12 @@ struct MenuContentView: View {
                 Image(systemName: "power").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
                     .frame(width: 34, height: 32)
                     .background(MenuPalette.red, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            }.buttonStyle(.plain).help("Quit Monitor")
+            }.buttonStyle(.plain).help(L10n.tr("退出监视器", "Quit Monitor"))
 
             Button { TipAction.open() } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "leaf.fill").font(.system(size: 11, weight: .bold))
-                    Text("Open \(MCConstants.appName)").font(.system(size: 12, weight: .bold))
+                    Text(L10n.tr("打开 \(MCConstants.appName)", "Open \(MCConstants.appName)")).font(.system(size: 12, weight: .bold))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity).padding(.vertical, 8)
@@ -437,16 +444,16 @@ struct MenuContentView: View {
 
     private func formatUptime(_ seconds: TimeInterval) -> String {
         let h = Int(seconds) / 3600, m = (Int(seconds) % 3600) / 60
-        if h > 24 { return "\(h/24)d \(h%24)h" }
-        return "\(h)h \(m)m"
+        if h > 24 { return L10n.tr("\(h/24)天 \(h%24)小时", "\(h/24)d \(h%24)h") }
+        return L10n.tr("\(h)小时 \(m)分", "\(h)h \(m)m")
     }
 
     private func relativeTime(_ date: Date) -> String {
         let i = Date().timeIntervalSince(date)
-        if i < 60 { return "just now" }
-        if i < 3600 { return "\(Int(i/60)) min ago" }
-        if i < 86400 { return "\(Int(i/3600)) hr ago" }
-        return "\(Int(i/86400)) day\(Int(i/86400) == 1 ? "" : "s") ago"
+        if i < 60 { return L10n.tr("刚刚", "just now") }
+        if i < 3600 { return L10n.tr("\(Int(i/60)) 分钟前", "\(Int(i/60)) min ago") }
+        if i < 86400 { return L10n.tr("\(Int(i/3600)) 小时前", "\(Int(i/3600)) hr ago") }
+        return L10n.tr("\(Int(i/86400)) 天前", "\(Int(i/86400)) day\(Int(i/86400) == 1 ? "" : "s") ago")
     }
 }
 

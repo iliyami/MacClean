@@ -1,5 +1,6 @@
 import Foundation
 import ServiceManagement
+import MacCleanKit
 
 /// Registers / unregisters the main app as a login item via
 /// `SMAppService.mainApp`. Mirrors `MenuBarLauncher`: best-effort
@@ -16,8 +17,8 @@ public final class LaunchAtLoginManager {
         public var errorDescription: String? {
             switch self {
             case .updateFailed(let enabling, let message):
-                let verb = enabling ? "enable" : "disable"
-                return "Couldn't \(verb) launch at login: \(message)"
+                let action = enabling ? L10n.tr("开启") : L10n.tr("关闭")
+                return L10n.tr("无法\(action)开机自动启动：\(message)", "Couldn't \(action) launch at login: \(message)")
             }
         }
     }

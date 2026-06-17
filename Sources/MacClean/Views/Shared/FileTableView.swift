@@ -40,7 +40,7 @@ struct FileTableView: NSViewRepresentable {
 
         let menu = NSMenu()
         let reveal = NSMenuItem(
-            title: "Reveal in Finder",
+            title: L10n.tr("在 Finder 中显示", "Reveal in Finder"),
             action: #selector(Coordinator.revealInFinder(_:)),
             keyEquivalent: ""
         )
@@ -277,7 +277,7 @@ private final class HeaderCellView: NSTableCellView {
         self.onToggleAll = onToggleAll
         chevron.image = NSImage(
             systemSymbolName: header.isExpanded ? "chevron.down" : "chevron.right",
-            accessibilityDescription: header.isExpanded ? "Collapse" : "Expand"
+            accessibilityDescription: header.isExpanded ? L10n.tr("折叠", "Collapse") : L10n.tr("展开", "Expand")
         )
         switch header.selection {
         case .all: checkbox.state = .on
@@ -289,7 +289,7 @@ private final class HeaderCellView: NSTableCellView {
         )
         title.stringValue = header.category.displayName
         subtitle.stringValue = header.category.subtitle
-        count.stringValue = "\(header.selectedCount)/\(header.fileCount) selected"
+        count.stringValue = L10n.tr("已选择 \(header.selectedCount)/\(header.fileCount)", "\(header.selectedCount)/\(header.fileCount) selected")
         size.attributedStringValue = Self.sizeText(
             selected: header.selectedSize, total: header.totalSize
         )
@@ -327,7 +327,7 @@ private final class ItemCellView: NSTableCellView {
     private let icon = NSImageView()
     private let name = NSTextField(labelWithString: "")
     private let path = NSTextField(labelWithString: "")
-    private let badge = BadgeView(text: "App open")
+    private let badge = BadgeView(text: L10n.tr("应用已打开", "App open"))
     private let size = NSTextField(labelWithString: "")
     private let infoButton = NSButton()
     private let revealButton = NSButton()
@@ -363,8 +363,8 @@ private final class ItemCellView: NSTableCellView {
         size.textColor = .secondaryLabelColor
         size.alignment = .right
 
-        configureIconButton(infoButton, symbol: "info.circle", tooltip: "Copy path", action: #selector(infoClicked))
-        configureIconButton(revealButton, symbol: "folder", tooltip: "Reveal in Finder", action: #selector(revealClicked))
+        configureIconButton(infoButton, symbol: "info.circle", tooltip: L10n.tr("复制路径", "Copy path"), action: #selector(infoClicked))
+        configureIconButton(revealButton, symbol: "folder", tooltip: L10n.tr("在 Finder 中显示", "Reveal in Finder"), action: #selector(revealClicked))
 
         for view in [checkbox, icon, name, path, badge, size, infoButton, revealButton] {
             view.translatesAutoresizingMaskIntoConstraints = false

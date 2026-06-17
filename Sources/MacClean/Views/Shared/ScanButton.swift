@@ -1,4 +1,5 @@
 import SwiftUI
+import MacCleanKit
 
 public struct ScanButton: View {
     let title: String
@@ -9,7 +10,7 @@ public struct ScanButton: View {
     let action: () -> Void
 
     public init(
-        title: String = "Scan",
+        title: String = L10n.tr("扫描", "Scan"),
         subtitle: String? = nil,
         theme: ModuleTheme = .smartScan,
         isScanning: Bool = false,

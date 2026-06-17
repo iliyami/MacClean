@@ -3,7 +3,7 @@ import MacCleanKit
 
 public struct PrivacyModule: ScanModule {
     public let id = "privacy"
-    public let name = "Privacy"
+    public var name: String { L10n.tr("隐私清理", "Privacy") }
     public let category = ModuleCategory.protection
 
     public enum TimeFilter: Sendable {

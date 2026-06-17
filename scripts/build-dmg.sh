@@ -57,9 +57,10 @@ echo ""
 
 # Step 1: Build release as a universal (arm64 + x86_64) binary
 BUILD_ARCHS="${BUILD_ARCHS:---arch arm64 --arch x86_64}"
-echo "[1/6] Building release binary (${BUILD_ARCHS})..."
-swift build -c release ${BUILD_ARCHS}
-BUILD_DIR=$(swift build -c release ${BUILD_ARCHS} --show-bin-path)
+echo "[1/6] Building release binaries (${BUILD_ARCHS})..."
+swift build -c release ${BUILD_ARCHS} --product MacClean
+swift build -c release ${BUILD_ARCHS} --product MacCleanMenu
+BUILD_DIR=$(swift build -c release ${BUILD_ARCHS} --product MacClean --show-bin-path)
 echo "  → Binaries: ${BUILD_DIR}"
 
 # Step 2: Create .app bundle
@@ -77,7 +78,7 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" << PLIST
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
+    <string>zh-Hans</string>
     <key>CFBundleExecutable</key>
     <string>MacClean</string>
     <key>CFBundleIdentifier</key>
@@ -141,7 +142,7 @@ cat > "${MENU_APP}/Contents/Info.plist" << MENU_PLIST
 <plist version="1.0">
 <dict>
     <key>CFBundleDevelopmentRegion</key>
-    <string>en</string>
+    <string>zh-Hans</string>
     <key>CFBundleExecutable</key>
     <string>MacCleanMenu</string>
     <key>CFBundleIdentifier</key>
@@ -149,9 +150,9 @@ cat > "${MENU_APP}/Contents/Info.plist" << MENU_PLIST
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Mac Sai Menu</string>
+    <string>Mac Sai 菜单栏</string>
     <key>CFBundleDisplayName</key>
-    <string>Mac Sai Menu</string>
+    <string>Mac Sai 菜单栏</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

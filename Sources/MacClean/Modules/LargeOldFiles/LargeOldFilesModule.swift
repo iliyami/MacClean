@@ -3,7 +3,7 @@ import MacCleanKit
 
 public struct LargeOldFilesModule: ScanModule {
     public let id = "large_old_files"
-    public let name = "Large & Old Files"
+    public var name: String { L10n.tr("大文件与旧文件", "Large & Old Files") }
     public let category = ModuleCategory.files
 
     // Excluded from Smart Scan's "junk found" total: large media (music,

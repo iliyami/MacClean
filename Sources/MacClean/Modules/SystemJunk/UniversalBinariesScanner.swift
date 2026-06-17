@@ -109,7 +109,7 @@ public enum UniversalBinariesScanner {
 
         return FileItem(
             url: appURL,
-            name: "\(appURL.deletingPathExtension().lastPathComponent) (drop \(dropping.map { $0.lipoName }.sorted().joined(separator: ", ")))",
+            name: L10n.tr("\(appURL.deletingPathExtension().lastPathComponent)（移除 \(dropping.map { $0.lipoName }.sorted().joined(separator: ", "))）", "\(appURL.deletingPathExtension().lastPathComponent) (drop \(dropping.map { $0.lipoName }.sorted().joined(separator: ", ")))"),
             size: savings,
             allocatedSize: savings,
             isDirectory: true

@@ -45,7 +45,7 @@ struct ContentView: View {
                 }
 
                 if appState.selectedSidebarItem == nil {
-                    Text("Select a module from the sidebar")
+                    Text(L10n.tr("请从侧边栏选择一个模块", "Select a module from the sidebar"))
                         .foregroundStyle(.secondary)
                 }
 

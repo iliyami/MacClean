@@ -4,7 +4,7 @@ import MacCleanKit
 
 public struct OptimizationModule: ScanModule {
     public let id = "optimization"
-    public let name = "Optimization"
+    public var name: String { L10n.tr("优化", "Optimization") }
     public let category = ModuleCategory.performance
 
     public init() {}

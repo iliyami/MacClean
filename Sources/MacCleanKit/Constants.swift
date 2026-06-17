@@ -164,6 +164,8 @@ public enum MCConstants {
     // full-word "English.lproj", so both English spellings are listed.
     public static let preservedLanguages: Set<String> = [
         "en.lproj", "English.lproj", "Base.lproj", "en_US.lproj", "en_GB.lproj",
+        "zh.lproj", "zh-Hans.lproj", "zh-Hant.lproj", "zh_CN.lproj", "zh_TW.lproj",
+        "Chinese.lproj", "Simplified Chinese.lproj", "Traditional Chinese.lproj",
     ]
 
     // MARK: - Log File Path
@@ -173,10 +175,10 @@ public enum MCConstants {
 
     // MARK: - Project links
 
-    public static let repoURL = URL(string: "https://github.com/iliyami/MacSai")!
-    public static let issuesURL = URL(string: "https://github.com/iliyami/MacSai/issues/new/choose")!
-    public static let releasesURL = URL(string: "https://github.com/iliyami/MacSai/releases")!
-    public static let latestReleaseAPI = URL(string: "https://api.github.com/repos/iliyami/MacSai/releases/latest")!
+    public static let repoURL = URL(string: "https://github.com/499403698/MacSai")!
+    public static let issuesURL = URL(string: "https://github.com/499403698/MacSai/issues/new/choose")!
+    public static let releasesURL = URL(string: "https://github.com/499403698/MacSai/releases")!
+    public static let latestReleaseAPI = URL(string: "https://api.github.com/repos/499403698/MacSai/releases/latest")!
 
     // MARK: - App version
     //

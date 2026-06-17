@@ -24,9 +24,9 @@ public final class MenuBarLauncher {
         public var errorDescription: String? {
             switch self {
             case .registrationFailed(let msg):
-                return "Couldn't enable the menu bar widget: \(msg)"
+                return L10n.tr("无法启用菜单栏小组件：\(msg)", "Couldn't enable the menu bar widget: \(msg)")
             case .unregisterFailed(let msg):
-                return "Couldn't disable the menu bar widget: \(msg)"
+                return L10n.tr("无法停用菜单栏小组件：\(msg)", "Couldn't disable the menu bar widget: \(msg)")
             }
         }
     }

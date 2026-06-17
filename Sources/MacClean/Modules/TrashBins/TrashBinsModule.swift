@@ -3,7 +3,7 @@ import MacCleanKit
 
 public struct TrashBinsModule: ScanModule {
     public let id = "trash_bins"
-    public let name = "Trash Bins"
+    public var name: String { L10n.tr("废纸篓", "Trash Bins") }
     public let category = ModuleCategory.cleanup
 
     private let scanner = TargetedScanner()

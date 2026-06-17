@@ -4,7 +4,7 @@ import MacCleanKit
 
 public struct UninstallerModule: ScanModule {
     public let id = "uninstaller"
-    public let name = "Uninstaller"
+    public var name: String { L10n.tr("卸载器", "Uninstaller") }
     public let category = ModuleCategory.applications
 
     public init() {}

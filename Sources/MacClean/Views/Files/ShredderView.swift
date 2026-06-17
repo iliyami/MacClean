@@ -14,10 +14,10 @@ struct ShredderView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Shredder")
+                    Text(L10n.tr("文件粉碎", "Shredder"))
                         .font(.system(size: 24, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("Securely erase files beyond recovery")
+                    Text(L10n.tr("安全擦除文件，使其无法恢复", "Securely erase files beyond recovery"))
                         .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.7))
                 }
@@ -32,14 +32,14 @@ struct ShredderView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 50))
                         .foregroundStyle(.white)
-                    Text("\(result.erasedCount) files erased")
+                    Text(L10n.tr("已擦除 \(result.erasedCount) 个文件", "\(result.erasedCount) files erased"))
                         .font(.headline)
                         .foregroundStyle(.white)
                     Text(FileSizeFormatter.format(result.totalSize))
                         .font(.system(size: 14))
                         .foregroundStyle(.white.opacity(0.7))
 
-                    Button("Done") {
+                    Button(L10n.tr("完成", "Done")) {
                         self.result = nil
                         filesToShred = []
                     }
@@ -47,7 +47,7 @@ struct ShredderView: View {
                     .tint(.white)
                 }
             } else if isProcessing {
-                ProgressView("Shredding files...")
+                ProgressView(L10n.tr("正在粉碎文件...", "Shredding files..."))
                     .foregroundStyle(.white)
                     .tint(.white)
             } else if filesToShred.isEmpty {
@@ -56,11 +56,11 @@ struct ShredderView: View {
                         .font(.system(size: 50))
                         .foregroundStyle(.white.opacity(0.5))
 
-                    Text("Drop files here to shred them")
+                    Text(L10n.tr("将文件拖放到此处进行粉碎", "Drop files here to shred them"))
                         .font(.system(size: 16))
                         .foregroundStyle(.white.opacity(0.6))
 
-                    Button("Select Files") {
+                    Button(L10n.tr("选择文件", "Select Files")) {
                         selectFiles()
                     }
                     .buttonStyle(SuperEllipseButtonStyle(
@@ -69,10 +69,10 @@ struct ShredderView: View {
                     ))
 
                     // Erase mode picker
-                    Picker("Mode", selection: $eraseMode) {
-                        Text("Move to Trash").tag(SecureEraser.EraseMode.standard)
-                        Text("Permanent Delete").tag(SecureEraser.EraseMode.permanent)
-                        Text("Secure Erase").tag(SecureEraser.EraseMode.secure)
+                    Picker(L10n.tr("模式", "Mode"), selection: $eraseMode) {
+                        Text(L10n.tr("移到废纸篓", "Move to Trash")).tag(SecureEraser.EraseMode.standard)
+                        Text(L10n.tr("永久删除", "Permanent Delete")).tag(SecureEraser.EraseMode.permanent)
+                        Text(L10n.tr("安全擦除", "Secure Erase")).tag(SecureEraser.EraseMode.secure)
                     }
                     .pickerStyle(.segmented)
                     // Hidden visually, kept for VoiceOver. Rendered inline,
@@ -85,7 +85,7 @@ struct ShredderView: View {
                 }
             } else {
                 VStack(spacing: 16) {
-                    Text("\(filesToShred.count) files selected")
+                    Text(L10n.tr("已选择 \(filesToShred.count) 个文件", "\(filesToShred.count) files selected"))
                         .font(.headline)
                         .foregroundStyle(.white)
 
@@ -113,7 +113,7 @@ struct ShredderView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                     .padding(.horizontal, 40)
 
-                    Button("Shred") {
+                    Button(L10n.tr("粉碎", "Shred")) {
                         shred()
                     }
                     .buttonStyle(SuperEllipseButtonStyle(

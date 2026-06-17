@@ -66,7 +66,7 @@ public actor CleaningEngine {
     ) async -> CleanResult {
         // Upper bound: refuse genuinely runaway selections cleanly.
         if items.count > MCConstants.maxTotalItemsPerCleanOperation {
-            let msg = "Operation exceeds limit of \(MCConstants.maxTotalItemsPerCleanOperation) items (attempted: \(items.count)). This usually indicates a scanner bug."
+            let msg = L10n.tr("操作超过 \(MCConstants.maxTotalItemsPerCleanOperation) 项上限（尝试处理：\(items.count) 项）。这通常表示扫描器存在异常。", "Operation exceeds limit of \(MCConstants.maxTotalItemsPerCleanOperation) items (attempted: \(items.count)). This usually indicates a scanner bug.")
             logger.error("\(msg, privacy: .public)")
             return CleanResult(
                 removedCount: 0,
@@ -193,7 +193,7 @@ public actor CleaningEngine {
                     // (or our own earlier processing) removed it before
                     // we got here. Not a failure to surface to the user.
                     skippedCount += 1
-                    logSkip(path: item.url, reason: "already gone")
+                    logSkip(path: item.url, reason: L10n.tr("已不存在", "already gone"))
                 } catch {
                     let msg = error.localizedDescription
                     errors.append(CleanError(
@@ -210,7 +210,7 @@ public actor CleaningEngine {
                     logOperation(path: item.url, size: realSize, dryRun: false)
                 } catch let nsError as NSError where Self.isBenignMissingFile(nsError) {
                     skippedCount += 1
-                    logSkip(path: item.url, reason: "already gone")
+                    logSkip(path: item.url, reason: L10n.tr("已不存在", "already gone"))
                 } catch {
                     let msg = error.localizedDescription
                     errors.append(CleanError(

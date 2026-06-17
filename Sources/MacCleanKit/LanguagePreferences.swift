@@ -22,18 +22,16 @@ public enum LanguagePreferences {
 
     // MARK: - Display-name mapping
 
-    /// Human-readable English name for an lproj folder, e.g. "fr.lproj" → "French",
-    /// "zh-Hans.lproj" → "Chinese (Simplified)". Falls back to the raw code.
-    /// Always uses a fixed en_US locale so the result is deterministic across
-    /// CI machines and non-English user accounts.
+    /// Human-readable name for an lproj folder in the current interface
+    /// language, e.g. "fr.lproj" → "法语" / "French". Falls back to the raw code.
     public static func displayName(forLproj lproj: String) -> String {
         let code = lproj.hasSuffix(".lproj") ? String(lproj.dropLast(6)) : lproj
-        let en = Locale(identifier: "en_US")
+        let locale = Locale(identifier: AppLanguage.current == .en ? "en_US" : "zh_Hans")
         // forIdentifier handles region/script variants (e.g. zh-Hans, pt-BR, en_GB).
         // forLanguageCode handles plain language codes (e.g. fr, de, ja).
         // Raw code is the final fallback for anything Locale doesn't recognise.
-        return en.localizedString(forIdentifier: code)
-            ?? en.localizedString(forLanguageCode: code)
+        return locale.localizedString(forIdentifier: code)
+            ?? locale.localizedString(forLanguageCode: code)
             ?? code
     }
 

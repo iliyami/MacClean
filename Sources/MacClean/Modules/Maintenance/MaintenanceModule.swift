@@ -3,7 +3,7 @@ import MacCleanKit
 
 public struct MaintenanceModule: ScanModule {
     public let id = "maintenance"
-    public let name = "Maintenance"
+    public var name: String { L10n.tr("维护", "Maintenance") }
     public let category = ModuleCategory.performance
 
     public init() {}
@@ -31,7 +31,7 @@ public actor MaintenanceExecutor {
 
         guard let (command, args) = task.systemCommand else {
             return TaskResult(task: task, success: false, output: "",
-                              error: "Task has no system command")
+                              error: L10n.tr("该任务没有可执行的系统命令", "Task has no system command"))
         }
 
         if task.requiresAdmin {
@@ -62,7 +62,7 @@ public actor MaintenanceExecutor {
         if !result.success, let err = result.error {
             if err.contains("User canceled") || err.contains("-128") {
                 return TaskResult(task: task, success: false, output: "",
-                                  error: "Cancelled — administrator access was not granted.")
+                                  error: L10n.tr("已取消——未授予管理员权限。", "Cancelled — administrator access was not granted."))
             }
             // Otherwise strip osascript's "1:92: execution error: … (1)" wrapper
             // so the user sees the real underlying message (issue #82).
@@ -118,7 +118,7 @@ public actor MaintenanceExecutor {
                 return TaskResult(
                     task: .speedUpMail,
                     success: true,
-                    output: "Mail envelope index removed. Mail will rebuild it on next launch.",
+                    output: L10n.tr("邮件索引已移除。邮件将在下次启动时重建。", "Mail envelope index removed. Mail will rebuild it on next launch."),
                     error: nil
                 )
             } catch {
@@ -134,7 +134,7 @@ public actor MaintenanceExecutor {
         return TaskResult(
             task: .speedUpMail,
             success: true,
-            output: "Mail envelope index not found — Mail may use a different version directory.",
+            output: L10n.tr("未找到邮件索引——邮件可能使用了不同的版本目录。", "Mail envelope index not found — Mail may use a different version directory."),
             error: nil
         )
     }

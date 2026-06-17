@@ -27,10 +27,10 @@ struct DuplicatesView: View {
                 scanningView
             } else if scanComplete && results.isEmpty {
                 ModuleContainerView(
-                    title: "Duplicates",
+                    title: L10n.tr("重复文件", "Duplicates"),
                     subtitle: "",
                     theme: .files,
-                    emptyMessage: "No duplicates found",
+                    emptyMessage: L10n.tr("未找到重复文件", "No duplicates found"),
                     results: results,
                     selectedItems: $selectedItems,
                     isScanning: false,
@@ -43,7 +43,7 @@ struct DuplicatesView: View {
                 )
             } else if !results.isEmpty {
                 ModuleContainerView(
-                    title: "Duplicates",
+                    title: L10n.tr("重复文件", "Duplicates"),
                     subtitle: "",
                     theme: .files,
                     results: results,
@@ -66,7 +66,7 @@ struct DuplicatesView: View {
                 )
             } else if completion != nil {
                 ModuleContainerView(
-                    title: "Duplicates",
+                    title: L10n.tr("重复文件", "Duplicates"),
                     subtitle: "",
                     theme: .files,
                     results: [],
@@ -90,10 +90,10 @@ struct DuplicatesView: View {
             Spacer()
 
             VStack(spacing: 10) {
-                Text("Duplicates")
+                Text(L10n.tr("重复文件", "Duplicates"))
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(.white)
-                Text("Find duplicate files using progressive\nSHA-256 hash detection")
+                Text(L10n.tr("使用渐进式 SHA-256 哈希检测\n查找重复文件", "Find duplicate files using progressive\nSHA-256 hash detection"))
                     .font(.system(size: 14))
                     .foregroundStyle(.white.opacity(0.65))
                     .multilineTextAlignment(.center)
@@ -103,7 +103,7 @@ struct DuplicatesView: View {
                 Image(systemName: "clock.fill")
                     .foregroundStyle(.yellow)
                     .font(.system(size: 13))
-                Text("This scan may take several minutes on large home folders")
+                Text(L10n.tr("大型个人目录可能需要几分钟扫描", "This scan may take several minutes on large home folders"))
                     .font(.system(size: 12))
                     .foregroundStyle(.white.opacity(0.8))
             }
@@ -112,7 +112,7 @@ struct DuplicatesView: View {
             .background(.white.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            ScanButton(title: "Scan", subtitle: "Duplicates", theme: .files, action: scan)
+            ScanButton(title: L10n.tr("扫描", "Scan"), subtitle: L10n.tr("重复文件", "Duplicates"), theme: .files, action: scan)
 
             Spacer()
         }
@@ -134,12 +134,12 @@ struct DuplicatesView: View {
                     .contentTransition(.interpolate)
                     .animation(.easeInOut(duration: 0.2), value: scanPhase)
 
-                Text("Elapsed: \(formatElapsed(elapsedSeconds))")
+                Text(L10n.tr("已用时：\(formatElapsed(elapsedSeconds))", "Elapsed: \(formatElapsed(elapsedSeconds))"))
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.6))
             }
 
-            Text("Duplicate detection hashes every candidate file with SHA-256.\nLarge home folders can take 5–15 minutes.")
+            Text(L10n.tr("重复文件检测会使用 SHA-256 哈希每个候选文件。\n大型个人目录可能需要 5–15 分钟。", "Duplicate detection hashes every candidate file with SHA-256.\nLarge home folders can take 5–15 minutes."))
                 .font(.system(size: 12))
                 .foregroundStyle(.white.opacity(0.55))
                 .multilineTextAlignment(.center)
@@ -160,7 +160,7 @@ struct DuplicatesView: View {
         scanComplete = false
         scanProgress = 0
         elapsedSeconds = 0
-        scanPhase = "Scanning home folder..."
+        scanPhase = L10n.tr("正在扫描个人目录...", "Scanning home folder...")
 
         // Elapsed timer
         let timerTask = Task {
@@ -171,18 +171,18 @@ struct DuplicatesView: View {
         }
 
         Task {
-            scanPhase = "Scanning home folder..."
+            scanPhase = L10n.tr("正在扫描个人目录...", "Scanning home folder...")
             try? await Task.sleep(for: .milliseconds(400))
 
-            scanPhase = "Grouping files by size..."
+            scanPhase = L10n.tr("正在按大小分组文件...", "Grouping files by size...")
             try? await Task.sleep(for: .milliseconds(400))
 
-            scanPhase = "Hashing candidate files in parallel..."
+            scanPhase = L10n.tr("正在并行哈希候选文件...", "Hashing candidate files in parallel...")
 
             let module = DuplicatesModule()
             let groups = await module.scanDisplayGroups()
 
-            scanPhase = "Finalizing..."
+            scanPhase = L10n.tr("正在完成...", "Finalizing...")
             try? await Task.sleep(for: .milliseconds(300))
 
             timerTask.cancel()

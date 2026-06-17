@@ -1,4 +1,5 @@
 import AppKit
+import MacCleanKit
 
 /// Light/Dark/System override for the whole app, stored in UserDefaults
 /// under `AppearanceManager.defaultsKey`. `.system` clears the override so
@@ -15,9 +16,9 @@ public enum AppearanceMode: String, CaseIterable, Identifiable {
 
     public var label: String {
         switch self {
-        case .system: "System"
-        case .light: "Light"
-        case .dark: "Dark"
+        case .system: L10n.tr("跟随系统", "System")
+        case .light: L10n.tr("浅色", "Light")
+        case .dark: L10n.tr("深色", "Dark")
         }
     }
 

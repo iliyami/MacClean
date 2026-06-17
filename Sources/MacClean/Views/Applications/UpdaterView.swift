@@ -18,16 +18,16 @@ struct UpdaterView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Updater")
+                    Text(L10n.tr("应用更新", "Updater"))
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("Check for available app updates")
+                    Text(L10n.tr("检查可用的应用更新", "Check for available app updates"))
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 Spacer()
                 if !isChecking {
-                    Button(hasChecked ? "Recheck" : "Check for Updates") {
+                    Button(hasChecked ? L10n.tr("重新检查", "Recheck") : L10n.tr("检查更新", "Check for Updates")) {
                         checkUpdates()
                     }
                     .buttonStyle(SuperEllipseButtonStyle(
@@ -41,7 +41,7 @@ struct UpdaterView: View {
 
             if isChecking {
                 Spacer()
-                ScanProgressRing(progress: 0.5, phase: "Checking for updates...", theme: .applications)
+                ScanProgressRing(progress: 0.5, phase: L10n.tr("正在检查更新...", "Checking for updates..."), theme: .applications)
                 Spacer()
             } else if hasChecked && updates.isEmpty {
                 Spacer()
@@ -49,7 +49,7 @@ struct UpdaterView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 44))
                         .foregroundStyle(.white.opacity(0.8))
-                    Text("All apps are up to date")
+                    Text(L10n.tr("所有应用均为最新", "All apps are up to date"))
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.white.opacity(0.7))
                 }
@@ -77,7 +77,7 @@ struct UpdaterView: View {
                                     .controlSize(.small)
                                     .frame(width: 60)
                             } else {
-                                Button("Update") { startUpdate(update) }
+                                Button(L10n.tr("更新", "Update")) { startUpdate(update) }
                                     .buttonStyle(.bordered)
                                     .controlSize(.small)
                             }
@@ -98,7 +98,7 @@ struct UpdaterView: View {
                     Image(systemName: "arrow.triangle.2.circlepath")
                         .font(.system(size: 44))
                         .foregroundStyle(.white.opacity(0.4))
-                    Text("Click above to check for updates")
+                    Text(L10n.tr("点击上方按钮检查更新", "Click above to check for updates"))
                         .font(.system(size: 14))
                         .foregroundStyle(.white.opacity(0.55))
                 }

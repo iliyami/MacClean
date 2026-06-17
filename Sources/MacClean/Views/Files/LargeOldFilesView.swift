@@ -15,10 +15,10 @@ struct LargeOldFilesView: View {
 
     var body: some View {
         ModuleContainerView(
-            title: "Large & Old Files",
-            subtitle: "Find files larger than 50 MB that haven't been accessed recently",
+            title: L10n.tr("大文件与旧文件", "Large & Old Files"),
+            subtitle: L10n.tr("查找大于 50 MB 且最近未访问的文件", "Find files larger than 50 MB that haven't been accessed recently"),
             theme: .files,
-            emptyMessage: "No large or old files found",
+            emptyMessage: L10n.tr("未找到大文件或旧文件", "No large or old files found"),
             results: results,
             selectedItems: $selectedItems,
             isScanning: isScanning,
@@ -56,23 +56,23 @@ struct LargeOldFilesView: View {
         Task {
             let scanStart = Date()
 
-            scanPhase = "Scanning home directory..."
+            scanPhase = L10n.tr("正在扫描个人目录...", "Scanning home directory...")
             scanProgress = 0.2
             try? await Task.sleep(for: .milliseconds(500))
 
-            scanPhase = "Checking file sizes..."
+            scanPhase = L10n.tr("正在检查文件大小...", "Checking file sizes...")
             scanProgress = 0.45
 
             let module = LargeOldFilesModule()
             async let scanTask = module.scan()
 
             try? await Task.sleep(for: .milliseconds(400))
-            scanPhase = "Checking access dates..."
+            scanPhase = L10n.tr("正在检查访问日期...", "Checking access dates...")
             scanProgress = 0.7
 
             results = await scanTask
 
-            scanPhase = "Grouping results..."
+            scanPhase = L10n.tr("正在整理结果...", "Grouping results...")
             scanProgress = 0.9
 
             let elapsed = Date().timeIntervalSince(scanStart)

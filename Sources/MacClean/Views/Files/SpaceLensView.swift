@@ -15,16 +15,16 @@ struct SpaceLensView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Space Lens")
+                    Text(L10n.tr("空间透视", "Space Lens"))
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(.white)
-                    Text("Visualize disk space usage")
+                    Text(L10n.tr("可视化磁盘空间使用情况", "Visualize disk space usage"))
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 Spacer()
                 if !isScanning {
-                    Button("Scan") { startScan() }
+                    Button(L10n.tr("扫描", "Scan")) { startScan() }
                         .buttonStyle(SuperEllipseButtonStyle(
                             gradient: ModuleTheme.files.buttonGradient,
                             size: CGSize(width: 90, height: 34)
@@ -40,11 +40,11 @@ struct SpaceLensView: View {
                         Button { nav.up(); startScan() } label: { Image(systemName: "chevron.up") }
                             .buttonStyle(.plain).foregroundStyle(.white.opacity(0.8))
                             .disabled(!nav.canGoUp)
-                            .help("Up one level")
+                            .help(L10n.tr("上一级", "Up one level"))
                         Button { nav.home(); startScan() } label: { Image(systemName: "house") }
                             .buttonStyle(.plain).foregroundStyle(.white.opacity(0.8))
                             .disabled(!nav.canGoUp)
-                            .help("Back to start")
+                            .help(L10n.tr("返回起点", "Back to start"))
 
                         ForEach(nav.breadcrumbs, id: \.self) { url in
                             Button(url.lastPathComponent) {
@@ -69,8 +69,8 @@ struct SpaceLensView: View {
 
             if isScanning {
                 Spacer()
-                ScanProgressRing(progress: 0.5, phase: "Scanning disk...", theme: .files)
-                Button("Cancel") {
+                ScanProgressRing(progress: 0.5, phase: L10n.tr("正在扫描磁盘...", "Scanning disk..."), theme: .files)
+                Button(L10n.tr("取消", "Cancel")) {
                     scanTask?.cancel()
                     isScanning = false
                 }
@@ -93,7 +93,7 @@ struct SpaceLensView: View {
                     Image(systemName: "chart.pie")
                         .font(.system(size: 44))
                         .foregroundStyle(.white.opacity(0.4))
-                    Text("Click Scan to visualize disk usage")
+                    Text(L10n.tr("点击“扫描”以可视化磁盘使用情况", "Click Scan to visualize disk usage"))
                         .font(.system(size: 14))
                         .foregroundStyle(.white.opacity(0.55))
                 }

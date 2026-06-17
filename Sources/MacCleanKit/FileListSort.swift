@@ -17,9 +17,9 @@ public enum FileListSort: String, CaseIterable, Sendable {
     /// Short label for the sort control.
     public var label: String {
         switch self {
-        case .sizeDescending: "Largest first"
-        case .sizeAscending: "Smallest first"
-        case .name: "Name"
+        case .sizeDescending: L10n.tr("从大到小", "Largest first")
+        case .sizeAscending: L10n.tr("从小到大", "Smallest first")
+        case .name: L10n.tr("按名称", "Name")
         }
     }
 

@@ -54,8 +54,8 @@ public actor TipsEngine {
         guard size >= Self.trashSizeMinimum else { return nil }
         return Tip(
             id: "trash_large",
-            title: "Trash is taking \(FileSizeFormatter.format(size))",
-            body: "Empty the Trash from \(MCConstants.appName) to reclaim space.",
+            title: L10n.tr("废纸篓占用了 \(FileSizeFormatter.format(size))", "Trash is taking \(FileSizeFormatter.format(size))"),
+            body: L10n.tr("通过 \(MCConstants.appName) 清空废纸篓以释放空间。", "Empty the Trash from \(MCConstants.appName) to reclaim space."),
             estimatedSavings: size,
             symbol: "trash"
         )
@@ -66,8 +66,8 @@ public actor TipsEngine {
         guard size >= Self.cachesSizeMinimum else { return nil }
         return Tip(
             id: "caches_large",
-            title: "User caches grew to \(FileSizeFormatter.format(size))",
-            body: "Run System Junk in \(MCConstants.appName) to clear regenerable cache files.",
+            title: L10n.tr("用户缓存已增长到 \(FileSizeFormatter.format(size))", "User caches grew to \(FileSizeFormatter.format(size))"),
+            body: L10n.tr("在 \(MCConstants.appName) 中运行“系统垃圾”以清理可再生成的缓存文件。", "Run System Junk in \(MCConstants.appName) to clear regenerable cache files."),
             estimatedSavings: size,
             symbol: "internaldrive"
         )

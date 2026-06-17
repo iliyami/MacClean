@@ -17,10 +17,10 @@ struct MailAttachmentsView: View {
 
     var body: some View {
         ModuleContainerView(
-            title: "Mail Attachments",
-            subtitle: "Find cached email attachments from Mail, Outlook, and Spark",
+            title: L10n.tr("邮件附件", "Mail Attachments"),
+            subtitle: L10n.tr("查找来自邮件、Outlook 和 Spark 的缓存邮件附件", "Find cached email attachments from Mail, Outlook, and Spark"),
             theme: .cleanup,
-            emptyMessage: "No attachments found",
+            emptyMessage: L10n.tr("未找到附件", "No attachments found"),
             results: results,
             selectedItems: $selectedItems,
             isScanning: isScanning,
@@ -58,22 +58,22 @@ struct MailAttachmentsView: View {
         Task {
             let scanStart = Date()
 
-            scanPhase = "Scanning Apple Mail..."
+            scanPhase = L10n.tr("正在扫描 Apple Mail...", "Scanning Apple Mail...")
             scanProgress = 0.2
             try? await Task.sleep(for: .milliseconds(400))
 
-            scanPhase = "Scanning Outlook..."
+            scanPhase = L10n.tr("正在扫描 Outlook...", "Scanning Outlook...")
             scanProgress = 0.45
 
             async let scanTask = module.scan()
             try? await Task.sleep(for: .milliseconds(400))
 
-            scanPhase = "Scanning Spark..."
+            scanPhase = L10n.tr("正在扫描 Spark...", "Scanning Spark...")
             scanProgress = 0.7
 
             results = await scanTask
 
-            scanPhase = "Analyzing attachments..."
+            scanPhase = L10n.tr("正在分析附件...", "Analyzing attachments...")
             scanProgress = 0.9
 
             let elapsed = Date().timeIntervalSince(scanStart)

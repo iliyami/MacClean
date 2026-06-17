@@ -16,7 +16,7 @@ final class SystemJunkViewModel {
     var results: [ScanResult] = []
     var selectedItems: Set<URL> = []
     var filesFound: Int = 0
-    var scanPhase: String = "Scanning..."
+    var scanPhase: String = L10n.tr("正在扫描...", "Scanning...")
     /// Held so the View's Cancel button can stop an in-flight cleanup.
     private var cleanTask: Task<Void, Never>?
 
@@ -42,35 +42,35 @@ final class SystemJunkViewModel {
         filesFound = 0
         results = []
         selectedItems = []
-        scanPhase = "Scanning caches..."
+        scanPhase = L10n.tr("正在扫描缓存...", "Scanning caches...")
 
         Task {
             let scanStart = Date()
 
             state = .scanning(progress: 0.1)
-            scanPhase = "Scanning user caches..."
+            scanPhase = L10n.tr("正在扫描用户缓存...", "Scanning user caches...")
             try? await Task.sleep(for: .milliseconds(300))
 
-            scanPhase = "Scanning system logs..."
+            scanPhase = L10n.tr("正在扫描系统日志...", "Scanning system logs...")
             state = .scanning(progress: 0.25)
 
             async let scanTask = module.scan()
 
             try? await Task.sleep(for: .milliseconds(400))
-            scanPhase = "Checking language files..."
+            scanPhase = L10n.tr("正在检查语言文件...", "Checking language files...")
             state = .scanning(progress: 0.4)
 
             try? await Task.sleep(for: .milliseconds(300))
-            scanPhase = "Inspecting preferences..."
+            scanPhase = L10n.tr("正在检查偏好设置...", "Inspecting preferences...")
             state = .scanning(progress: 0.55)
 
             try? await Task.sleep(for: .milliseconds(300))
-            scanPhase = "Checking login items..."
+            scanPhase = L10n.tr("正在检查登录项...", "Checking login items...")
             state = .scanning(progress: 0.7)
 
             let scanResults = await scanTask
 
-            scanPhase = "Analyzing results..."
+            scanPhase = L10n.tr("正在分析结果...", "Analyzing results...")
             state = .scanning(progress: 0.9)
 
             results = scanResults

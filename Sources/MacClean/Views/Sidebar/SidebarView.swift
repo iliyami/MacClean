@@ -3,35 +3,36 @@ import MacCleanKit
 
 public enum SidebarItem: String, CaseIterable, Identifiable {
     // Main
-    case smartScan = "Smart Scan"
+    case smartScan = "智能扫描"
 
     // Cleanup
-    case systemJunk = "System Junk"
-    case mailAttachments = "Mail Attachments"
-    case trashBins = "Trash Bins"
+    case systemJunk = "系统垃圾"
+    case mailAttachments = "邮件附件"
+    case trashBins = "废纸篓"
 
     // Protection
-    case malwareRemoval = "Malware Removal"
-    case privacy = "Privacy"
+    case malwareRemoval = "恶意软件清理"
+    case privacy = "隐私清理"
 
     // Performance
-    case optimization = "Optimization"
-    case maintenance = "Maintenance"
+    case optimization = "优化"
+    case maintenance = "维护"
 
     // Applications
-    case uninstaller = "Uninstaller"
-    case updater = "Updater"
+    case uninstaller = "卸载器"
+    case updater = "应用更新"
 
     // Files
-    case spaceLens = "Space Lens"
-    case largeOldFiles = "Large & Old Files"
-    case duplicates = "Duplicates"
-    case shredder = "Shredder"
+    case spaceLens = "空间透视"
+    case largeOldFiles = "大文件与旧文件"
+    case duplicates = "重复文件"
+    case shredder = "文件粉碎"
 
     // Footer (pinned below the list, not rendered in any section)
-    case settings = "Settings"
+    case settings = "设置"
 
     public var id: String { rawValue }
+    public var title: String { L10n.tr(rawValue) }
 
     /// Stable slug used in `macclean://module/<id>` deep links.
     public var deepLinkID: String {
@@ -106,13 +107,14 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
 
 public enum SidebarSection: String, CaseIterable, Identifiable {
     case main = ""
-    case cleanup = "Cleanup"
-    case protection = "Protection"
-    case performance = "Performance"
-    case applications = "Applications"
-    case files = "Files"
+    case cleanup = "清理"
+    case protection = "防护"
+    case performance = "性能"
+    case applications = "应用"
+    case files = "文件"
 
     public var id: String { rawValue }
+    public var title: String { L10n.tr(rawValue) }
 
     public var items: [SidebarItem] {
         // .settings is pinned to the footer; it never renders inside a section.
@@ -168,7 +170,7 @@ public struct SidebarView: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.secondary)
                 .frame(width: 14)
-            Text(section.rawValue.uppercased())
+            Text(section.title.uppercased())
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
             Spacer()
@@ -195,7 +197,7 @@ public struct SidebarView: View {
                 Image(systemName: "gearshape")
                     .font(.system(size: 13))
                     .foregroundStyle(selection == .settings ? Color.accentColor : Color.secondary)
-                Text("Settings")
+                Text(L10n.tr("设置", "Settings"))
                     .font(.system(size: 13, weight: .medium))
                 Spacer()
                 // Version lives here (not in the title bar); kept in sync
@@ -215,12 +217,12 @@ public struct SidebarView: View {
         )
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .accessibilityLabel("Settings")
+        .accessibilityLabel(L10n.tr("设置", "Settings"))
     }
 
     private func sidebarRow(_ item: SidebarItem) -> some View {
         Label {
-            Text(item.rawValue)
+            Text(item.title)
                 .fontWeight(item == .smartScan ? .semibold : .regular)
         } icon: {
             Image(systemName: item.icon)
