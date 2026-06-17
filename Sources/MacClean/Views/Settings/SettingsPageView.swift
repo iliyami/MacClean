@@ -18,6 +18,7 @@ struct SettingsPageView: View {
 
     @AppStorage("showMenuBarWidget") private var showMenuBarWidget = true
     @AppStorage("launchAtLogin") private var launchAtLogin = false
+    @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
     @AppStorage(AppearanceManager.defaultsKey) private var appearanceRaw = AppearanceMode.system.rawValue
     @State private var launcher = MenuBarLauncher.shared
     @State private var loginLauncher = LaunchAtLoginManager.shared
@@ -229,6 +230,19 @@ struct SettingsPageView: View {
             .pickerStyle(.segmented)
             .onChange(of: appearanceRaw) { _, newValue in
                 AppearanceManager.apply(AppearanceMode(rawValue: newValue) ?? .system)
+            }
+
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Remove background colors")
+                    Text("Replace module gradient backgrounds with a neutral dark color for better readability.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle("Remove background colors", isOn: $removeBackgroundColors)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
             }
         }
     }

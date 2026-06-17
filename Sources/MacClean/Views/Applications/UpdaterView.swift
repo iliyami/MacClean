@@ -3,6 +3,7 @@ import AppKit
 import MacCleanKit
 
 struct UpdaterView: View {
+    @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
     @State private var updates: [AppUpdateChecker.AppUpdate] = []
     @State private var isChecking = false
     @State private var hasChecked = false
@@ -84,7 +85,10 @@ struct UpdaterView: View {
                     }
                 }
                 .listStyle(.inset)
-                .background(.ultraThinMaterial)
+                .background {
+                    if removeBackgroundColors { Color.clear }
+                    else { Rectangle().fill(.ultraThinMaterial) }
+                }
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)

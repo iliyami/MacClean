@@ -1,5 +1,16 @@
 import SwiftUI
 
+/// Neutral dark gradient used when "Remove background colors" is enabled
+/// in Settings, replacing per-module themed gradients.
+private let neutralGradient = LinearGradient(
+    colors: [
+        Color(red: 0.12, green: 0.12, blue: 0.14),
+        Color(red: 0.16, green: 0.16, blue: 0.18),
+    ],
+    startPoint: .topLeading,
+    endPoint: .bottomTrailing
+)
+
 public enum ModuleTheme {
     case smartScan
     case cleanup
@@ -70,12 +81,17 @@ public enum ModuleTheme {
 
 public struct GradientBackgroundView: View {
     let theme: ModuleTheme
+    @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
 
     public init(theme: ModuleTheme) {
         self.theme = theme
     }
 
     public var body: some View {
-        theme.gradient
+        if removeBackgroundColors {
+            neutralGradient
+        } else {
+            theme.gradient
+        }
     }
 }

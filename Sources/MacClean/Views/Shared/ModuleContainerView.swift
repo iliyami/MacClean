@@ -2,6 +2,7 @@ import SwiftUI
 import MacCleanKit
 
 struct ModuleContainerView: View {
+    @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
     let title: String
     let subtitle: String
     let theme: ModuleTheme
@@ -352,7 +353,10 @@ struct ModuleContainerView: View {
                     FileListView(results: results, selectedItems: $selectedItems)
                 }
             }
-            .background(.ultraThinMaterial)
+            .background {
+                if removeBackgroundColors { Color.clear }
+                else { Rectangle().fill(.ultraThinMaterial) }
+            }
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
