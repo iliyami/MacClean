@@ -68,6 +68,37 @@ public enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// One-line description shown under the category name in the results list.
+    public var subtitle: String {
+        switch self {
+        case .userCaches: "App temporary files. Regenerated next launch."
+        case .systemCaches: "macOS-managed caches. Rebuilt automatically."
+        case .userLogs: "Diagnostic logs written by your apps."
+        case .systemLogs: "macOS diagnostic logs."
+        case .languageFiles: "Unused localizations bundled with apps."
+        case .brokenPreferences: "Corrupt or orphaned preference files."
+        case .brokenLoginItems: "Login items pointing at apps that are gone."
+        case .documentVersions: "Old autosaved document revisions."
+        case .brokenDownloads: "Failed or orphaned download leftovers."
+        case .iosDeviceBackups: "Local backups of iPhone and iPad devices."
+        case .oldUpdates: "Installer packages left behind after updating."
+        case .universalBinaries: "Unused CPU slices inside app binaries."
+        case .xcodeJunk: "Derived data, archives, and simulator caches."
+        case .deletedUsers: "Leftover data from removed user accounts."
+        case .unusedDiskImages: "Disk images you mounted once and forgot."
+        case .incompleteDownloads: "Partially downloaded files."
+        case .appLeftovers: "Support files from apps you've deleted."
+        case .mailAttachments: "Saved copies of Mail attachments."
+        case .trashBins: "Items currently sitting in the Trash."
+        case .malware: "Known malicious files found on disk."
+        case .browserPrivacy: "Browsing history and tracking data. Cookies and sessions stay."
+        case .systemPrivacy: "Recent-items lists and other privacy traces."
+        case .largeFiles: "The files taking up the most space."
+        case .oldFiles: "Files you haven't opened in a long time."
+        case .duplicates: "Identical copies of the same file."
+        }
+    }
+
     public var systemImage: String {
         switch self {
         case .userCaches, .systemCaches: "folder.badge.gearshape"

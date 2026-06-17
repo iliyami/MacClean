@@ -21,6 +21,22 @@ DIRTY=$(git status --porcelain 2>/dev/null | head -1 | grep -q . && echo " + unc
 echo "=== Dev install: building current checkout [${BRANCH}${DIRTY}] v$(tr -d '[:space:]' < VERSION) ($(uname -m), ad-hoc signed) ==="
 BUILD_ARCHS="--arch $(uname -m)" ./scripts/build-dmg.sh --app-only
 
+# Re-sign with the Developer ID (a stable identity) so Full Disk Access and other
+# TCC grants survive across dev builds. Ad-hoc signatures change every build, so
+# macOS treats each install as a brand-new app and re-prompts file-by-file. The
+# first build after switching identities still needs one fresh FDA grant.
+DEVID=$(security find-identity -v -p codesigning | awk -F'"' '/Developer ID Application/{print $2; exit}')
+if [ -n "${DEVID}" ]; then
+    echo "Re-signing with: ${DEVID}"
+    if codesign --force --deep --sign "${DEVID}" "${APP_BUNDLE}" >/dev/null 2>&1; then
+        echo "  → stable signature applied (FDA persists across dev builds)"
+    else
+        echo "  → re-sign failed; staying ad-hoc (FDA will re-prompt)"
+    fi
+else
+    echo "No Developer ID Application identity found; ad-hoc signed (FDA re-prompts each build)."
+fi
+
 # Quit the running app and its menu bar helper before swapping the bundle.
 osascript -e "tell application \"${APP_NAME}\" to quit" >/dev/null 2>&1 || true
 pkill -x MacCleanMenu 2>/dev/null || true

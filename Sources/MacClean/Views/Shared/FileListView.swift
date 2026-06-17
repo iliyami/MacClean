@@ -13,6 +13,12 @@ public struct FileListView: View {
     @Binding var selectedItems: Set<URL>
     @State private var expansion = FileListExpansion()
     @State private var sort: FileListSort = .default
+    /// Bundle ids of apps running right now, so item rows can show an "App open"
+    /// badge. Snapshotted on appear; the set rarely changes during a review.
+    @State private var runningBundleIDs: Set<String> = []
+    /// Item URLs whose owning app is running. Precomputed off the render path
+    /// (the path→bundle-id work is expensive) so selection toggles stay snappy.
+    @State private var appRunningURLs: Set<URL> = []
     /// Results with each category's items already sorted, computed off-main
     /// in the `.task` below. Seeded unsorted so content shows immediately.
     @State private var displayResults: [ScanResult]
@@ -31,12 +37,25 @@ public struct FileListView: View {
                 rows: FileListRows.flatten(
                     results: displayResults,
                     isExpanded: { expansion.isExpanded($0) },
-                    selectedItems: selectedItems
+                    selectedItems: selectedItems,
+                    appRunningURLs: appRunningURLs
                 ),
                 onToggleItem: { toggle($0) },
                 onToggleAll: { toggleAll($0) },
                 onToggleExpand: { expansion.toggle($0) }
             )
+        }
+        .onAppear {
+            runningBundleIDs = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
+        }
+        // Recompute "app open" URLs only when the results or running apps change,
+        // off the main thread — never on a selection toggle.
+        .task(id: "\(sortSignature)#\(runningBundleIDs.count)") {
+            let snapshot = results
+            let running = runningBundleIDs
+            appRunningURLs = await Task.detached(priority: .utility) {
+                AppCacheOwnership.runningOwnedURLs(in: snapshot, runningBundleIDs: running)
+            }.value
         }
         // Re-sort off the main thread whenever the sort or the result set
         // changes. Keyed on a cheap signature (category + count) so it doesn't

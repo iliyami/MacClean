@@ -13,7 +13,7 @@ final class FileTableViewTests: XCTestCase {
         var rows: [FileListRow] = []
         rows.append(.header(FileListHeader(
             category: .userCaches, totalSize: 123, fileCount: n,
-            isExpanded: true, allSelected: false
+            selectedSize: 0, selectedCount: 0, isExpanded: true
         )))
         for i in 0..<n {
             rows.append(.item(
@@ -24,7 +24,8 @@ final class FileTableViewTests: XCTestCase {
                     allocatedSize: UInt64(i),
                     isDirectory: false
                 ),
-                isSelected: i.isMultiple(of: 2)
+                isSelected: i.isMultiple(of: 2),
+                appRunning: false
             ))
         }
         return rows
