@@ -150,9 +150,9 @@ cat > "${MENU_APP}/Contents/Info.plist" << MENU_PLIST
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>Mac Sai 菜单栏</string>
+    <string>Mac Sai Menu</string>
     <key>CFBundleDisplayName</key>
-    <string>Mac Sai 菜单栏</string>
+    <string>Mac Sai Menu</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
