@@ -6,7 +6,11 @@
 
 <p align="center">
   <strong>The open-source Mac cleaner, optimizer, and malware scanner.</strong><br>
-  A feature-complete, free alternative to CleanMyMac — built with Swift 6 and SwiftUI.
+  A feature-complete, free alternative to CleanMyMac, built with Swift 6 and SwiftUI.
+</p>
+
+<p align="center">
+  <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
 </p>
 
 <!-- TEMPORARY rename notice: remove once the new name has settled (target: 2026-09). -->
@@ -53,6 +57,8 @@ brew tap iliyami/macsai && brew install --cask mac-sai
 Mac Sai is a **free, open-source** macOS app that cleans junk files, removes malware, optimizes performance, uninstalls apps completely, and visualizes disk usage — all from a single, beautiful interface. It replicates every major feature of CleanMyMac while being fully transparent and community-driven.
 
 **No subscriptions. No telemetry. No ads. Just a clean Mac.**
+
+**Available in English and Simplified Chinese (简体中文).** Switch anytime in **Settings → Interface Language**; by default it follows your system language.
 
 ## How Mac Sai compares
 
