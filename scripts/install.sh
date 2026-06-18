@@ -1,10 +1,10 @@
 #!/bin/bash
 # One-line installer for Mac Sai.
-# Usage: curl -fsSL https://raw.githubusercontent.com/499403698/MacSai/main/scripts/install.sh | bash
+# Usage: curl -fsSL https://raw.githubusercontent.com/iliyami/MacSai/main/scripts/install.sh | bash
 
 set -euo pipefail
 
-REPO="499403698/MacSai"
+REPO="iliyami/MacSai"
 APP_NAME="Mac Sai.app"
 INSTALL_DIR="/Applications"
 

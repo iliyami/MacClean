@@ -26,7 +26,7 @@ public enum LanguagePreferences {
     /// language, e.g. "fr.lproj" → "法语" / "French". Falls back to the raw code.
     public static func displayName(forLproj lproj: String) -> String {
         let code = lproj.hasSuffix(".lproj") ? String(lproj.dropLast(6)) : lproj
-        let locale = Locale(identifier: AppLanguage.current == .en ? "en_US" : "zh_Hans")
+        let locale = Locale(identifier: AppLanguage.current.resolved == .en ? "en_US" : "zh_Hans")
         // forIdentifier handles region/script variants (e.g. zh-Hans, pt-BR, en_GB).
         // forLanguageCode handles plain language codes (e.g. fr, de, ja).
         // Raw code is the final fallback for anything Locale doesn't recognise.

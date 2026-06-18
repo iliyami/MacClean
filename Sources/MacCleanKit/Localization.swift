@@ -5,6 +5,7 @@ import Foundation
 /// We keep the preference in the shared defaults suite so the main app and the
 /// menu-bar helper switch languages together.
 public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
+    case system = "system"
     case zhHans = "zh-Hans"
     case en = "en"
 
@@ -13,13 +14,38 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 
     public var id: String { rawValue }
 
-    public var localeIdentifier: String { rawValue }
+    public var localeIdentifier: String { resolved.localeIdentifierForResolvedLanguage }
+
+    private var localeIdentifierForResolvedLanguage: String {
+        switch self {
+        case .system:
+            Self.systemPreferred.localeIdentifierForResolvedLanguage
+        case .zhHans:
+            "zh-Hans"
+        case .en:
+            "en"
+        }
+    }
+
+    public var resolved: AppLanguage {
+        switch self {
+        case .system: Self.systemPreferred
+        case .zhHans, .en: self
+        }
+    }
+
+    public static var systemPreferred: AppLanguage {
+        let preferred = Locale.preferredLanguages.first ?? Locale.current.identifier
+        let normalized = preferred.replacingOccurrences(of: "_", with: "-").lowercased()
+        return normalized.hasPrefix("zh") ? .zhHans : .en
+    }
 
     /// Label shown in the language picker. These are intentionally native names
     /// instead of going through `L10n.tr`, so users can always find their
     /// preferred language even if the current UI language is unfamiliar.
     public var pickerLabel: String {
         switch self {
+        case .system: L10n.tr("跟随系统", "System")
         case .zhHans: "简体中文"
         case .en: "English"
         }
@@ -45,7 +71,7 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 
     /// Set a product default without changing an existing user choice. Tests and
     /// command-line tools keep the English fallback, while the shipped apps call
-    /// this on launch to default new users to Simplified Chinese.
+    /// this on launch to follow the user's system language by default.
     public static func registerDefault(_ language: AppLanguage) {
         guard SharedAppState.defaults.string(forKey: defaultsKey) == nil,
               UserDefaults.standard.string(forKey: defaultsKey) == nil else { return }
@@ -62,11 +88,11 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 /// Chinese/English switching at runtime.
 public enum L10n {
     public static func tr(_ zhHans: String, _ english: @autoclosure () -> String) -> String {
-        AppLanguage.current == .en ? english() : zhHans
+        AppLanguage.current.resolved == .en ? english() : zhHans
     }
 
     public static func tr(_ zhHans: String) -> String {
-        guard AppLanguage.current == .en else { return zhHans }
+        guard AppLanguage.current.resolved == .en else { return zhHans }
         return englishFallbacks[zhHans] ?? zhHans
     }
 
