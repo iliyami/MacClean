@@ -69,7 +69,7 @@ public enum FileGroup: Sendable {
         case "mp4", "mov", "avi", "mkv", "wmv", "flv": L10n.tr("视频", "Videos")
         case "mp3", "wav", "flac", "aac", "m4a", "ogg": L10n.tr("音频", "Audio")
         case "jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic", "webp", "raw": L10n.tr("图片", "Images")
-        case "pdf": "PDF"
+        case "pdf": L10n.tr("PDF", "PDFs")
         case "doc", "docx", "pages", "rtf", "txt": L10n.tr("文档", "Documents")
         case "xls", "xlsx", "numbers", "csv": L10n.tr("表格", "Spreadsheets")
         case "zip", "gz", "tar", "rar", "7z", "bz2": L10n.tr("压缩包")

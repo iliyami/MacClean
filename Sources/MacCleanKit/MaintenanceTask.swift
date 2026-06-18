@@ -4,24 +4,36 @@ import Foundation
 /// actual `Process` execution happens in `MaintenanceExecutor` in the
 /// MacClean target.
 public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
-    case freeUpRAM = "释放内存"
-    case freeUpPurgeableSpace = "释放可清除空间"
-    case runMaintenanceScripts = "运行维护脚本"
+    case freeUpRAM = "Free Up RAM"
+    case freeUpPurgeableSpace = "Free Up Purgeable Space"
+    case runMaintenanceScripts = "Run Maintenance Scripts"
     // NOTE: "Repair Disk Permissions" was removed (issue #82). Apple deleted
     // the `diskutil repairPermissions` verb in OS X 10.11 El Capitan, so the
     // task could only ever fail on supported macOS. Repairing system
     // permissions is obsolete under SIP + the sealed System volume, and the
     // home-folder alternative (`diskutil resetUserPermissions`) is undocumented,
     // Apple-deprecated, slow, and ACL-incomplete — not fit for a one-click tool.
-    case verifyStartupDisk = "验证启动磁盘"
-    case speedUpMail = "加速邮件"
-    case rebuildLaunchServices = "重建启动服务"
-    case reindexSpotlight = "重建 Spotlight 索引"
-    case flushDNSCache = "刷新 DNS 缓存"
-    case thinTimeMachineSnapshots = "精简 Time Machine 快照"
+    case verifyStartupDisk = "Verify Startup Disk"
+    case speedUpMail = "Speed Up Mail"
+    case rebuildLaunchServices = "Rebuild Launch Services"
+    case reindexSpotlight = "Reindex Spotlight"
+    case flushDNSCache = "Flush DNS Cache"
+    case thinTimeMachineSnapshots = "Thin Time Machine Snapshots"
 
     public var id: String { rawValue }
-    public var title: String { L10n.tr(rawValue) }
+    public var title: String {
+        switch self {
+        case .freeUpRAM: L10n.tr("释放内存", rawValue)
+        case .freeUpPurgeableSpace: L10n.tr("释放可清除空间", rawValue)
+        case .runMaintenanceScripts: L10n.tr("运行维护脚本", rawValue)
+        case .verifyStartupDisk: L10n.tr("验证启动磁盘", rawValue)
+        case .speedUpMail: L10n.tr("加速邮件", rawValue)
+        case .rebuildLaunchServices: L10n.tr("重建启动服务", rawValue)
+        case .reindexSpotlight: L10n.tr("重建 Spotlight 索引", rawValue)
+        case .flushDNSCache: L10n.tr("刷新 DNS 缓存", rawValue)
+        case .thinTimeMachineSnapshots: L10n.tr("精简 Time Machine 快照", rawValue)
+        }
+    }
 
     public var icon: String {
         switch self {

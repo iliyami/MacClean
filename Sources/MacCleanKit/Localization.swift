@@ -9,7 +9,7 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     case en = "en"
 
     public static let defaultsKey = "appLanguage"
-    public static let fallback: AppLanguage = .zhHans
+    public static let fallback: AppLanguage = .en
 
     public var id: String { rawValue }
 
@@ -41,6 +41,15 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
             SharedAppState.defaults.set(newValue.rawValue, forKey: defaultsKey)
             UserDefaults.standard.set(newValue.rawValue, forKey: defaultsKey)
         }
+    }
+
+    /// Set a product default without changing an existing user choice. Tests and
+    /// command-line tools keep the English fallback, while the shipped apps call
+    /// this on launch to default new users to Simplified Chinese.
+    public static func registerDefault(_ language: AppLanguage) {
+        guard SharedAppState.defaults.string(forKey: defaultsKey) == nil,
+              UserDefaults.standard.string(forKey: defaultsKey) == nil else { return }
+        current = language
     }
 }
 

@@ -6,6 +6,7 @@ import MacCleanKit
 @main
 struct MacCleanMenuApp: App {
     init() {
+        AppLanguage.registerDefault(.zhHans)
         // Single-instance enforcement. macOS does NOT auto-deduplicate
         // LSUIElement apps by bundle id the way it does for regular apps,
         // and we have two launch paths (SMAppService + NSWorkspace). If a
@@ -36,7 +37,7 @@ struct MacCleanMenuApp: App {
     @State private var tips: [TipsEngine.Tip] = []
     @State private var pollingTask: Task<Void, Never>?
     @State private var slowTickCount = 0
-    @AppStorage(AppLanguage.defaultsKey, store: SharedAppState.defaults) private var appLanguageRaw = AppLanguage.fallback.rawValue
+    @AppStorage(AppLanguage.defaultsKey, store: SharedAppState.defaults) private var appLanguageRaw = AppLanguage.zhHans.rawValue
 
     private var appLanguage: AppLanguage {
         AppLanguage(rawValue: appLanguageRaw) ?? .fallback
