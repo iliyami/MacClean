@@ -20,10 +20,10 @@ struct MaintenanceView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Maintenance")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text("Run system maintenance tasks to keep your Mac healthy")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
                 // Was "Run All" — but blanket-running every task in this
@@ -74,14 +74,14 @@ struct MaintenanceView: View {
         HStack(spacing: 12) {
             Image(systemName: task.icon)
                 .font(.system(size: 16))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.primary.opacity(0.75))
                 .frame(width: 26)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(task.rawValue)
                         .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     if task.severity == .advanced {
                         Text("ADVANCED")
                             .font(.system(size: 9, weight: .bold))
@@ -100,7 +100,7 @@ struct MaintenanceView: View {
                 } else {
                     Text(task.description)
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.primary.opacity(0.45))
                         .lineLimit(1)
                 }
             }
@@ -117,8 +117,8 @@ struct MaintenanceView: View {
                       : "play.circle.fill")
                     .font(.system(size: 20))
                     .foregroundStyle(task.severity == .advanced
-                                     ? .orange.opacity(0.85)
-                                     : .white.opacity(0.6))
+                                     ? Color.orange.opacity(0.85)
+                                     : Color.primary.opacity(0.6))
             }
             .buttonStyle(.plain)
             .disabled(isRunning(task))
@@ -128,7 +128,7 @@ struct MaintenanceView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(.white.opacity(0.07))
+        .background(.primary.opacity(0.07))
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
@@ -138,7 +138,7 @@ struct MaintenanceView: View {
         case .running:
             ProgressView()
                 .controlSize(.small)
-                .tint(.white)
+                .tint(.primary)
         case .completed:
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(.green)

@@ -143,7 +143,7 @@ struct ModuleContainerView: View {
         if summary.errorCount == 1, let msg = summary.firstErrorMessage {
             Text(msg)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.primary.opacity(0.75))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
                 .textSelection(.enabled)
@@ -153,11 +153,11 @@ struct ModuleContainerView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("\(group.count.formatted())×")
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.primary.opacity(0.6))
                             .frame(minWidth: 50, alignment: .trailing)
                         Text(group.message)
                             .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.8))
+                            .foregroundStyle(.primary.opacity(0.8))
                             .lineLimit(2)
                             .textSelection(.enabled)
                     }
@@ -166,18 +166,18 @@ struct ModuleContainerView: View {
                     let shownTotal = summary.topErrorGroups.reduce(0) { $0 + $1.count }
                     Text("…and \((summary.errorCount - shownTotal).formatted()) more")
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.primary.opacity(0.5))
                         .padding(.top, 2)
                 }
                 Text("Full log: ~/Library/Logs/MacClean/operations.log")
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(.primary.opacity(0.45))
                     .padding(.top, 4)
                     .textSelection(.enabled)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
-            .background(.white.opacity(0.08))
+            .background(.primary.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 24)
         }
@@ -196,12 +196,12 @@ struct ModuleContainerView: View {
             if progress.totalItems > 0 {
                 Text("\(progress.processedItems.formatted()) of \(progress.totalItems.formatted()) items")
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.primary.opacity(0.65))
             }
             if let onCancelClean {
                 Button("Cancel") { onCancelClean() }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
             }
             Spacer()
@@ -214,10 +214,10 @@ struct ModuleContainerView: View {
             VStack(spacing: 10) {
                 Text(title)
                     .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(subtitle)
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.primary.opacity(0.65))
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 380)
             }
@@ -239,16 +239,16 @@ struct ModuleContainerView: View {
             Spacer()
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 52))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.primary.opacity(0.9))
             Text(emptyMessage)
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Text("Scan complete — nothing to clean up")
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.primary.opacity(0.55))
             Button("Done") { onReset() }
                 .buttonStyle(.bordered)
-                .tint(.white)
+                .tint(.primary)
                 .controlSize(.large)
             Spacer()
         }
@@ -262,29 +262,29 @@ struct ModuleContainerView: View {
             Spacer()
             Image(systemName: "lock.fill")
                 .font(.system(size: 52))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.primary.opacity(0.9))
             Text("Full Disk Access needed")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Text("macOS is blocking access to this location. Grant \(MCConstants.appName) Full Disk Access, then scan again.")
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.primary.opacity(0.7))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 360)
             HStack(spacing: 10) {
                 if let onGrantAccess {
                     Button("Open Settings") { onGrantAccess() }
                         .buttonStyle(.borderedProminent)
-                        .tint(.white)
+                        .tint(.primary)
                         .controlSize(.large)
                 }
                 Button("Rescan") { onScan() }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
                 Button("Done") { onReset() }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
             }
             Spacer()
@@ -295,7 +295,7 @@ struct ModuleContainerView: View {
         VStack(spacing: 0) {
             HStack {
                 SizeDisplay(size: totalSelected, label: "selected")
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Button("Clean") {
                     if confirmEmptyTrash {
@@ -374,13 +374,13 @@ struct ModuleContainerView: View {
             if summary.selectedCount == 0 {
                 Image(systemName: "checklist.unchecked")
                     .font(.system(size: 52))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.primary.opacity(0.85))
                 Text("Nothing was selected")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text("Re-run the scan, check the items you want to remove, then click Clean.")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.primary.opacity(0.6))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             } else if summary.removedCount == 0 {
@@ -389,7 +389,7 @@ struct ModuleContainerView: View {
                     .foregroundStyle(.orange.opacity(0.85))
                 Text("\(summary.selectedCount) item\(summary.selectedCount == 1 ? "" : "s") couldn't be cleaned")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 // Show the actual first error message instead of "Check
                 // Console for details" — the user shouldn't need to open
                 // Console.app to find out it was a limit / permission /
@@ -399,14 +399,14 @@ struct ModuleContainerView: View {
             } else {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 52))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 SizeDisplay(size: summary.freedBytes, label: "cleaned up")
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 if summary.removedCount < summary.selectedCount {
                     Text("\(summary.removedCount) of \(summary.selectedCount) items removed" +
                          (summary.errorCount > 0 ? " — \(summary.errorCount) error\(summary.errorCount == 1 ? "" : "s")" : ""))
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(.primary.opacity(0.65))
                 }
             }
 
@@ -418,13 +418,13 @@ struct ModuleContainerView: View {
                         Label("View Log", systemImage: "doc.text.magnifyingglass")
                     }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
                     .help("Open the activity log to see every error and copy details for a bug report")
                 }
                 Button("Done") { onReset() }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
             }
             Spacer()

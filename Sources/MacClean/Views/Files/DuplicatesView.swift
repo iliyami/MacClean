@@ -92,10 +92,10 @@ struct DuplicatesView: View {
             VStack(spacing: 10) {
                 Text("Duplicates")
                     .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text("Find duplicate files using progressive\nSHA-256 hash detection")
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.primary.opacity(0.65))
                     .multilineTextAlignment(.center)
             }
 
@@ -105,11 +105,11 @@ struct DuplicatesView: View {
                     .font(.system(size: 13))
                 Text("This scan may take several minutes on large home folders")
                     .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.primary.opacity(0.8))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(.white.opacity(0.1))
+            .background(.primary.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             ScanButton(title: "Scan", subtitle: "Duplicates", theme: .files, action: scan)
@@ -124,24 +124,24 @@ struct DuplicatesView: View {
 
             ProgressView()
                 .controlSize(.large)
-                .tint(.white)
+                .tint(.primary)
                 .scaleEffect(1.4)
 
             VStack(spacing: 6) {
                 Text(scanPhase)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .contentTransition(.interpolate)
                     .animation(.easeInOut(duration: 0.2), value: scanPhase)
 
                 Text("Elapsed: \(formatElapsed(elapsedSeconds))")
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.primary.opacity(0.6))
             }
 
             Text("Duplicate detection hashes every candidate file with SHA-256.\nLarge home folders can take 5–15 minutes.")
                 .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.primary.opacity(0.55))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 

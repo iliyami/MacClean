@@ -17,10 +17,10 @@ struct SpaceLensView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Space Lens")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text("Visualize disk space usage")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
                 if !isScanning {
@@ -38,11 +38,11 @@ struct SpaceLensView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 4) {
                         Button { nav.up(); startScan() } label: { Image(systemName: "chevron.up") }
-                            .buttonStyle(.plain).foregroundStyle(.white.opacity(0.8))
+                            .buttonStyle(.plain).foregroundStyle(.primary.opacity(0.8))
                             .disabled(!nav.canGoUp)
                             .help("Up one level")
                         Button { nav.home(); startScan() } label: { Image(systemName: "house") }
-                            .buttonStyle(.plain).foregroundStyle(.white.opacity(0.8))
+                            .buttonStyle(.plain).foregroundStyle(.primary.opacity(0.8))
                             .disabled(!nav.canGoUp)
                             .help("Back to start")
 
@@ -52,13 +52,13 @@ struct SpaceLensView: View {
                                 startScan()
                             }
                             .buttonStyle(.plain)
-                            .foregroundStyle(.white.opacity(0.7))
+                            .foregroundStyle(.primary.opacity(0.7))
                             .font(.system(size: 12))
 
                             if url != nav.breadcrumbs.last {
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 9))
-                                    .foregroundStyle(.white.opacity(0.4))
+                                    .foregroundStyle(.primary.opacity(0.4))
                             }
                         }
                     }
@@ -75,7 +75,7 @@ struct SpaceLensView: View {
                     isScanning = false
                 }
                 .buttonStyle(.bordered)
-                .tint(.white)
+                .tint(.primary)
                 .controlSize(.large)
                 Spacer()
             } else if !treemapRects.isEmpty {
@@ -92,10 +92,10 @@ struct SpaceLensView: View {
                 VStack(spacing: 14) {
                     Image(systemName: "chart.pie")
                         .font(.system(size: 44))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                     Text("Click Scan to visualize disk usage")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.55))
+                        .foregroundStyle(.primary.opacity(0.55))
                 }
                 Spacer()
             }
@@ -119,7 +119,7 @@ struct SpaceLensView: View {
                             .font(.system(size: max(8, min(10, item.rect.width / 12))))
                             .opacity(0.7)
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .padding(4)
                 }
             }

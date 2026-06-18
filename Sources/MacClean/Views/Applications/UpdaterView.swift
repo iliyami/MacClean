@@ -20,10 +20,10 @@ struct UpdaterView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Updater")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text("Check for available app updates")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
                 if !isChecking {
@@ -48,10 +48,10 @@ struct UpdaterView: View {
                 VStack(spacing: 14) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 44))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.primary.opacity(0.8))
                     Text("All apps are up to date")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.primary.opacity(0.7))
                 }
                 Spacer()
             } else if !updates.isEmpty {
@@ -97,10 +97,10 @@ struct UpdaterView: View {
                 VStack(spacing: 14) {
                     Image(systemName: "arrow.triangle.2.circlepath")
                         .font(.system(size: 44))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                     Text("Click above to check for updates")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.55))
+                        .foregroundStyle(.primary.opacity(0.55))
                 }
                 Spacer()
             }

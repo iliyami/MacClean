@@ -48,11 +48,11 @@ struct SystemJunkView: View {
             VStack(spacing: 10) {
                 Text("System Junk")
                     .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 Text("Find and remove system caches, logs,\nlanguage files, and other junk")
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.primary.opacity(0.65))
                     .multilineTextAlignment(.center)
             }
 
@@ -87,14 +87,14 @@ struct SystemJunkView: View {
         VStack(spacing: 0) {
             HStack {
                 SizeDisplay(size: viewModel.totalSelectedSize, label: "selected to clean")
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 6) {
                     Text("\(viewModel.selectedCount) of \(viewModel.totalFileCount) files")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
 
                     Button("Clean") {
                         if viewModel.selectedCount > MCConstants.cleanConfirmationThreshold {
@@ -150,16 +150,16 @@ struct SystemJunkView: View {
             Spacer()
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 52))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.primary.opacity(0.9))
             Text("No junk found")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Text("Your Mac is clean!")
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.primary.opacity(0.55))
             Button("Done") { viewModel.reset() }
                 .buttonStyle(.bordered)
-                .tint(.white)
+                .tint(.primary)
                 .controlSize(.large)
             Spacer()
         }
@@ -180,7 +180,7 @@ struct SystemJunkView: View {
             if let progress {
                 Text("\(progress.processedItems.formatted()) of \(progress.totalItems.formatted()) items")
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.primary.opacity(0.65))
             }
 
             // Cancel button — engine honors Task.isCancelled at chunk
@@ -188,7 +188,7 @@ struct SystemJunkView: View {
             // partial CleanResult (which the .done state shows honestly).
             Button("Cancel") { viewModel.cancelCleaning() }
                 .buttonStyle(.bordered)
-                .tint(.white)
+                .tint(.primary)
                 .controlSize(.large)
 
             Spacer()
@@ -203,7 +203,7 @@ struct SystemJunkView: View {
         if summary.errorCount == 1, let msg = summary.firstErrorMessage {
             Text(msg)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.primary.opacity(0.75))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
                 .textSelection(.enabled)
@@ -213,11 +213,11 @@ struct SystemJunkView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("\(group.count.formatted())×")
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.primary.opacity(0.6))
                             .frame(minWidth: 50, alignment: .trailing)
                         Text(group.message)
                             .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.8))
+                            .foregroundStyle(.primary.opacity(0.8))
                             .lineLimit(2)
                             .textSelection(.enabled)
                     }
@@ -226,18 +226,18 @@ struct SystemJunkView: View {
                 if summary.errorCount > shownTotal {
                     Text("…and \((summary.errorCount - shownTotal).formatted()) more")
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.primary.opacity(0.5))
                         .padding(.top, 2)
                 }
                 Text("Full log: ~/Library/Logs/MacClean/operations.log")
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(.primary.opacity(0.45))
                     .padding(.top, 4)
                     .textSelection(.enabled)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
-            .background(.white.opacity(0.08))
+            .background(.primary.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 24)
         }
@@ -264,13 +264,13 @@ struct SystemJunkView: View {
             if summary.selectedCount == 0 {
                 Image(systemName: "checklist.unchecked")
                     .font(.system(size: 52))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.primary.opacity(0.85))
                 Text("Nothing was selected")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text("Re-run the scan, check the items you want to remove, then click Clean.")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.primary.opacity(0.6))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             } else if summary.removedCount == 0 {
@@ -279,20 +279,20 @@ struct SystemJunkView: View {
                     .foregroundStyle(.orange.opacity(0.85))
                 Text("\(summary.selectedCount) item\(summary.selectedCount == 1 ? "" : "s") couldn't be cleaned")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 cleanErrorDetail(for: summary)
             } else {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 52))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 SizeDisplay(size: summary.freedBytes, label: "cleaned up")
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 if summary.removedCount < summary.selectedCount {
                     // Partial success — tell them what got skipped.
                     Text("\(summary.removedCount) of \(summary.selectedCount) items removed" +
                          (summary.errorCount > 0 ? " — \(summary.errorCount) error\(summary.errorCount == 1 ? "" : "s")" : ""))
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(.primary.opacity(0.65))
                 }
             }
 
@@ -304,13 +304,13 @@ struct SystemJunkView: View {
                         Label("View Log", systemImage: "doc.text.magnifyingglass")
                     }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
                     .help("Open the activity log to see every error and copy details for a bug report")
                 }
                 Button("Done") { viewModel.reset() }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
             }
             Spacer()

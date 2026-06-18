@@ -158,7 +158,7 @@ struct OnboardingView: View {
                 .font(.system(size: 12, weight: .bold))
                 .frame(width: 22, height: 22)
                 .background(Color.accentColor)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .clipShape(Circle())
             Text(text)
                 .font(.system(size: 13))

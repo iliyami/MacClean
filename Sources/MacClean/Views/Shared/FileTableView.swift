@@ -467,9 +467,9 @@ private final class GroupRowView: NSTableRowView {
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         wantsLayer = true
-        card.backgroundColor = NSColor.white.withAlphaComponent(0.06).cgColor
         card.cornerRadius = radius
         layer?.addSublayer(card)
+        updateCardColor()
     }
 
     @available(*, unavailable)
@@ -477,6 +477,7 @@ private final class GroupRowView: NSTableRowView {
 
     override func layout() {
         super.layout()
+        updateCardColor()
         // Don't animate the card frame on reload/scroll.
         card.actions = ["position": NSNull(), "bounds": NSNull(), "frame": NSNull()]
 
@@ -500,6 +501,19 @@ private final class GroupRowView: NSTableRowView {
         case .middle:
             card.maskedCorners = []
         }
+    }
+
+    /// CALayer `cgColor` is static, so re-resolve `labelColor` for the current
+    /// appearance: a subtle dark card on Light, a subtle light card on Dark.
+    private func updateCardColor() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            card.backgroundColor = NSColor.labelColor.withAlphaComponent(0.06).cgColor
+        }
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateCardColor()
     }
 
     // The card is the only background; suppress the table's default selection draw.

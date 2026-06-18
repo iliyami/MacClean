@@ -32,10 +32,10 @@ struct UninstallerView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Uninstaller")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text("Completely remove apps and their leftover files")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
             }
@@ -47,10 +47,10 @@ struct UninstallerView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.large)
-                        .tint(.white)
+                        .tint(.primary)
                     Text("Discovering installed apps...")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
             } else {
@@ -80,7 +80,7 @@ struct UninstallerView: View {
                         VStack {
                             Spacer()
                             Text("Select an app to see its files")
-                                .foregroundStyle(.white.opacity(0.4))
+                                .foregroundStyle(.primary.opacity(0.4))
                                 .font(.system(size: 13))
                             Spacer()
                         }
@@ -189,7 +189,7 @@ struct UninstallerView: View {
                 if safetyGuard.isProtectedApp(app.bundleIdentifier) {
                     Text("Protected system app — can't be removed")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 } else if isUninstalling {
                     // In-progress feedback: the button is gone (can't be
                     // re-tapped) and a spinner shows the work is happening.

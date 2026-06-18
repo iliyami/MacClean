@@ -17,10 +17,10 @@ struct OptimizationView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Optimization")
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text("Manage startup items and background processes")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
             }
@@ -32,10 +32,10 @@ struct OptimizationView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.large)
-                        .tint(.white)
+                        .tint(.primary)
                     Text("Loading items...")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
             } else {
