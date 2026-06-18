@@ -34,10 +34,10 @@ struct UninstallerView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L10n.tr("卸载器", "Uninstaller"))
                         .font(.system(size: 22, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text(L10n.tr("彻底移除应用及其残留文件", "Completely remove apps and their leftover files"))
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
             }
@@ -49,10 +49,10 @@ struct UninstallerView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.large)
-                        .tint(.white)
+                        .tint(.primary)
                     Text(L10n.tr("正在发现已安装应用...", "Discovering installed apps..."))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
             } else {
@@ -82,7 +82,7 @@ struct UninstallerView: View {
                         VStack {
                             Spacer()
                             Text(L10n.tr("选择一个应用以查看相关文件", "Select an app to see its files"))
-                                .foregroundStyle(.white.opacity(0.4))
+                                .foregroundStyle(.primary.opacity(0.4))
                                 .font(.system(size: 13))
                             Spacer()
                         }
@@ -191,7 +191,7 @@ struct UninstallerView: View {
                 if safetyGuard.isProtectedApp(app.bundleIdentifier) {
                     Text(L10n.tr("受保护的系统应用——无法移除", "Protected system app — can't be removed"))
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 } else if isUninstalling {
                     // In-progress feedback: the button is gone (can't be
                     // re-tapped) and a spinner shows the work is happening.

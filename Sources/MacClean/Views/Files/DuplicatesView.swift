@@ -92,10 +92,10 @@ struct DuplicatesView: View {
             VStack(spacing: 10) {
                 Text(L10n.tr("重复文件", "Duplicates"))
                     .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(L10n.tr("使用渐进式 SHA-256 哈希检测\n查找重复文件", "Find duplicate files using progressive\nSHA-256 hash detection"))
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.primary.opacity(0.65))
                     .multilineTextAlignment(.center)
             }
 
@@ -105,11 +105,11 @@ struct DuplicatesView: View {
                     .font(.system(size: 13))
                 Text(L10n.tr("大型个人目录可能需要几分钟扫描", "This scan may take several minutes on large home folders"))
                     .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.8))
+                    .foregroundStyle(.primary.opacity(0.8))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(.white.opacity(0.1))
+            .background(.primary.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
             ScanButton(title: L10n.tr("扫描", "Scan"), subtitle: L10n.tr("重复文件", "Duplicates"), theme: .files, action: scan)
@@ -124,24 +124,24 @@ struct DuplicatesView: View {
 
             ProgressView()
                 .controlSize(.large)
-                .tint(.white)
+                .tint(.primary)
                 .scaleEffect(1.4)
 
             VStack(spacing: 6) {
                 Text(scanPhase)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .contentTransition(.interpolate)
                     .animation(.easeInOut(duration: 0.2), value: scanPhase)
 
                 Text(L10n.tr("已用时：\(formatElapsed(elapsedSeconds))", "Elapsed: \(formatElapsed(elapsedSeconds))"))
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.primary.opacity(0.6))
             }
 
             Text(L10n.tr("重复文件检测会使用 SHA-256 哈希每个候选文件。\n大型个人目录可能需要 5–15 分钟。", "Duplicate detection hashes every candidate file with SHA-256.\nLarge home folders can take 5–15 minutes."))
                 .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.primary.opacity(0.55))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
 

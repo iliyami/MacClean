@@ -16,10 +16,10 @@ struct ShredderView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L10n.tr("文件粉碎", "Shredder"))
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text(L10n.tr("安全擦除文件，使其无法恢复", "Securely erase files beyond recovery"))
                         .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.primary.opacity(0.7))
                 }
                 Spacer()
             }
@@ -31,34 +31,34 @@ struct ShredderView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 50))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text(L10n.tr("已擦除 \(result.erasedCount) 个文件", "\(result.erasedCount) files erased"))
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text(FileSizeFormatter.format(result.totalSize))
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.primary.opacity(0.7))
 
                     Button(L10n.tr("完成", "Done")) {
                         self.result = nil
                         filesToShred = []
                     }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                 }
             } else if isProcessing {
                 ProgressView(L10n.tr("正在粉碎文件...", "Shredding files..."))
-                    .foregroundStyle(.white)
-                    .tint(.white)
+                    .foregroundStyle(.primary)
+                    .tint(.primary)
             } else if filesToShred.isEmpty {
                 VStack(spacing: 20) {
                     Image(systemName: "scissors")
                         .font(.system(size: 50))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.primary.opacity(0.5))
 
                     Text(L10n.tr("将文件拖放到此处进行粉碎", "Drop files here to shred them"))
                         .font(.system(size: 16))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
 
                     Button(L10n.tr("选择文件", "Select Files")) {
                         selectFiles()
@@ -87,7 +87,7 @@ struct ShredderView: View {
                 VStack(spacing: 16) {
                     Text(L10n.tr("已选择 \(filesToShred.count) 个文件", "\(filesToShred.count) files selected"))
                         .font(.headline)
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     List(filesToShred, id: \.self) { url in
                         HStack {

@@ -143,7 +143,7 @@ struct ModuleContainerView: View {
         if summary.errorCount == 1, let msg = summary.firstErrorMessage {
             Text(msg)
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.primary.opacity(0.75))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
                 .textSelection(.enabled)
@@ -153,11 +153,11 @@ struct ModuleContainerView: View {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("\(group.count.formatted())×")
                             .font(.system(size: 12, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.6))
+                            .foregroundStyle(.primary.opacity(0.6))
                             .frame(minWidth: 50, alignment: .trailing)
                         Text(group.message)
                             .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.8))
+                            .foregroundStyle(.primary.opacity(0.8))
                             .lineLimit(2)
                             .textSelection(.enabled)
                     }
@@ -166,18 +166,18 @@ struct ModuleContainerView: View {
                     let shownTotal = summary.topErrorGroups.reduce(0) { $0 + $1.count }
                     Text(L10n.tr("…以及另外 \((summary.errorCount - shownTotal).formatted()) 项", "…and \((summary.errorCount - shownTotal).formatted()) more"))
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.primary.opacity(0.5))
                         .padding(.top, 2)
                 }
                 Text(L10n.tr("完整日志：~/Library/Logs/MacClean/operations.log", "Full log: ~/Library/Logs/MacClean/operations.log"))
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(.primary.opacity(0.45))
                     .padding(.top, 4)
                     .textSelection(.enabled)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
-            .background(.white.opacity(0.08))
+            .background(.primary.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(.horizontal, 24)
         }
@@ -196,12 +196,12 @@ struct ModuleContainerView: View {
             if progress.totalItems > 0 {
                 Text(L10n.tr("已处理 \(progress.processedItems.formatted()) / \(progress.totalItems.formatted()) 项", "\(progress.processedItems.formatted()) of \(progress.totalItems.formatted()) items"))
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.primary.opacity(0.65))
             }
             if let onCancelClean {
                 Button(L10n.tr("取消", "Cancel")) { onCancelClean() }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
             }
             Spacer()
@@ -214,10 +214,10 @@ struct ModuleContainerView: View {
             VStack(spacing: 10) {
                 Text(title)
                     .font(.system(size: 30, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(subtitle)
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.65))
+                    .foregroundStyle(.primary.opacity(0.65))
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 380)
             }
@@ -239,16 +239,16 @@ struct ModuleContainerView: View {
             Spacer()
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 52))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.primary.opacity(0.9))
             Text(emptyMessage)
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Text(L10n.tr("扫描完成——没有需要清理的内容", "Scan complete — nothing to clean up"))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.primary.opacity(0.55))
             Button(L10n.tr("完成", "Done")) { onReset() }
                 .buttonStyle(.bordered)
-                .tint(.white)
+                .tint(.primary)
                 .controlSize(.large)
             Spacer()
         }
@@ -262,29 +262,29 @@ struct ModuleContainerView: View {
             Spacer()
             Image(systemName: "lock.fill")
                 .font(.system(size: 52))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.primary.opacity(0.9))
             Text(L10n.tr("需要完全磁盘访问权限", "Full Disk Access needed"))
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Text(L10n.tr("macOS 正在阻止访问此位置。请为 \(MCConstants.appName) 授予完全磁盘访问权限，然后重新扫描。", "macOS is blocking access to this location. Grant \(MCConstants.appName) Full Disk Access, then scan again."))
                 .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.primary.opacity(0.7))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 360)
             HStack(spacing: 10) {
                 if let onGrantAccess {
                     Button(L10n.tr("打开设置", "Open Settings")) { onGrantAccess() }
                         .buttonStyle(.borderedProminent)
-                        .tint(.white)
+                        .tint(.primary)
                         .controlSize(.large)
                 }
                 Button(L10n.tr("重新扫描", "Rescan")) { onScan() }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
                 Button(L10n.tr("完成", "Done")) { onReset() }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
             }
             Spacer()
@@ -295,7 +295,7 @@ struct ModuleContainerView: View {
         VStack(spacing: 0) {
             HStack {
                 SizeDisplay(size: totalSelected, label: L10n.tr("已选择"))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Button(L10n.tr("清理", "Clean")) {
                     if confirmEmptyTrash {
@@ -374,13 +374,13 @@ struct ModuleContainerView: View {
             if summary.selectedCount == 0 {
                 Image(systemName: "checklist.unchecked")
                     .font(.system(size: 52))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.primary.opacity(0.85))
                 Text(L10n.tr("未选择任何项目", "Nothing was selected"))
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(L10n.tr("请重新扫描，勾选要移除的项目，然后点击“清理”。", "Re-run the scan, check the items you want to remove, then click Clean."))
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(.primary.opacity(0.6))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             } else if summary.removedCount == 0 {
@@ -389,7 +389,7 @@ struct ModuleContainerView: View {
                     .foregroundStyle(.orange.opacity(0.85))
                 Text(L10n.tr("\(summary.selectedCount) 项无法清理", "\(summary.selectedCount) item\(summary.selectedCount == 1 ? "" : "s") couldn't be cleaned"))
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 // Show the actual first error message instead of "Check
                 // Console for details" — the user shouldn't need to open
                 // Console.app to find out it was a limit / permission /
@@ -399,14 +399,14 @@ struct ModuleContainerView: View {
             } else {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 52))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 SizeDisplay(size: summary.freedBytes, label: L10n.tr("已清理", "cleaned up"))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 if summary.removedCount < summary.selectedCount {
                     Text(L10n.tr("已移除 \(summary.removedCount) / \(summary.selectedCount) 项", "\(summary.removedCount) of \(summary.selectedCount) items removed") +
                          (summary.errorCount > 0 ? L10n.tr(" — \(summary.errorCount) 个错误", " — \(summary.errorCount) error\(summary.errorCount == 1 ? "" : "s")") : ""))
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.65))
+                        .foregroundStyle(.primary.opacity(0.65))
                 }
             }
 
@@ -418,13 +418,13 @@ struct ModuleContainerView: View {
                         Label(L10n.tr("查看日志", "View Log"), systemImage: "doc.text.magnifyingglass")
                     }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
                     .help(L10n.tr("打开活动日志，查看每个错误并复制详情用于反馈问题", "Open the activity log to see every error and copy details for a bug report"))
                 }
                 Button(L10n.tr("完成", "Done")) { onReset() }
                     .buttonStyle(.bordered)
-                    .tint(.white)
+                    .tint(.primary)
                     .controlSize(.large)
             }
             Spacer()
