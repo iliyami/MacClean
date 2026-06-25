@@ -215,6 +215,22 @@ bash scripts/build-dmg.sh      # 构建本地 DMG（未签名）
 2. 点击 **+**，从“应用程序”中添加 **Mac Sai.app**
 3. 重新启动 Mac Sai
 
+### 卸载
+
+如果你是通过 Homebrew 安装的，一条命令即可删除应用及其所有支持文件：
+
+```bash
+brew uninstall --zap --cask mac-sai
+```
+
+如果是 DMG 或手动安装，运行卸载脚本（它同样能处理 Homebrew 安装）：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/iliyami/MacSai/main/scripts/uninstall.sh | bash
+```
+
+两种方式都会删除 Mac Sai 以及它在 `~/Library` 下的偏好设置、缓存、日志和数据库。如果 **系统设置 → 通用 → 登录项** 中仍有残留条目，请在那里手动删除；应用删除后 macOS 会自动清理它。
+
 ## 已签名并公证：为什么你可以信任它
 
 Mac Sai 使用 Apple **Developer ID** 进行代码签名，并经 **Apple 公证**。对于一款清理类应用而言，这一点比几乎任何其他你安装的软件都更重要，因为你即将赋予它对文件的深度访问权限。你理应确信，运行在你 Mac 上的东西确实出自我们之手，且未被篡改。

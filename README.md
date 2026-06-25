@@ -215,6 +215,22 @@ Some modules (Mail Attachments, Privacy, Malware) need Full Disk Access to scan 
 2. Click **+** and add **Mac Sai.app** from Applications
 3. Restart Mac Sai
 
+### Uninstalling
+
+If you installed with Homebrew, remove the app and all of its support files in one command:
+
+```bash
+brew uninstall --zap --cask mac-sai
+```
+
+For a DMG or manual install, run the uninstaller (it also handles a Homebrew install):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/iliyami/MacSai/main/scripts/uninstall.sh | bash
+```
+
+Both remove Mac Sai plus its preferences, caches, logs, and database under `~/Library`. If a leftover entry remains under **System Settings → General → Login Items**, remove it there; macOS clears it once the app is gone.
+
 ## Signed & notarized: why you can trust it
 
 Mac Sai is code-signed with an Apple **Developer ID** and **notarized by Apple**. That matters more for a cleaning app than for almost anything else you install, because you are about to give it deep access to your files. You deserve to know that what runs on your Mac is genuinely ours and has not been tampered with.
