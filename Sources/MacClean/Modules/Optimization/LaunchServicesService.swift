@@ -11,6 +11,11 @@ public final class LaunchServicesService: @unchecked Sendable {
         plistPath = "\(home)/Library/Preferences/com.apple.LaunchServices/com.apple.launchservices.secure.plist"
     }
 
+    /// Testing override: inject a custom plist path so tests don't touch the real file.
+    internal init(plistPath: String) {
+        self.plistPath = plistPath
+    }
+
     public func loadHandlers() -> [HandlerEntry] {
         guard FileManager.default.fileExists(atPath: plistPath),
               let plistData = NSDictionary(contentsOfFile: plistPath),
