@@ -123,6 +123,32 @@ final class AppMatchingTests: XCTestCase {
         XCTAssertFalse(patterns.contains("ai"), "Company names < 3 chars are too generic")
     }
 
+    // MARK: - Regression: shared-vendor over-matching (#98)
+
+    func testDefaultLevelDoesNotEmitBareVendorToken() {
+        // com.tencent.yuanbao must NOT yield "tencent" at the default level, or
+        // it would match every Tencent app (WeChat, QQ, ...). The company-name
+        // level is opt-in only, never part of the default an uninstaller uses.
+        let yuanbao = AppInfo(bundleIdentifier: "com.tencent.yuanbao", name: "Yuanbao",
+                              path: URL(filePath: "/Applications/Yuanbao.app"))
+        let patterns = AppMatching.generatePatterns(for: yuanbao)
+        XCTAssertFalse(patterns.contains("tencent"),
+                       "Default matching must not emit the bare vendor token")
+    }
+
+    func testUninstallingOneVendorAppDoesNotMatchSibling() {
+        // The exact #98 report: uninstalling Tencent Yuanbao also flagged WeChat.
+        let yuanbao = AppInfo(bundleIdentifier: "com.tencent.yuanbao", name: "Yuanbao",
+                              path: URL(filePath: "/Applications/Yuanbao.app"))
+        let patterns = AppMatching.generatePatterns(for: yuanbao)
+        XCTAssertFalse(
+            AppMatching.filenameMatches("com.tencent.xinWeChat.plist", patterns: patterns),
+            "Uninstalling Yuanbao must not match WeChat files (#98)")
+        // Yuanbao's own files (and its helpers) still match.
+        XCTAssertTrue(AppMatching.filenameMatches("com.tencent.yuanbao.plist", patterns: patterns))
+        XCTAssertTrue(AppMatching.filenameMatches("com.tencent.yuanbao.helper.plist", patterns: patterns))
+    }
+
     // MARK: - filenameMatches
 
     func testFilenameMatchesContainsPattern() {

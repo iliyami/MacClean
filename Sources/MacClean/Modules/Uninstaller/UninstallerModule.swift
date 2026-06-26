@@ -105,7 +105,9 @@ public struct AppPathFinder: Sendable {
 
     public let maxLevel: MatchLevel
 
-    public init(maxLevel: MatchLevel = .companyName) {
+    // Default stops at .versionStripped: the .companyName level matches the bare
+    // vendor token and would flag sibling apps from the same vendor (issue #98).
+    public init(maxLevel: MatchLevel = .versionStripped) {
         self.maxLevel = maxLevel
     }
 

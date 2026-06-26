@@ -41,9 +41,17 @@ public enum AppMatching {
 
     /// Generates the pattern set for an app using all match levels up to `maxLevel`.
     /// Each pattern is a substring (lowercased) that we'll search filenames for.
+    ///
+    /// The default stops at `.versionStripped` (7), deliberately excluding
+    /// `.companyName` (8). The company-name level emits the bare vendor token
+    /// (e.g. "tencent", "google"), which substring-matches every app from that
+    /// vendor, so uninstalling one app would flag a sibling's files (issue #98:
+    /// uninstalling Tencent Yuanbao also matched WeChat). For a tool that
+    /// deletes files, precision matters more than recall, so company-name is
+    /// opt-in only.
     public static func generatePatterns(
         for app: AppInfo,
-        maxLevel: MatchLevel = .companyName
+        maxLevel: MatchLevel = .versionStripped
     ) -> Set<String> {
         var patterns: Set<String> = []
         let levels = MatchLevel.allCases.filter { $0.rawValue <= maxLevel.rawValue }
