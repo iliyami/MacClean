@@ -23,6 +23,16 @@ struct OptimizationView: View {
                         .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
+                // The view is kept alive across navigation, so `.task` only runs
+                // once and the list would otherwise go stale (issue #93: rescans
+                // showed old data until the app was relaunched). This button
+                // re-reads login items and launch agents from disk on demand.
+                Button {
+                    refresh()
+                } label: {
+                    Label(L10n.tr("刷新", "Refresh"), systemImage: "arrow.clockwise")
+                }
+                .help(L10n.tr("重新扫描启动项", "Rescan startup items"))
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
