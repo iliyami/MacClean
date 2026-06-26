@@ -302,15 +302,23 @@ public final class AutoStartManager: @unchecked Sendable {
             guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId) else {
                 throw ToggleError.sfltoolFailed("Cannot find app for bundle ID: \(bundleId)")
             }
+            // Escape backslash and double-quote so a path like /Apps/foo".app
+            // cannot break out of the AppleScript string literal.
+            let escapedPath = url.path
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
             script = """
             tell application "System Events"
-                make new login item at end with properties {path:"\(url.path)", hidden:false}
+                make new login item at end with properties {path:"\(escapedPath)", hidden:false}
             end tell
             """
         } else {
+            let escapedId = bundleId
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\"")
             script = """
             tell application "System Events"
-                delete login item "\(bundleId)"
+                delete login item "\(escapedId)"
             end tell
             """
         }

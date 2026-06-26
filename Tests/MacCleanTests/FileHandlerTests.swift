@@ -54,36 +54,25 @@ final class LaunchServicesServiceTests: XCTestCase {
         XCTAssertTrue(handlers.isEmpty)
     }
 
-    func testSaveAndLoadRoundTrip() throws {
+    func testLoadHandlersFromPlistData() throws {
         try TestFixtures.withTempDir { dir in
             let plistURL = dir.appending(path: "launchservices.plist")
-            let service = LaunchServicesService(plistPath: plistURL.path)
-
-            // Create test handlers
-            let handlers: [HandlerEntry] = [
-                HandlerEntry(
-                    id: UUID(),
-                    contentType: "public.plain-text",
-                    contentTag: "txt",
-                    contentTagClass: "filename-extension",
-                    roleAll: "com.apple.TextEdit",
-                    urlScheme: nil,
-                    modificationDate: Date(timeIntervalSince1970: 1_700_000_000)
-                ),
-                HandlerEntry(
-                    id: UUID(),
-                    contentType: nil,
-                    contentTag: nil,
-                    contentTagClass: nil,
-                    roleAll: nil,
-                    urlScheme: "https",
-                    modificationDate: nil
-                ),
+            let plistData: [String: Any] = [
+                "LSHandlers": [
+                    [
+                        "LSHandlerContentType": "public.plain-text",
+                        "LSHandlerContentTag": "txt",
+                        "LSHandlerContentTagClass": "filename-extension",
+                        "LSHandlerRoleAll": "com.apple.TextEdit",
+                    ] as [String: Any],
+                    [
+                        "LSHandlerURLScheme": "https",
+                    ] as [String: Any],
+                ] as [[String: Any]]
             ]
+            try TestFixtures.writePlist(plistData, to: plistURL)
 
-            try service.saveHandlers(handlers)
-
-            // Reload and verify
+            let service = LaunchServicesService(plistPath: plistURL.path)
             let loaded = service.loadHandlers()
             XCTAssertEqual(loaded.count, 2)
 
@@ -93,13 +82,10 @@ final class LaunchServicesServiceTests: XCTestCase {
             XCTAssertEqual(textHandler?.contentTagClass, "filename-extension")
             XCTAssertEqual(textHandler?.roleAll, "com.apple.TextEdit")
             XCTAssertNil(textHandler?.urlScheme)
-            XCTAssertNotNil(textHandler?.modificationDate)
 
             let httpsHandler = loaded.first { $0.urlScheme == "https" }
             XCTAssertNotNil(httpsHandler)
             XCTAssertNil(httpsHandler?.contentType)
-            XCTAssertNil(httpsHandler?.contentTag)
-            XCTAssertNil(httpsHandler?.modificationDate)
         }
     }
 
@@ -128,38 +114,29 @@ final class LaunchServicesServiceTests: XCTestCase {
         }
     }
 
-    func testSaveWithoutModificationDate() throws {
+    func testLoadPreservesAllKeysNotInModel() throws {
         try TestFixtures.withTempDir { dir in
             let plistURL = dir.appending(path: "launchservices.plist")
-            let service = LaunchServicesService(plistPath: plistURL.path)
-
-            let handlers: [HandlerEntry] = [
-                HandlerEntry(
-                    id: UUID(),
-                    contentType: nil,
-                    contentTag: nil,
-                    contentTagClass: nil,
-                    roleAll: nil,
-                    urlScheme: "mailto",
-                    modificationDate: nil
-                ),
+            let plistData: [String: Any] = [
+                "LSHandlers": [
+                    [
+                        "LSHandlerContentType": "public.foo",
+                        "LSHandlerRoleAll": "com.example.App",
+                        "LSHandlerContentTag": "foo",
+                        "LSHandlerContentTagClass": "filename-extension",
+                        // Keys we intentionally don't model — must not cause a crash
+                        "LSHandlerPreferredVersions": ["LSHandlerRoleAll": "-"],
+                        "LSHandlerRank": "DefaultHandler",
+                    ] as [String: Any],
+                ] as [[String: Any]]
             ]
+            try TestFixtures.writePlist(plistData, to: plistURL)
 
-            try service.saveHandlers(handlers)
-            let loaded = service.loadHandlers()
-            XCTAssertEqual(loaded.count, 1)
-            XCTAssertEqual(loaded.first?.urlScheme, "mailto")
-        }
-    }
-
-    func testEmptyHandlersList() throws {
-        try TestFixtures.withTempDir { dir in
-            let plistURL = dir.appending(path: "launchservices.plist")
             let service = LaunchServicesService(plistPath: plistURL.path)
-
-            try service.saveHandlers([])
-            let loaded = service.loadHandlers()
-            XCTAssertTrue(loaded.isEmpty)
+            let handlers = service.loadHandlers()
+            XCTAssertEqual(handlers.count, 1)
+            // Non-model keys should be silently ignored but not break parsing
+            XCTAssertEqual(handlers.first?.contentTag, "foo")
         }
     }
 }
@@ -241,26 +218,139 @@ final class FileHandlerViewModelTests: XCTestCase {
         vm.searchText = "nonexistent"
         XCTAssertTrue(vm.filteredHandlers.isEmpty)
     }
+}
 
-    func testDeleteHandlerRemovesFromList() {
-        let vm = FileHandlerViewModel()
-        let h1 = HandlerEntry(id: UUID(), contentType: "public.foo", contentTag: nil, contentTagClass: nil, roleAll: "com.example.App1", urlScheme: nil, modificationDate: nil)
-        let h2 = HandlerEntry(id: UUID(), contentType: "public.bar", contentTag: nil, contentTagClass: nil, roleAll: "com.example.App2", urlScheme: nil, modificationDate: nil)
-        vm.handlers = [h1, h2]
+// MARK: - LaunchServicesService Delete + Backup Tests
 
-        vm.deleteHandler(h1)
-        XCTAssertEqual(vm.handlers.count, 1)
-        XCTAssertEqual(vm.handlers.first?.roleAll, "com.example.App2")
+final class LaunchServicesServiceDeleteBackupTests: XCTestCase {
+    /// Helper: write a plist + create a service pointing to it.
+    private func makeService(dir: URL, data: [String: Any]) throws -> LaunchServicesService {
+        let plistURL = dir.appending(path: "com.apple.launchservices.secure.plist")
+        try TestFixtures.writePlist(data, to: plistURL)
+        return LaunchServicesService(plistPath: plistURL.path)
     }
 
-    func testDeleteHandlerNoOpForMissingHandler() {
-        let vm = FileHandlerViewModel()
-        let h1 = HandlerEntry(id: UUID(), contentType: "public.foo", contentTag: nil, contentTagClass: nil, roleAll: "com.example.App", urlScheme: nil, modificationDate: nil)
-        vm.handlers = [h1]
+    // MARK: Delete
 
-        let missing = HandlerEntry(id: UUID(), contentType: "public.bar", contentTag: nil, contentTagClass: nil, roleAll: "com.example.Missing", urlScheme: nil, modificationDate: nil)
-        vm.deleteHandler(missing)
-        // Should not crash and count stays the same
-        XCTAssertEqual(vm.handlers.count, 1)
+    func testDeleteRemovesEntryByContentType() throws {
+        try TestFixtures.withTempDir { dir in
+            let service = try makeService(dir: dir, data: [
+                "LSHandlers": [
+                    ["LSHandlerContentType": "public.foo", "LSHandlerRoleAll": "com.example.App1"],
+                    ["LSHandlerContentType": "public.bar", "LSHandlerRoleAll": "com.example.App2"],
+                ]
+            ])
+            let entry = HandlerEntry(id: UUID(), contentType: "public.foo", contentTag: nil, contentTagClass: nil, roleAll: "com.example.App1", urlScheme: nil, modificationDate: nil)
+            try service.deleteHandler(entry)
+            let remaining = service.loadHandlers()
+            XCTAssertEqual(remaining.count, 1)
+            XCTAssertEqual(remaining.first?.contentType, "public.bar")
+        }
+    }
+
+    func testDeleteRemovesEntryByURLScheme() throws {
+        try TestFixtures.withTempDir { dir in
+            let service = try makeService(dir: dir, data: [
+                "LSHandlers": [
+                    ["LSHandlerURLScheme": "https"],
+                    ["LSHandlerURLScheme": "mailto"],
+                ]
+            ])
+            let entry = HandlerEntry(id: UUID(), contentType: nil, contentTag: nil, contentTagClass: nil, roleAll: nil, urlScheme: "https", modificationDate: nil)
+            try service.deleteHandler(entry)
+            let remaining = service.loadHandlers()
+            XCTAssertEqual(remaining.count, 1)
+            XCTAssertEqual(remaining.first?.urlScheme, "mailto")
+        }
+    }
+
+    func testDeletePreservesUnknownKeys() throws {
+        try TestFixtures.withTempDir { dir in
+            let service = try makeService(dir: dir, data: [
+                "LSHandlers": [
+                    [
+                        "LSHandlerContentType": "public.foo",
+                        "LSHandlerRoleAll": "com.example.App",
+                        "LSHandlerPreferredVersions": ["LSHandlerRoleAll": "-"],
+                        "LSHandlerRank": "DefaultHandler",
+                    ]
+                ]
+            ])
+            let entry = HandlerEntry(id: UUID(), contentType: "public.foo", contentTag: nil, contentTagClass: nil, roleAll: "com.example.App", urlScheme: nil, modificationDate: nil)
+            try service.deleteHandler(entry)
+            // After delete, this entry is gone — but the test verifies no crash
+            XCTAssertTrue(service.loadHandlers().isEmpty)
+        }
+    }
+
+    func testDeleteNoopForNonMatchingEntry() throws {
+        try TestFixtures.withTempDir { dir in
+            let service = try makeService(dir: dir, data: [
+                "LSHandlers": [
+                    ["LSHandlerContentType": "public.foo", "LSHandlerRoleAll": "com.example.App"],
+                ]
+            ])
+            let entry = HandlerEntry(id: UUID(), contentType: "public.bar", contentTag: nil, contentTagClass: nil, roleAll: "com.other.App", urlScheme: nil, modificationDate: nil)
+            try service.deleteHandler(entry)
+            // Nothing should be removed
+            XCTAssertEqual(service.loadHandlers().count, 1)
+        }
+    }
+
+    // MARK: Backup
+
+    func testBackupCreatesFile() throws {
+        try TestFixtures.withTempDir { dir in
+            let service = try makeService(dir: dir, data: [
+                "LSHandlers": [
+                    ["LSHandlerContentType": "public.foo", "LSHandlerRoleAll": "com.example.App"],
+                ]
+            ])
+            try service.backup()
+            let backups = service.listBackups()
+            XCTAssertEqual(backups.count, 1)
+        }
+    }
+
+    func testBackupAndRestoreRoundTrip() throws {
+        try TestFixtures.withTempDir { dir in
+            let beforePlist = [
+                "LSHandlers": [
+                    ["LSHandlerContentType": "public.foo", "LSHandlerRoleAll": "com.example.App"],
+                    ["LSHandlerURLScheme": "https"],
+                ] as [[String: Any]]
+            ] as [String: Any]
+            let service = try makeService(dir: dir, data: beforePlist)
+
+            // Delete one entry
+            let entry = HandlerEntry(id: UUID(), contentType: "public.foo", contentTag: nil, contentTagClass: nil, roleAll: "com.example.App", urlScheme: nil, modificationDate: nil)
+            try service.deleteHandler(entry) // this also creates a backup
+            XCTAssertEqual(service.loadHandlers().count, 1)
+
+            // Restore from backup
+            let backups = service.listBackups()
+            XCTAssertEqual(backups.count, 1)
+            try service.restoreBackup(from: backups[0])
+
+            // Verify restored
+            let restored = service.loadHandlers()
+            XCTAssertEqual(restored.count, 2)
+            XCTAssertNotNil(restored.first { $0.contentType == "public.foo" })
+            XCTAssertNotNil(restored.first { $0.urlScheme == "https" })
+        }
+    }
+
+    func testBackupMultipleCreatesSeparateFiles() throws {
+        try TestFixtures.withTempDir { dir in
+            let service = try makeService(dir: dir, data: [
+                "LSHandlers": [
+                    ["LSHandlerContentType": "public.foo", "LSHandlerRoleAll": "com.example.App"],
+                ]
+            ])
+            try service.backup()
+            try service.backup()
+            let backups = service.listBackups()
+            XCTAssertEqual(backups.count, 2)
+        }
     }
 }

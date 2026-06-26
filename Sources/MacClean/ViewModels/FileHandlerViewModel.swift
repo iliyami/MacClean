@@ -3,13 +3,19 @@ import AppKit
 import SwiftUI
 import MacCleanKit
 
+/// View model for browsing and managing user-customised file-type and URL-scheme
+/// associations.  Every delete is preceded by a backup so all changes are
+/// reversible via the restore-history panel.
 @MainActor
 public final class FileHandlerViewModel: ObservableObject {
     @Published public var handlers: [HandlerEntry] = []
     @Published public var isLoading = false
+    @Published public var searchText = ""
     @Published public var errorMessage: String?
     @Published public var showError = false
-    @Published public var searchText = ""
+    @Published public var backups: [URL] = []
+    @Published public var showRestoreSheet = false
+    @Published public var isRestoring = false
 
     private let service = LaunchServicesService.shared
 
@@ -36,25 +42,53 @@ public final class FileHandlerViewModel: ObservableObject {
         }
     }
 
-    public func deleteHandler(_ handler: HandlerEntry) {
-        guard let idx = handlers.firstIndex(of: handler) else { return }
-        handlers.remove(at: idx)
-        saveHandlers()
-    }
+    // MARK: - Delete (with auto-backup)
 
-    private func saveHandlers() {
-        let currentHandlers = handlers
-        Task.detached {
+    public func deleteHandler(_ handler: HandlerEntry) {
+        Task.detached { [weak self] in
             do {
-                try LaunchServicesService.shared.saveHandlers(currentHandlers)
+                try LaunchServicesService.shared.deleteHandler(handler)
+                await MainActor.run {
+                    self?.loadHandlers()
+                }
             } catch {
                 await MainActor.run { [weak self] in
-                    self?.errorMessage = L10n.tr("保存失败: \(error.localizedDescription)", "Save failed: \(error.localizedDescription)")
+                    self?.errorMessage = L10n.tr("删除失败：\(error.localizedDescription)",
+                                                  "Delete failed: \(error.localizedDescription)")
                     self?.showError = true
                 }
             }
         }
     }
+
+    // MARK: - Restore
+
+    public func loadBackups() {
+        backups = service.listBackups()
+    }
+
+    public func restoreBackup(from url: URL) {
+        isRestoring = true
+        Task.detached { [weak self] in
+            do {
+                try LaunchServicesService.shared.restoreBackup(from: url)
+                await MainActor.run {
+                    self?.isRestoring = false
+                    self?.showRestoreSheet = false
+                    self?.loadHandlers()
+                }
+            } catch {
+                await MainActor.run { [weak self] in
+                    self?.isRestoring = false
+                    self?.errorMessage = L10n.tr("还原失败：\(error.localizedDescription)",
+                                                  "Restore failed: \(error.localizedDescription)")
+                    self?.showError = true
+                }
+            }
+        }
+    }
+
+    // MARK: - App Info
 
     public func getAppInfo(for handler: HandlerEntry) -> (name: String, icon: NSImage)? {
         if let bid = handler.appBundleIdentifier {

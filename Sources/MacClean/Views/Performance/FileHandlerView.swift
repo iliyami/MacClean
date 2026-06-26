@@ -7,7 +7,7 @@ struct FileHandlerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Search bar
+            // Top bar: search + restore button
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
@@ -24,6 +24,16 @@ struct FileHandlerView: View {
                     }
                     .buttonStyle(.borderless)
                 }
+                Spacer()
+                Button(action: {
+                    viewModel.loadBackups()
+                    viewModel.showRestoreSheet = true
+                }) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 12))
+                }
+                .buttonStyle(.borderless)
+                .help(L10n.tr("版本历史", "Version history"))
                 Button(action: { viewModel.loadHandlers() }) {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 12))
@@ -77,12 +87,110 @@ struct FileHandlerView: View {
                 .listStyle(.inset)
             }
         }
+        .sheet(isPresented: $viewModel.showRestoreSheet) {
+            restoreSheet
+        }
         .alert(L10n.tr("错误", "Error"), isPresented: $viewModel.showError) {
             Button("OK") { viewModel.showError = false }
         } message: {
             Text(viewModel.errorMessage ?? L10n.tr("发生未知错误", "An unknown error occurred"))
         }
         .onAppear { viewModel.loadHandlers() }
+    }
+
+    // MARK: - Restore Sheet
+
+    private var restoreSheet: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(L10n.tr("还原版本", "Restore Version"))
+                    .font(.headline)
+                Spacer()
+                Button(action: { viewModel.showRestoreSheet = false }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.borderless)
+            }
+            .padding()
+
+            Divider()
+
+            if viewModel.backups.isEmpty {
+                VStack(spacing: 12) {
+                    Spacer()
+                    Image(systemName: "clock.badge.questionmark")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.tertiary)
+                    Text(L10n.tr("没有可用的备份", "No backups available"))
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, minHeight: 200)
+            } else {
+                List {
+                    ForEach(Array(viewModel.backups.enumerated()), id: \.offset) { _, url in
+                        BackupRowView(
+                            url: url,
+                            isRestoring: viewModel.isRestoring,
+                            onRestore: { viewModel.restoreBackup(from: url) }
+                        )
+                    }
+                }
+                .listStyle(.inset)
+            }
+        }
+        .frame(width: 420, height: 320)
+    }
+}
+
+// MARK: - Backup Row
+
+private struct BackupRowView: View {
+    let url: URL
+    let isRestoring: Bool
+    let onRestore: () -> Void
+
+    var body: some View {
+        HStack {
+            Image(systemName: "doc.badge.clock")
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(formattedDate)
+                    .font(.system(size: 13, weight: .medium))
+                Text(url.lastPathComponent)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Button(action: onRestore) {
+                Text(L10n.tr("还原", "Restore"))
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.bordered)
+            .disabled(isRestoring)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var formattedDate: String {
+        // Filename: launchservices-2026-06-26T11_12_26+08_00.plist
+        // Underscores were originally colons (filesystem-safe encoding).
+        let isoStr = url.lastPathComponent
+            .replacingOccurrences(of: "launchservices-", with: "")
+            .replacingOccurrences(of: ".plist", with: "")
+            .replacingOccurrences(of: "_", with: ":")
+        let isoFmt = ISO8601DateFormatter()
+        isoFmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = isoFmt.date(from: isoStr) {
+            let display = DateFormatter()
+            display.dateStyle = .medium
+            display.timeStyle = .medium
+            return display.string(from: date)
+        }
+        return url.lastPathComponent
     }
 }
 
@@ -151,7 +259,7 @@ private struct HandlerRowView: View {
                     .foregroundStyle(.red)
             }
             .buttonStyle(.borderless)
-            .help(L10n.tr("删除此关联", "Remove this association"))
+            .help(L10n.tr("删除此关联（自动备份当前版本）", "Remove (auto-backup created)"))
         }
         .padding(.vertical, 2)
     }
