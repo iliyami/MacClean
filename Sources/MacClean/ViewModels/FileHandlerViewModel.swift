@@ -33,30 +33,27 @@ public final class FileHandlerViewModel: ObservableObject {
 
     public func loadHandlers() {
         isLoading = true
-        Task.detached { [weak self] in
-            let handlers = LaunchServicesService.shared.loadHandlers()
-            await MainActor.run {
-                self?.handlers = handlers
-                self?.isLoading = false
-            }
+        // MainActor Task: `self` stays on the main actor (never sent into a
+        // detached context, which tripped Swift 6 region isolation on CI). Only
+        // the plist read is offloaded, returning a Sendable [HandlerEntry].
+        Task {
+            let loaded = await Task.detached { LaunchServicesService.shared.loadHandlers() }.value
+            handlers = loaded
+            isLoading = false
         }
     }
 
     // MARK: - Delete (with auto-backup)
 
     public func deleteHandler(_ handler: HandlerEntry) {
-        Task.detached { [weak self] in
+        Task {
             do {
-                try LaunchServicesService.shared.deleteHandler(handler)
-                await MainActor.run {
-                    self?.loadHandlers()
-                }
+                try await Task.detached { try LaunchServicesService.shared.deleteHandler(handler) }.value
+                loadHandlers()
             } catch {
-                await MainActor.run { [weak self] in
-                    self?.errorMessage = L10n.tr("删除失败：\(error.localizedDescription)",
-                                                  "Delete failed: \(error.localizedDescription)")
-                    self?.showError = true
-                }
+                errorMessage = L10n.tr("删除失败：\(error.localizedDescription)",
+                                       "Delete failed: \(error.localizedDescription)")
+                showError = true
             }
         }
     }
@@ -69,21 +66,17 @@ public final class FileHandlerViewModel: ObservableObject {
 
     public func restoreBackup(from url: URL) {
         isRestoring = true
-        Task.detached { [weak self] in
+        Task {
             do {
-                try LaunchServicesService.shared.restoreBackup(from: url)
-                await MainActor.run {
-                    self?.isRestoring = false
-                    self?.showRestoreSheet = false
-                    self?.loadHandlers()
-                }
+                try await Task.detached { try LaunchServicesService.shared.restoreBackup(from: url) }.value
+                isRestoring = false
+                showRestoreSheet = false
+                loadHandlers()
             } catch {
-                await MainActor.run { [weak self] in
-                    self?.isRestoring = false
-                    self?.errorMessage = L10n.tr("还原失败：\(error.localizedDescription)",
-                                                  "Restore failed: \(error.localizedDescription)")
-                    self?.showError = true
-                }
+                isRestoring = false
+                errorMessage = L10n.tr("还原失败：\(error.localizedDescription)",
+                                       "Restore failed: \(error.localizedDescription)")
+                showError = true
             }
         }
     }
