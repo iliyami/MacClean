@@ -11,6 +11,11 @@ struct SmartScanView: View {
     @State private var cleanResults: [ScanResult] = []
     @State private var showCleanConfirm = false
     @State private var cleanTask: Task<Void, Never>?
+    /// Cached selected-size total + a url -> size index backing it, so the
+    /// footer reads an O(1) value instead of an O(all-items) sum on every body
+    /// pass (the sidebar-switch beachball on large Smart Scans).
+    @State private var selectedCleanSize: UInt64 = 0
+    @State private var cleanSizeIndex: [URL: UInt64] = [:]
 
     struct CompletedModule: Identifiable {
         let id = UUID()
@@ -62,6 +67,19 @@ struct SmartScanView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Recompute the selected-size total only when the results or selection
+        // actually change, NOT on every body pass. The footer reads
+        // `selectedCleanSize`, and SwiftUI re-evaluates this body during the
+        // layout pass on every sidebar switch; recomputing an O(all-items) sum
+        // (with a FileItem copy per item) there froze the switch for seconds on
+        // a large Smart Scan (confirmed by a main-thread sample).
+        .onChange(of: cleanResultsSignature, initial: true) { _, _ in
+            rebuildCleanSizeIndex()
+            recomputeSelectedCleanSize()
+        }
+        .onChange(of: selectedItems.count) { _, _ in
+            recomputeSelectedCleanSize()
+        }
     }
 
     // MARK: - Idle
@@ -288,13 +306,28 @@ struct SmartScanView: View {
         cleanResults.reduce(0) { $0 + $1.items.count }
     }
 
-    /// On-disk size of the currently selected items, for the footer button.
-    private var selectedCleanSize: UInt64 {
-        cleanResults.reduce(into: UInt64(0)) { total, result in
-            for item in result.items where selectedItems.contains(item.url) {
-                total += item.size
-            }
+    /// Cheap signature of the result set (category + item count), used to
+    /// rebuild the size index only when the results change. O(categories).
+    private var cleanResultsSignature: String {
+        cleanResults.map { "\($0.category.rawValue):\($0.items.count)" }.joined(separator: ",")
+    }
+
+    /// Rebuild the url -> size lookup so recomputing the selected total is
+    /// O(selected) instead of O(all items) with a FileItem copy each pass.
+    private func rebuildCleanSizeIndex() {
+        var map = [URL: UInt64](minimumCapacity: cleanResults.reduce(0) { $0 + $1.items.count })
+        for result in cleanResults {
+            for item in result.items { map[item.url] = item.size }
         }
+        cleanSizeIndex = map
+    }
+
+    /// Sum the selected items' sizes via the index. Every selection mutation
+    /// changes `selectedItems.count`, so this is driven by an O(1) onChange key.
+    private func recomputeSelectedCleanSize() {
+        var total: UInt64 = 0
+        for url in selectedItems { total += cleanSizeIndex[url] ?? 0 }
+        selectedCleanSize = total
     }
 
     // MARK: - Empty / Done / Cleaning
