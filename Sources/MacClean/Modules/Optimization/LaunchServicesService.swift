@@ -92,7 +92,10 @@ public final class LaunchServicesService: @unchecked Sendable {
 
     // MARK: - Backup / Restore
 
-    /// Snapshot the current plist to the backup directory.
+    private static let maxBackups = 20
+
+    /// Snapshot the current plist to the backup directory, then trim to
+    /// `maxBackups` so the folder doesn't grow unbounded.
     public func backup() throws {
         let src = URL(fileURLWithPath: plistPath)
         guard FileManager.default.fileExists(atPath: plistPath) else { return }
@@ -112,6 +115,17 @@ public final class LaunchServicesService: @unchecked Sendable {
         } catch {
             throw LaunchServicesError.backupFailed(error)
         }
+        // Prune old backups beyond the cap.
+        trimBackups()
+    }
+
+    /// Remove backups beyond `maxBackups`, keeping the newest ones.
+    private func trimBackups() {
+        let all = listBackups()
+        guard all.count > Self.maxBackups else { return }
+        for stale in all[Self.maxBackups...] {
+            try? FileManager.default.removeItem(at: stale)
+        }
     }
 
     /// List available backups newest-first (sorted by filename timestamp).
@@ -125,16 +139,19 @@ public final class LaunchServicesService: @unchecked Sendable {
             .sorted { $0.lastPathComponent > $1.lastPathComponent }
     }
 
-    /// Restore a specific backup to the live plist path, replacing the current.
+    /// Restore a backup to the live plist path using an atomic swap so a
+    /// mid-failure can never leave the user with neither file.
     public func restoreBackup(from url: URL) throws {
         let dst = URL(fileURLWithPath: plistPath)
+        let tmpDir = dst.deletingLastPathComponent()
+        let tmpURL = tmpDir.appending(path: ".launchservices-restore-tmp.plist")
+        // Clean any stale temp from a previous crash.
+        try? FileManager.default.removeItem(at: tmpURL)
         do {
-            // Remove current, then copy backup in its place.
-            if FileManager.default.fileExists(atPath: plistPath) {
-                try FileManager.default.removeItem(at: dst)
-            }
-            try FileManager.default.copyItem(at: url, to: dst)
+            try FileManager.default.copyItem(at: url, to: tmpURL)
+            _ = try FileManager.default.replaceItemAt(dst, withItemAt: tmpURL)
         } catch {
+            try? FileManager.default.removeItem(at: tmpURL)
             throw LaunchServicesError.restoreFailed(error)
         }
     }
