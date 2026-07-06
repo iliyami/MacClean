@@ -67,7 +67,7 @@ public actor AppUpdateChecker {
         let (latestVersion, downloadURL) = parser.parseLatestItem(from: data)
 
         let currentVersion = app.version ?? "0"
-        let hasUpdate = latestVersion != nil && latestVersion != currentVersion
+        let hasUpdate = UpdaterActions.hasUpdate(current: currentVersion, available: latestVersion)
 
         return AppUpdate(
             app: app,
@@ -90,6 +90,15 @@ public enum UpdaterRoute: Equatable {
 }
 
 public enum UpdaterActions {
+    /// Offer an update only when the appcast's version is genuinely NEWER than
+    /// what's installed. Using `!=` here offered downgrades whenever the feed
+    /// version merely differed (issue #105: AppCleaner 3.6.8 -> 3.4). Reuses the
+    /// numeric-semver comparison so "3.4" is correctly older than "3.6.8".
+    public static func hasUpdate(current: String, available: String?) -> Bool {
+        guard let available else { return false }
+        return UpdateChecker.isNewer(available, than: current)
+    }
+
     /// Sparkle feeds must be fetched over TLS; an http feed is trivially
     /// MITM-able into pointing the user at a malicious download.
     public static func isAcceptableFeedURL(_ url: URL) -> Bool {

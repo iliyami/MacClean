@@ -51,21 +51,47 @@ final class AppcastParserTests: XCTestCase {
         XCTAssertNil(parser.parseLatestVersion(from: xml.data(using: .utf8)!))
     }
 
-    func testTakesFirstEnclosureWhenMultipleItems() {
+    func testPicksHighestVersionWhenNewestListedFirst() {
         let xml = """
         <rss xmlns:sparkle="ns">
           <channel>
-            <item>
-              <enclosure url="x" sparkle:shortVersionString="3.0"/>
-            </item>
-            <item>
-              <enclosure url="x" sparkle:shortVersionString="2.0"/>
-            </item>
+            <item><enclosure url="x" sparkle:shortVersionString="3.0"/></item>
+            <item><enclosure url="x" sparkle:shortVersionString="2.0"/></item>
           </channel>
         </rss>
         """
         let parser = AppcastParser()
         XCTAssertEqual(parser.parseLatestVersion(from: xml.data(using: .utf8)!), "3.0")
+    }
+
+    // Regression for #105: Sparkle feeds are not guaranteed newest-first. The
+    // parser must return the HIGHEST version, not the first item.
+    func testPicksHighestVersionWhenOldestListedFirst() {
+        let xml = """
+        <rss xmlns:sparkle="ns">
+          <channel>
+            <item><enclosure url="https://e/old.zip" sparkle:shortVersionString="3.4"/></item>
+            <item><enclosure url="https://e/new.zip" sparkle:shortVersionString="3.6.8"/></item>
+          </channel>
+        </rss>
+        """
+        let parser = AppcastParser()
+        XCTAssertEqual(parser.parseLatestVersion(from: xml.data(using: .utf8)!), "3.6.8")
+    }
+
+    func testPicksHighestVersionAndItsDownloadURL() {
+        let xml = """
+        <rss xmlns:sparkle="ns">
+          <channel>
+            <item><enclosure url="https://e/old.zip" sparkle:shortVersionString="3.4"/></item>
+            <item><enclosure url="https://e/new.zip" sparkle:shortVersionString="3.6.8"/></item>
+          </channel>
+        </rss>
+        """
+        let parser = AppcastParser()
+        let result = parser.parseLatestItem(from: xml.data(using: .utf8)!)
+        XCTAssertEqual(result.version, "3.6.8")
+        XCTAssertEqual(result.downloadURL?.absoluteString, "https://e/new.zip")
     }
 
     func testParserIsReusable() {
