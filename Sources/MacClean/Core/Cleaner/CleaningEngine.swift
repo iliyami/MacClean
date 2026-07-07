@@ -145,11 +145,23 @@ public actor CleaningEngine {
         let urls = chunk.map(\.url)
         do {
             try safetyGuard.validateDeletion(paths: urls)
-        } catch {
-            logger.error("Chunk validation failed: \(error.localizedDescription)")
-            errors.append(CleanError(path: "validation", error: error.localizedDescription))
+        } catch SafetyGuard.SafetyError.tooManyFiles {
+            // Genuine over-cap chunk: skip it wholesale. Structurally this can't
+            // happen (chunks are <= cleanChunkSize < maxFilesPerOperation), but
+            // keep the guard so raising the chunk size can't bypass the cap.
+            logger.error("Chunk exceeds the \(MCConstants.maxFilesPerOperation)-file safety cap")
+            errors.append(CleanError(
+                path: "validation",
+                error: SafetyGuard.SafetyError.tooManyFiles(chunk.count).localizedDescription
+            ))
             skippedCount += chunk.count
             return
+        } catch {
+            // A single UNSAFE PATH failed batch validation. Do NOT skip the whole
+            // chunk (issue #104: one printer-PPD symlink left everything
+            // uncleaned). Fall through to the per-item loop below, which
+            // re-validates each path and skips only the offending one(s).
+            logger.notice("Chunk has an unsafe path; validating per-item instead of skipping all")
         }
 
         for item in chunk {

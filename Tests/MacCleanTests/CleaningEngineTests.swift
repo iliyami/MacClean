@@ -79,6 +79,35 @@ final class CleaningEngineTests: XCTestCase {
         }
     }
 
+    // MARK: - One unsafe path must not cancel the whole clean (#104)
+
+    func testOneUnsafePathDoesNotSkipTheWholeChunk() async throws {
+        // Reporter #104: a single printer-PPD symlink that resolved outside its
+        // location made SafetyGuard reject the whole batch, so the engine
+        // skipped the ENTIRE selection and cleaned nothing (while reporting
+        // "done"). A safe file alongside it must still be cleaned.
+        let dir = try Self.makeTestDir()
+        defer { Self.cleanupTestDir(dir) }
+
+        let good = dir.appending(path: "good.cache")
+        try TestFixtures.writeFile(at: good, size: 500)
+
+        // A symlink whose target resolves to a different location, the exact
+        // shape SafetyGuard's symlink check rejects (like the CUPS PPD symlink).
+        let badLink = dir.appending(path: "printer.ppd")
+        try FileManager.default.createSymbolicLink(
+            at: badLink, withDestinationURL: URL(fileURLWithPath: "/private/etc/hosts"))
+
+        let items = [makeFileItem(at: good, size: 500), makeFileItem(at: badLink)]
+        let result = await CleaningEngine().clean(items: items, mode: .dryRun)
+
+        XCTAssertEqual(result.removedCount, 1, "the safe file must still be cleaned")
+        XCTAssertEqual(result.freedBytes, 500)
+        XCTAssertEqual(result.errors.count, 1, "only the unsafe path should error")
+        XCTAssertTrue(result.errors.first?.path.contains("printer.ppd") ?? false,
+                      "the error should name the offending path, not the whole chunk")
+    }
+
     // MARK: - Trash mode
 
     func testTrashModeMovesToTrash() async throws {
