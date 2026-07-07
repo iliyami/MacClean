@@ -204,7 +204,7 @@ jobs:
           ### Install via Homebrew
 
           \`\`\`
-          brew tap iliyami/macsai && brew install --cask mac-sai
+          brew install --cask mac-sai
           \`\`\`
 
           ### Or download directly

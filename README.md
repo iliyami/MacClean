@@ -20,7 +20,7 @@
 > Installed it through Homebrew under the old name? Switch with:
 > ```bash
 > brew uninstall --cask mac-clean && brew untap iliyami/macclean
-> brew tap iliyami/macsai && brew install --cask mac-sai
+> brew install --cask mac-sai
 > ```
 
 <p align="center">
@@ -43,7 +43,7 @@
 </p>
 
 ```bash
-brew tap iliyami/macsai && brew install --cask mac-sai
+brew install --cask mac-sai
 ```
 
 <p align="center">
@@ -179,11 +179,15 @@ Mac Sai is designed to **never cause data loss**:
 
 ### Homebrew (recommended — one command, no warnings)
 
+Mac Sai is in the official Homebrew cask repository, so no tap is needed:
+
 ```bash
-brew tap iliyami/macsai && brew install --cask mac-sai
+brew install --cask mac-sai
 ```
 
 Mac Sai is notarized by Apple, so it launches from Spotlight or Applications with no warnings, no right-clicks, and no commands.
+
+> Installed via the old `iliyami/macsai` tap? You can drop it now that Mac Sai is in the official cask: `brew untap iliyami/macsai` (your installed app and future `brew upgrade` are unaffected).
 
 ### One-line installer
 

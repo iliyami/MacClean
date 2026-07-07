@@ -20,7 +20,7 @@
 > 之前通过 Homebrew 以旧名安装的？用以下命令切换：
 > ```bash
 > brew uninstall --cask mac-clean && brew untap iliyami/macclean
-> brew tap iliyami/macsai && brew install --cask mac-sai
+> brew install --cask mac-sai
 > ```
 
 <p align="center">
@@ -43,7 +43,7 @@
 </p>
 
 ```bash
-brew tap iliyami/macsai && brew install --cask mac-sai
+brew install --cask mac-sai
 ```
 
 <p align="center">
@@ -179,11 +179,15 @@ Mac Sai 的设计目标是**绝不造成数据丢失**：
 
 ### Homebrew（推荐，一条命令，无任何警告）
 
+Mac Sai 已收录进官方 Homebrew cask 仓库，无需 tap：
+
 ```bash
-brew tap iliyami/macsai && brew install --cask mac-sai
+brew install --cask mac-sai
 ```
 
 Mac Sai 已经过 Apple 公证，可从聚焦或“应用程序”直接启动，没有警告、无需右键、也无需命令行。
+
+> 之前通过旧的 `iliyami/macsai` tap 安装的？现在 Mac Sai 已进入官方 cask，可以移除它：`brew untap iliyami/macsai`（不影响已安装的应用和后续的 `brew upgrade`）。
 
 ### 一行安装脚本
 
