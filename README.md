@@ -373,13 +373,11 @@ Inspired by the open-source Mac utility community:
 ## Star History
 
 <p align="center">
-  <a href="https://www.star-history.com/?type=date&repos=iliyami%2FMacSai">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=iliyami/MacSai&type=date&theme=dark&legend=top-left" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=iliyami/MacSai&type=date&legend=top-left" />
-      <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=iliyami/MacSai&type=date&legend=top-left" />
-    </picture>
+  <a href="https://star-history.com/#iliyami/MacSai&Date">
+    <img src="https://img.shields.io/github/stars/iliyami/MacSai?style=for-the-badge&logo=github&label=Stars&color=gold" alt="GitHub stars" />
   </a>
+  <br>
+  <a href="https://star-history.com/#iliyami/MacSai&Date">View the interactive star history chart</a>
 </p>
 
 <p align="center">

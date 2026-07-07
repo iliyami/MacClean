@@ -373,13 +373,11 @@ Mac Sai 认真对待安全：
 ## Star 历史
 
 <p align="center">
-  <a href="https://www.star-history.com/?type=date&repos=iliyami%2FMacSai">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=iliyami/MacSai&type=date&theme=dark&legend=top-left" />
-      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=iliyami/MacSai&type=date&legend=top-left" />
-      <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=iliyami/MacSai&type=date&legend=top-left" />
-    </picture>
+  <a href="https://star-history.com/#iliyami/MacSai&Date">
+    <img src="https://img.shields.io/github/stars/iliyami/MacSai?style=for-the-badge&logo=github&label=Stars&color=gold" alt="GitHub stars" />
   </a>
+  <br>
+  <a href="https://star-history.com/#iliyami/MacSai&Date">查看交互式 Star 历史图表</a>
 </p>
 
 <p align="center">
