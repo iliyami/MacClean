@@ -1,12 +1,68 @@
 import Foundation
 import CoreGraphics
 
+/// File type category for treemap color coding (inspired by Space Sniffer).
+public enum FileTypeCategory: String, Sendable, CaseIterable {
+    case folders
+    case documents
+    case images
+    case video
+    case audio
+    case archives
+    case code
+    case diskImages
+    case applications
+    case system
+    case other
+
+    public var label: String {
+        switch self {
+        case .folders: "Folders"
+        case .documents: "Documents"
+        case .images: "Images"
+        case .video: "Video"
+        case .audio: "Audio"
+        case .archives: "Archives"
+        case .code: "Code"
+        case .diskImages: "Disk Images"
+        case .applications: "Applications"
+        case .system: "System"
+        case .other: "Other"
+        }
+    }
+
+    public static func category(forFileExtension ext: String, isDirectory: Bool) -> FileTypeCategory {
+        if isDirectory { return .folders }
+        let lower = ext.lowercased()
+        switch lower {
+        case "mp4", "mov", "avi", "mkv", "wmv", "flv", "webm": return .video
+        case "mp3", "wav", "flac", "aac", "m4a", "ogg", "wma": return .audio
+        case "jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic", "webp": return .images
+        case "pdf", "doc", "docx", "pages", "rtf", "txt", "odt": return .documents
+        case "xls", "xlsx", "numbers", "csv", "ods": return .documents
+        case "ppt", "pptx", "key": return .documents
+        case "zip", "gz", "tar", "rar", "7z", "bz2", "xz": return .archives
+        case "dmg", "iso", "img", "sparseimage": return .diskImages
+        case "app": return .applications
+        case "pkg", "mpkg": return .applications
+        case "swift", "h", "m", "mm", "c", "cpp", "py", "js", "ts",
+             "java", "rs", "go", "rb", "php", "css", "html", "sh",
+             "json", "xml", "yaml", "toml", "plist", "entitlements": return .code
+        case "kext", "dylib", "framework", "bundle": return .system
+        case "log", "cache", "db", "sqlite": return .system
+        default: return .other
+        }
+    }
+}
+
 /// A node in a treemap layout. Pure data.
 public struct TreemapNode: Sendable {
     public let name: String
     public let size: UInt64
     public let url: URL
     public let isDirectory: Bool
+    public let fileExtension: String
+    public let fileTypeCategory: FileTypeCategory
     public let children: [TreemapNode]
 
     public init(
@@ -14,12 +70,15 @@ public struct TreemapNode: Sendable {
         size: UInt64,
         url: URL,
         isDirectory: Bool,
-        children: [TreemapNode]
+        fileExtension: String = "",
+        children: [TreemapNode] = []
     ) {
         self.name = name
         self.size = size
         self.url = url
         self.isDirectory = isDirectory
+        self.fileExtension = fileExtension
+        self.fileTypeCategory = FileTypeCategory.category(forFileExtension: fileExtension, isDirectory: isDirectory)
         self.children = children
     }
 

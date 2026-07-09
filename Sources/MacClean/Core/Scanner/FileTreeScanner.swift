@@ -87,12 +87,14 @@ public actor FileTreeScanner {
             guard let values = try? fileURL.resourceValues(forKeys: keys) else { continue }
             let size = UInt64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? values.fileSize ?? 0)
             let isDir = values.isDirectory ?? false
+            let ext = values.name?.components(separatedBy: ".").last?.lowercased() ?? fileURL.pathExtension.lowercased()
 
             let node = FileNode(
                 url: fileURL,
                 name: values.name ?? fileURL.lastPathComponent,
                 size: isDir ? 0 : size,
-                isDirectory: isDir
+                isDirectory: isDir,
+                fileExtension: ext
             )
 
             let parentPath = key(fileURL.deletingLastPathComponent())
@@ -132,14 +134,16 @@ public final class FileNode: @unchecked Sendable {
     public let name: String
     public private(set) var size: UInt64
     public let isDirectory: Bool
+    public let fileExtension: String
     public private(set) var children: [FileNode] = []
     public private(set) var totalSize: UInt64 = 0
 
-    public init(url: URL, name: String, size: UInt64 = 0, isDirectory: Bool = true) {
+    public init(url: URL, name: String, size: UInt64 = 0, isDirectory: Bool = true, fileExtension: String = "") {
         self.url = url
         self.name = name
         self.size = size
         self.isDirectory = isDirectory
+        self.fileExtension = fileExtension
         self.totalSize = size
     }
 
