@@ -88,12 +88,22 @@ public actor SecureEraser {
         // This overwrite is best-effort: it writes over the logical file content,
         // but the SSD controller may redirect the write to a new physical block.
         // For true security, recommend FileVault (full-disk encryption).
-        let values = try url.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey])
+        let values = try url.resourceValues(forKeys: [.fileSizeKey, .isDirectoryKey, .isSymbolicLinkKey])
+        // Nothing to overwrite for a directory or an empty file: a legitimate
+        // no-op (the caller still trashes/removes them). These must NOT throw.
         guard values.isDirectory != true else { return }
+        // Never follow a symlink: opening it for writing would zero the TARGET
+        // file's contents, not the link. Refuse rather than corrupt the target.
+        guard values.isSymbolicLink != true else {
+            throw SafetyGuard.SafetyError.symlinkTarget(url.path(percentEncoded: false))
+        }
         let size = values.fileSize ?? 0
         guard size > 0 else { return }
 
-        guard let handle = try? FileHandle(forWritingTo: url) else { return }
+        // Propagate an open failure instead of silently returning: a file we
+        // couldn't overwrite must NOT be deleted and reported as a successful
+        // secure erase (e.g. a read-only file in a writable directory).
+        let handle = try FileHandle(forWritingTo: url)
         defer { try? handle.close() }
 
         // Single pass of zeros
