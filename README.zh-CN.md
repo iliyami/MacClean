@@ -13,16 +13,6 @@
   <a href="README.md">English</a> | <strong>简体中文</strong>
 </p>
 
-<!-- TEMPORARY rename notice: remove once the new name has settled (target: 2026-09). -->
-> [!IMPORTANT]
-> **Mac Clean 现已更名为 Mac Sai。** 还是同一个应用、同一个团队，因商标原因更名。现有的 GitHub 链接会自动重定向，本提示为临时性质。
->
-> 之前通过 Homebrew 以旧名安装的？用以下命令切换：
-> ```bash
-> brew uninstall --cask mac-clean && brew untap iliyami/macclean
-> brew install --cask mac-sai
-> ```
-
 <p align="center">
   <a href="https://github.com/iliyami/MacSai/stargazers"><img src="https://img.shields.io/github/stars/iliyami/MacSai?style=flat-square&color=gold" alt="GitHub stars" /></a>
   <img src="https://img.shields.io/badge/platform-macOS%2014%2B-blue?style=flat-square" alt="macOS 14+" />
