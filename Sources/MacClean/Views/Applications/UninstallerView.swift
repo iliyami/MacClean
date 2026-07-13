@@ -13,6 +13,7 @@ struct UninstallerView: View {
     @State private var isLoadingFiles = false
     @State private var isUninstalling = false
     @State private var appPendingUninstall: AppInfo?
+    @State private var uninstallError: String?
     @State private var filter: AppFilter = .all
     @State private var searchText = ""
 
@@ -112,6 +113,13 @@ struct UninstallerView: View {
             }
         } message: { app in
             Text(L10n.tr("\(app.name) 及其关联文件将被移到废纸篓。如有需要，你可以从废纸篓恢复。", "\(app.name) and its associated files will be moved to the Trash. You can restore them from the Trash if needed."))
+        }
+        .alert(L10n.tr("卸载", "Uninstall"),
+               isPresented: Binding(get: { uninstallError != nil },
+                                    set: { if !$0 { uninstallError = nil } })) {
+            Button(L10n.tr("好", "OK"), role: .cancel) { uninstallError = nil }
+        } message: {
+            Text(uninstallError ?? "")
         }
     }
 
@@ -293,14 +301,37 @@ struct UninstallerView: View {
 
     private func uninstall(_ app: AppInfo) {
         guard !isUninstalling else { return }   // ignore double-taps
+
+        // Build the validated plan. Refuses protected system apps (bundle-id
+        // check that SafetyGuard.validatePath can't do) and routes the app
+        // bundle through the same validated, logged, trash-first engine as its
+        // leftovers, instead of a raw try? trashItem that skipped every guard.
+        guard let plan = AppUninstaller.plan(
+            app: app,
+            associatedFiles: associatedFiles,
+            selectedFiles: selectedFiles,
+            safetyGuard: safetyGuard
+        ) else {
+            uninstallError = L10n.tr(
+                "\(app.name) 是受保护的系统应用，无法移除。",
+                "\(app.name) is a protected system app and can't be removed.")
+            return
+        }
+
         isUninstalling = true
         Task {
-            try? FileManager.default.trashItem(at: app.path, resultingItemURL: nil)
-            _ = await CleanActions.executeUserClean(
-                items: associatedFiles,
-                selectedItems: selectedFiles,
+            let result = await CleanActions.executeUserClean(
+                items: plan.items,
+                selectedItems: plan.selection,
                 engine: appState.cleaningEngine
             )
+            // Surface failures instead of silently swallowing them: if the
+            // bundle or a leftover couldn't be removed, tell the user.
+            if !result.errors.isEmpty {
+                uninstallError = L10n.tr(
+                    "移除 \(app.name) 时部分项目失败（\(result.errors.count) 个）。请查看该应用是否仍在，如仍在可重试。",
+                    "Some items couldn't be removed while uninstalling \(app.name) (\(result.errors.count)). Check whether the app is still there and try again.")
+            }
             await loadApps()
             isUninstalling = false
             selectedApp = nil
