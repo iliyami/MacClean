@@ -30,6 +30,7 @@ struct MacCleanMenuApp: App {
     @NSApplicationDelegateAdaptor(MenuAppDelegate.self) private var appDelegate
     @State private var model = MenuStatsModel.shared
     @AppStorage(AppLanguage.defaultsKey, store: SharedAppState.defaults) private var appLanguageRaw = AppLanguage.system.rawValue
+    @AppStorage(MenuBarMetric.defaultsKey, store: SharedAppState.defaults) private var menuBarMetricRaw = MenuBarMetric.diskFree.rawValue
 
     private var appLanguage: AppLanguage {
         AppLanguage(rawValue: appLanguageRaw) ?? .fallback
@@ -62,7 +63,14 @@ struct MacCleanMenuApp: App {
                 Image(nsImage: Self.labelIcon)
                     .renderingMode(.original)
                 if let stats = model.stats {
-                    Text(FileSizeFormatter.format(stats.diskFree))
+                    Text(MenuBarMetric.resolve(menuBarMetricRaw).formattedValue(
+                        diskFree: stats.diskFree,
+                        gpuUsage: stats.gpuUsage,
+                        memoryUsage: stats.memoryTotal > 0
+                            ? Double(stats.memoryUsed) / Double(stats.memoryTotal)
+                            : 0,
+                        batteryTemperature: stats.batteryTemperature
+                    ))
                         .font(.system(size: 11, weight: .medium, design: .monospaced))
                 }
             }

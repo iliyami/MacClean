@@ -17,6 +17,7 @@ struct SettingsPageView: View {
     }
 
     @AppStorage("showMenuBarWidget") private var showMenuBarWidget = true
+    @AppStorage(MenuBarMetric.defaultsKey, store: SharedAppState.defaults) private var menuBarMetricRaw = MenuBarMetric.diskFree.rawValue
     @AppStorage("launchAtLogin") private var launchAtLogin = false
     @AppStorage("removeBackgroundColors") private var removeBackgroundColors = false
     @AppStorage("automaticUpdateChecks") private var automaticUpdateChecks = true
@@ -228,6 +229,23 @@ struct SettingsPageView: View {
                 Task { await launcher.setEnabled(newValue) }
             }
             widgetStatusRow
+            Picker(selection: $menuBarMetricRaw) {
+                ForEach(MenuBarMetric.allCases) { metric in
+                    Text(metric.localizedName).tag(metric.rawValue)
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.tr("菜单栏显示", "Menu bar display"))
+                    Text(L10n.tr(
+                        "选择应用图标旁显示的紧凑数值。GPU 或电池温度不可用时显示 --。",
+                        "Choose the compact value shown next to the app icon. Unavailable GPU or battery sensors appear as --."
+                    ))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            }
+            .pickerStyle(.menu)
+            .disabled(!showMenuBarWidget)
             if let err = launcher.lastError {
                 Label(err.localizedDescription, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)

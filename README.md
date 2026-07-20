@@ -119,6 +119,7 @@ Mac Sai is a **free, open-source** macOS app that cleans junk files, removes mal
 A glassmorphism menu bar widget that puts your Mac's vitals one click away — an independent process that launches at login and is toggled from the app's sidebar. No need to open the main window just to check in.
 
 - **Live stat rings** — CPU load, memory pressure, disk usage, and battery in a 2×2 ring grid (`host_processor_info`, `vm_statistics64`, APFS capacity, IOKit power source), color-graded green → amber → red
+- **Configurable menu-bar readout** — choose free disk space, GPU usage, memory usage, or battery temperature; the selection persists, and unavailable sensors display `--`
 - **Network, uptime & swap** — real-time up/down throughput, system uptime, and swap usage
 - **Recommendations** — actionable, dismissible tips ("User caches grew to 2.52 GB — run System Junk") with one-tap actions, suppressed for 30 days once dismissed
 - **Protection status** — last malware-scan time and threat count, color-coded by freshness

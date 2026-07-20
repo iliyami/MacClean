@@ -7,6 +7,7 @@ public actor SystemStatsCollector {
     public struct SystemStats: Sendable {
         public let cpuUsage: Double
         public let cpuTemperature: Double?
+        public let gpuUsage: Double?
         public let memoryTotal: UInt64
         public let memoryUsed: UInt64
         public let memoryPressure: Double
@@ -27,6 +28,7 @@ public actor SystemStatsCollector {
 
     public func collect() -> SystemStats {
         let cpu = getCPUUsage()
+        let gpu = getGPUUsage()
         let memory = getMemoryInfo()
         let disk = getDiskInfo()
         let battery = getBatteryInfo()
@@ -34,6 +36,7 @@ public actor SystemStatsCollector {
         return SystemStats(
             cpuUsage: cpu,
             cpuTemperature: nil, // Requires SMC access
+            gpuUsage: gpu,
             memoryTotal: memory.total,
             memoryUsed: memory.used,
             memoryPressure: memory.pressure,
@@ -47,6 +50,36 @@ public actor SystemStatsCollector {
             batteryTemperature: battery.temperature,
             uptime: ProcessInfo.processInfo.systemUptime
         )
+    }
+
+    // MARK: - GPU
+
+    /// Reads public IOAccelerator utilization counters. These fields are not
+    /// available on every GPU or macOS version, so the absence of a supported
+    /// counter is represented as `nil`.
+    private func getGPUUsage() -> Double? {
+        guard let matching = IOServiceMatching("IOAccelerator") else { return nil }
+        var iterator: io_iterator_t = 0
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, matching, &iterator) == KERN_SUCCESS
+        else { return nil }
+        defer { IOObjectRelease(iterator) }
+
+        var samples: [[String: NSNumber]] = []
+        var service = IOIteratorNext(iterator)
+        while service != 0 {
+            if let statistics = IORegistryEntryCreateCFProperty(
+                service,
+                "PerformanceStatistics" as CFString,
+                kCFAllocatorDefault,
+                0
+            )?.takeRetainedValue() as? [String: Any] {
+                samples.append(statistics.compactMapValues { $0 as? NSNumber })
+            }
+            IOObjectRelease(service)
+            service = IOIteratorNext(iterator)
+        }
+
+        return HardwareSensorNormalizer.gpuUsageFraction(from: samples)
     }
 
     // MARK: - CPU
@@ -175,12 +208,19 @@ public actor SystemStatsCollector {
     }
 
     private func getBatteryInfo() -> BatteryInfo {
+        let sensorTemperature = getBatterySensorTemperature()
         guard let snapshot = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let sources = IOPSCopyPowerSourcesList(snapshot)?.takeRetainedValue() as? [Any],
               let source = sources.first,
               let desc = IOPSGetPowerSourceDescription(snapshot, source as CFTypeRef)?.takeUnretainedValue() as? [String: Any]
         else {
-            return BatteryInfo(level: nil, health: nil, isCharging: false, cycleCount: nil, temperature: nil)
+            return BatteryInfo(
+                level: nil,
+                health: nil,
+                isCharging: false,
+                cycleCount: nil,
+                temperature: sensorTemperature
+            )
         }
 
         let currentCapacity = desc[kIOPSCurrentCapacityKey] as? Int ?? 0
@@ -196,7 +236,27 @@ public actor SystemStatsCollector {
             health: nil,
             isCharging: isCharging,
             cycleCount: nil,
-            temperature: nil
+            temperature: sensorTemperature
         )
+    }
+
+    private func getBatterySensorTemperature() -> Double? {
+        guard let matching = IOServiceMatching("AppleSmartBattery") else { return nil }
+        let service = IOServiceGetMatchingService(kIOMainPortDefault, matching)
+        guard service != 0 else { return nil }
+        defer { IOObjectRelease(service) }
+
+        var properties: [String: NSNumber] = [:]
+        for key in HardwareSensorNormalizer.batteryTemperatureKeys {
+            if let value = IORegistryEntryCreateCFProperty(
+                service,
+                key as CFString,
+                kCFAllocatorDefault,
+                0
+            )?.takeRetainedValue() as? NSNumber {
+                properties[key] = value
+            }
+        }
+        return HardwareSensorNormalizer.batteryTemperatureCelsius(from: properties)
     }
 }
