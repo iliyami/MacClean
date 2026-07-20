@@ -36,16 +36,16 @@ struct SmartScanView: View {
 
     private static var moduleOrder: [(id: String, name: String, icon: String, group: String)] {
         [
-            ("systemJunk", L10n.tr("系统垃圾", "System Junk"), "trash.circle.fill", L10n.tr("清理", "Cleanup")),
-            ("mailAttachments", L10n.tr("邮件附件", "Mail Attachments"), "paperclip.circle.fill", L10n.tr("清理", "Cleanup")),
-            ("trashBins", L10n.tr("废纸篓", "Trash Bins"), "trash.fill", L10n.tr("清理", "Cleanup")),
-            ("malware", L10n.tr("恶意软件清理", "Malware Removal"), "shield.lefthalf.filled", L10n.tr("防护", "Protection")),
-            ("privacy", L10n.tr("隐私清理", "Privacy"), "hand.raised.fill", L10n.tr("防护", "Protection")),
-            ("optimization", L10n.tr("优化", "Optimization"), "gauge.with.dots.needle.67percent", L10n.tr("加速", "Speed")),
-            ("maintenance", L10n.tr("维护", "Maintenance"), "wrench.and.screwdriver", L10n.tr("加速", "Speed")),
-            ("uninstaller", L10n.tr("卸载器", "Uninstaller"), "xmark.app.fill", L10n.tr("应用", "Apps")),
-            ("updater", L10n.tr("应用更新", "Updater"), "arrow.triangle.2.circlepath", L10n.tr("应用", "Apps")),
-            ("largeOldFiles", L10n.tr("大文件与旧文件", "Large & Old Files"), "doc.richtext.fill", L10n.tr("文件", "Files")),
+            ("systemJunk", L10n.tr("系统垃圾", "System Junk", "Системный мусор"), "trash.circle.fill", L10n.tr("清理", "Cleanup", "Очистка")),
+            ("mailAttachments", L10n.tr("邮件附件", "Mail Attachments", "Почтовые вложения"), "paperclip.circle.fill", L10n.tr("清理", "Cleanup", "Очистка")),
+            ("trashBins", L10n.tr("废纸篓", "Trash Bins", "Корзины"), "trash.fill", L10n.tr("清理", "Cleanup", "Очистка")),
+            ("malware", L10n.tr("恶意软件清理", "Malware Removal", "Удаление угроз"), "shield.lefthalf.filled", L10n.tr("防护", "Protection", "Защита")),
+            ("privacy", L10n.tr("隐私清理", "Privacy", "Конфиденциальность"), "hand.raised.fill", L10n.tr("防护", "Protection", "Защита")),
+            ("optimization", L10n.tr("优化", "Optimization", "Оптимизация"), "gauge.with.dots.needle.67percent", L10n.tr("加速", "Speed", "Ускорение")),
+            ("maintenance", L10n.tr("维护", "Maintenance", "Обслуживание"), "wrench.and.screwdriver", L10n.tr("加速", "Speed", "Ускорение")),
+            ("uninstaller", L10n.tr("卸载器", "Uninstaller", "Удаление приложений"), "xmark.app.fill", L10n.tr("应用", "Apps", "Приложения")),
+            ("updater", L10n.tr("应用更新", "Updater", "Обновления"), "arrow.triangle.2.circlepath", L10n.tr("应用", "Apps", "Приложения")),
+            ("largeOldFiles", L10n.tr("大文件与旧文件", "Large & Old Files", "Большие и старые файлы"), "doc.richtext.fill", L10n.tr("文件", "Files", "Файлы")),
         ]
     }
 
@@ -89,18 +89,18 @@ struct SmartScanView: View {
             Spacer()
 
             VStack(spacing: 8) {
-                Text(L10n.tr("智能扫描", "Smart Scan"))
+                Text(L10n.tr("智能扫描", "Smart Scan", "Умное сканирование"))
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(.primary)
-                Text(L10n.tr("扫描 Mac 中的垃圾文件、恶意威胁\n和性能问题", "Scan your Mac for junk files, malware threats,\nand performance issues"))
+                Text(L10n.tr("扫描 Mac 中的垃圾文件、恶意威胁\n和性能问题", "Scan your Mac for junk files, malware threats,\nand performance issues", "Поиск на Mac мусора, вредоносных программ\nи проблем с производительностью"))
                     .font(.system(size: 14))
                     .foregroundStyle(.primary.opacity(0.65))
                     .multilineTextAlignment(.center)
             }
 
             ScanButton(
-                title: L10n.tr("扫描", "Scan"),
-                subtitle: L10n.tr("一键清理", "One-click cleanup"),
+                title: L10n.tr("扫描", "Scan", "Сканировать"),
+                subtitle: L10n.tr("一键清理", "One-click cleanup", "Очистка одним нажатием"),
                 theme: .smartScan,
                 action: startScan
             )
@@ -117,8 +117,8 @@ struct SmartScanView: View {
             // Top stats bar
             HStack(spacing: 24) {
                 statBadge(label: L10n.tr("进度"), value: "\(Int(progress * 100))%")
-                statBadge(label: L10n.tr("已发现文件", "Files Found"), value: filesFound.formatted())
-                statBadge(label: L10n.tr("大小", "Size"), value: FileSizeFormatter.format(sizeFound))
+                statBadge(label: L10n.tr("已发现文件", "Files Found", "Найдено файлов"), value: filesFound.formatted())
+                statBadge(label: L10n.tr("大小", "Size", "Размер"), value: FileSizeFormatter.format(sizeFound))
             }
             .padding(.horizontal, 30)
             .padding(.top, 16)
@@ -200,14 +200,14 @@ struct SmartScanView: View {
 
             // Results for completed modules
             if let info = completedInfo, info.fileCount > 0 {
-                Text(L10n.tr("\(info.fileCount) 项", "\(info.fileCount) items"))
+                Text(L10n.tr("\(info.fileCount) 项", "\(info.fileCount) items", "\(info.fileCount) \(L10n.russianPlural(info.fileCount, one: "объект", few: "объекта", many: "объектов"))"))
                     .font(.system(size: 11))
                     .foregroundStyle(.primary.opacity(0.5))
                 Text(FileSizeFormatter.format(info.size))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.primary.opacity(0.6))
             } else if completedInfo != nil {
-                Text(L10n.tr("干净", "Clean"))
+                Text(L10n.tr("干净", "Clean", "Чисто"))
                     .font(.system(size: 11))
                     .foregroundStyle(.green.opacity(0.7))
             }
@@ -246,19 +246,19 @@ struct SmartScanView: View {
 
     private func resultsView(totalSize: UInt64) -> some View {
         VStack(spacing: 20) {
-            SizeDisplay(size: totalSize, label: L10n.tr("发现的垃圾", "of junk found"))
+            SizeDisplay(size: totalSize, label: L10n.tr("发现的垃圾", "of junk found", "найдено мусора"))
                 .foregroundStyle(.primary)
                 .padding(.top, 24)
 
             HStack(spacing: 24) {
                 if case .results(let cleanup, _, _, _, _) = scanState {
-                    resultPill(icon: "trash.circle.fill", label: L10n.tr("清理", "Cleanup"), value: FileSizeFormatter.format(cleanup))
+                    resultPill(icon: "trash.circle.fill", label: L10n.tr("清理", "Cleanup", "Очистка"), value: FileSizeFormatter.format(cleanup))
                 }
                 if case .results(_, let threats, _, _, _) = scanState {
-                    resultPill(icon: "shield.lefthalf.filled", label: L10n.tr("防护", "Protection"), value: L10n.tr("\(threats) 个威胁", "\(threats) threats"))
+                    resultPill(icon: "shield.lefthalf.filled", label: L10n.tr("防护", "Protection", "Защита"), value: L10n.tr("\(threats) 个威胁", "\(threats) threats", "\(threats) \(L10n.russianPlural(threats, one: "угроза", few: "угрозы", many: "угроз"))"))
                 }
                 if case .results(_, _, let perf, _, _) = scanState {
-                    resultPill(icon: "gauge.with.dots.needle.67percent", label: L10n.tr("加速", "Speed"), value: L10n.tr("\(perf) 项", "\(perf) items"))
+                    resultPill(icon: "gauge.with.dots.needle.67percent", label: L10n.tr("加速", "Speed", "Ускорение"), value: L10n.tr("\(perf) 项", "\(perf) items", "\(perf) \(L10n.russianPlural(perf, one: "объект", few: "объекта", many: "объектов"))"))
                 }
             }
 
@@ -275,12 +275,12 @@ struct SmartScanView: View {
 
             // Footer: running selection on the left, the clean action on the right.
             HStack {
-                Text(L10n.tr("已选择 \(selectedItems.count)/\(totalCleanItems) 项", "\(selectedItems.count)/\(totalCleanItems) selected"))
+                Text(L10n.tr("已选择 \(selectedItems.count)/\(totalCleanItems) 项", "\(selectedItems.count)/\(totalCleanItems) selected", "Выбрано \(selectedItems.count) из \(totalCleanItems) \(L10n.russianPlural(totalCleanItems, one: "объекта", few: "объектов", many: "объектов"))"))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.primary.opacity(0.7))
                 Spacer()
                 Button { showCleanConfirm = true } label: {
-                    Text(L10n.tr("清理 · \(FileSizeFormatter.format(selectedCleanSize))", "Clean · \(FileSizeFormatter.format(selectedCleanSize))"))
+                    Text(L10n.tr("清理 · \(FileSizeFormatter.format(selectedCleanSize))", "Clean · \(FileSizeFormatter.format(selectedCleanSize))", "Очистить · \(FileSizeFormatter.format(selectedCleanSize))"))
                 }
                 .buttonStyle(SuperEllipseButtonStyle(
                     gradient: ModuleTheme.smartScan.buttonGradient,
@@ -288,11 +288,11 @@ struct SmartScanView: View {
                 ))
                 .disabled(selectedItems.isEmpty)
                 .opacity(selectedItems.isEmpty ? 0.5 : 1)
-                .alert(L10n.tr("清理 \(selectedItems.count) 项？", "Clean \(selectedItems.count) item\(selectedItems.count == 1 ? "" : "s")?"), isPresented: $showCleanConfirm) {
-                    Button(L10n.tr("取消", "Cancel"), role: .cancel) { }
-                    Button(L10n.tr("清理", "Clean"), role: .destructive) { runCleanup() }
+                .alert(L10n.tr("清理 \(selectedItems.count) 项？", "Clean \(selectedItems.count) item\(selectedItems.count == 1 ? "" : "s")?", "Очистить \(selectedItems.count) \(L10n.russianPlural(selectedItems.count, one: "объект", few: "объекта", many: "объектов"))?"), isPresented: $showCleanConfirm) {
+                    Button(L10n.tr("取消", "Cancel", "Отмена"), role: .cancel) { }
+                    Button(L10n.tr("清理", "Clean", "Очистить"), role: .destructive) { runCleanup() }
                 } message: {
-                    Text(L10n.tr("选中的项目会移到废纸篓，如有需要仍可恢复。", "Selected items will be moved to the Trash so you can recover them if needed."))
+                    Text(L10n.tr("选中的项目会移到废纸篓，如有需要仍可恢复。", "Selected items will be moved to the Trash so you can recover them if needed.", "Выбранные объекты будут перемещены в Корзину, откуда при необходимости их можно восстановить."))
                 }
             }
             .padding(.horizontal, 24)
@@ -338,13 +338,13 @@ struct SmartScanView: View {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 52))
                 .foregroundStyle(.primary.opacity(0.9))
-            Text(L10n.tr("你的 Mac 很干净！", "Your Mac is clean!"))
+            Text(L10n.tr("你的 Mac 很干净！", "Your Mac is clean!", "Ваш Mac чист!"))
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.primary)
-            Text(L10n.tr("未发现垃圾、威胁或性能问题", "No junk, threats, or performance issues found"))
+            Text(L10n.tr("未发现垃圾、威胁或性能问题", "No junk, threats, or performance issues found", "Мусор, угрозы и проблемы с производительностью не обнаружены"))
                 .font(.system(size: 14))
                 .foregroundStyle(.primary.opacity(0.6))
-            Button(L10n.tr("完成", "Done")) { resetScan() }
+            Button(L10n.tr("完成", "Done", "Готово")) { resetScan() }
                 .buttonStyle(.bordered)
                 .tint(.primary)
                 .controlSize(.large)
@@ -355,13 +355,13 @@ struct SmartScanView: View {
     private func cleaningView(progress: Double) -> some View {
         VStack(spacing: 20) {
             Spacer()
-            ScanProgressRing(progress: progress, phase: L10n.tr("正在清理你的 Mac...", "Cleaning your Mac..."), theme: .smartScan)
+            ScanProgressRing(progress: progress, phase: L10n.tr("正在清理你的 Mac...", "Cleaning your Mac...", "Очистка Mac..."), theme: .smartScan)
             // Cancel mid-clean — consistent with the per-module views: just
             // cancel the task and let it land on .done with whatever was
             // already freed (the CleaningEngine checks Task.isCancelled at
             // each chunk boundary). We do NOT reset to .idle here, because
             // the in-flight task would race that back to .done.
-            Button(L10n.tr("取消", "Cancel")) { cleanTask?.cancel() }
+            Button(L10n.tr("取消", "Cancel", "Отмена")) { cleanTask?.cancel() }
                 .buttonStyle(.bordered)
                 .tint(.primary)
                 .controlSize(.large)
@@ -375,17 +375,17 @@ struct SmartScanView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 52))
                 .foregroundStyle(.primary)
-            Text(L10n.tr("已移到废纸篓", "Moved to the Trash"))
+            Text(L10n.tr("已移到废纸篓", "Moved to the Trash", "Перемещено в Корзину"))
                 .font(.system(size: 22, weight: .bold))
                 .foregroundStyle(.primary)
-            SizeDisplay(size: freedSize, label: L10n.tr("可回收", "ready to reclaim"))
+            SizeDisplay(size: freedSize, label: L10n.tr("可回收", "ready to reclaim", "можно освободить"))
                 .foregroundStyle(.primary)
-            Text(L10n.tr("你选择的项目已在废纸篓中——需要时可以恢复。若要彻底删除，请打开“废纸篓”模块并清空。", "Your selected items are in the Trash — recover anything you need. To erase them for good, open Trash Bins and empty it."))
+            Text(L10n.tr("你选择的项目已在废纸篓中——需要时可以恢复。若要彻底删除，请打开“废纸篓”模块并清空。", "Your selected items are in the Trash — recover anything you need. To erase them for good, open Trash Bins and empty it.", "Выбранные объекты находятся в Корзине — при необходимости их можно восстановить. Чтобы удалить их окончательно, откройте раздел «Корзины» и очистите корзины."))
                 .font(.system(size: 13))
                 .foregroundStyle(.primary.opacity(0.65))
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 420)
-            Button(L10n.tr("完成", "Done")) { resetScan() }
+            Button(L10n.tr("完成", "Done", "Готово")) { resetScan() }
                 .buttonStyle(.bordered)
                 .tint(.primary)
                 .controlSize(.large)
@@ -429,7 +429,7 @@ struct SmartScanView: View {
         currentModuleName = ""
 
         Task {
-            scanState = .scanning(phase: L10n.tr("正在分析系统...", "Analyzing system..."), progress: 0, filesFound: 0, sizeFound: 0)
+            scanState = .scanning(phase: L10n.tr("正在分析系统...", "Analyzing system...", "Анализ системы..."), progress: 0, filesFound: 0, sizeFound: 0)
             appState.scanCoordinator.scanAll()
 
             var previousModule = ""

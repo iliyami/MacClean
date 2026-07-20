@@ -2,7 +2,7 @@ import XCTest
 import Foundation
 @testable import MacCleanKit
 
-final class FileGroupTests: XCTestCase {
+final class FileGroupTests: EnglishAppLanguageTestCase {
 
     private func makeFile(_ name: String, size: UInt64 = 0, mod: Date? = nil) -> FileItem {
         FileItem(

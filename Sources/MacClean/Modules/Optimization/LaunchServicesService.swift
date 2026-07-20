@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import MacCleanKit
 
 public enum LaunchServicesError: LocalizedError, Sendable {
     case backupFailed(Error)
@@ -8,9 +9,24 @@ public enum LaunchServicesError: LocalizedError, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .backupFailed(let e): return "Backup failed: \(e.localizedDescription)"
-        case .restoreFailed(let e): return "Restore failed: \(e.localizedDescription)"
-        case .deleteFailed(let msg): return "Delete failed: \(msg)"
+        case .backupFailed(let error):
+            return L10n.tr(
+                "备份失败：\(error.localizedDescription)",
+                "Backup failed: \(error.localizedDescription)",
+                "Не удалось создать резервную копию: \(error.localizedDescription)"
+            )
+        case .restoreFailed(let error):
+            return L10n.tr(
+                "恢复失败：\(error.localizedDescription)",
+                "Restore failed: \(error.localizedDescription)",
+                "Не удалось восстановить копию: \(error.localizedDescription)"
+            )
+        case .deleteFailed(let message):
+            return L10n.tr(
+                "删除失败：\(message)",
+                "Delete failed: \(message)",
+                "Не удалось удалить: \(message)"
+            )
         }
     }
 }
@@ -70,7 +86,9 @@ public final class LaunchServicesService: @unchecked Sendable {
 
         // 2. Read as mutable dictionary so unknown keys are preserved.
         guard let plistData = NSMutableDictionary(contentsOfFile: plistPath) else {
-            throw LaunchServicesError.deleteFailed("Cannot read plist")
+            throw LaunchServicesError.deleteFailed(
+                L10n.tr("无法读取 plist", "Cannot read plist", "Не удалось прочитать plist")
+            )
         }
 
         if let handlers = plistData["LSHandlers"] as? NSMutableArray {
@@ -86,7 +104,9 @@ public final class LaunchServicesService: @unchecked Sendable {
         }
 
         guard plistData.write(toFile: plistPath, atomically: true) else {
-            throw LaunchServicesError.deleteFailed("Cannot write plist")
+            throw LaunchServicesError.deleteFailed(
+                L10n.tr("无法写入 plist", "Cannot write plist", "Не удалось записать plist")
+            )
         }
     }
 

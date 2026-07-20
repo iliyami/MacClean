@@ -37,11 +37,23 @@ public actor ThinAppBundleOperation {
         public var errorDescription: String? {
             switch self {
             case .noFatBinariesFound:
-                "no fat (universal) Mach-O binaries found in bundle"
+                L10n.tr(
+                    "应用包中未找到通用 Mach-O 二进制文件",
+                    "no fat (universal) Mach-O binaries found in bundle",
+                    "В пакете нет универсальных бинарных файлов Mach-O"
+                )
             case .bundleInUse(let pids):
-                "bundle is in use by process(es) \(pids.joined(separator: ", ")) — quit the app and try again"
+                L10n.tr(
+                    "应用包正被进程 \(pids.joined(separator: ", ")) 使用——请退出应用后重试",
+                    "bundle is in use by process(es) \(pids.joined(separator: ", ")) — quit the app and try again",
+                    "Пакет используют процессы \(pids.joined(separator: ", ")). Закройте приложение и повторите попытку"
+                )
             case .bundleVerifyFailed(let s):
-                "thinning would have invalidated the app's code signature, so it was rolled back: \(s)"
+                L10n.tr(
+                    "精简会使应用的代码签名失效，因此已回滚：\(s)",
+                    "thinning would have invalidated the app's code signature, so it was rolled back: \(s)",
+                    "Удаление лишних архитектур сделало бы подпись кода приложения недействительной, поэтому изменения отменены: \(s)"
+                )
             }
         }
     }
@@ -109,7 +121,11 @@ public actor ThinAppBundleOperation {
             }
             try? fm.removeItem(at: backupDir)
             throw OpError.bundleVerifyFailed(
-                stderr: "bundle no longer passes codesign --verify after thinning"
+                stderr: L10n.tr(
+                    "精简后应用包无法再通过 codesign --verify",
+                    "bundle no longer passes codesign --verify after thinning",
+                    "После обработки пакет больше не проходит codesign --verify"
+                )
             )
         }
 

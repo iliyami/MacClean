@@ -16,9 +16,9 @@ public enum AppearanceMode: String, CaseIterable, Identifiable {
 
     public var label: String {
         switch self {
-        case .system: L10n.tr("跟随系统", "System")
-        case .light: L10n.tr("浅色", "Light")
-        case .dark: L10n.tr("深色", "Dark")
+        case .system: L10n.tr("跟随系统", "System", "Системная")
+        case .light: L10n.tr("浅色", "Light", "Светлая")
+        case .dark: L10n.tr("深色", "Dark", "Тёмная")
         }
     }
 

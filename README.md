@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a>
+  <strong>English</strong> | <a href="README.zh-CN.md">简体中文</a> | <a href="README.ru.md">Русский</a>
 </p>
 
 <p align="center">
@@ -48,7 +48,7 @@ Mac Sai is a **free, open-source** macOS app that cleans junk files, removes mal
 
 **No subscriptions. No telemetry. No ads. Just a clean Mac.**
 
-**Available in English and Simplified Chinese (简体中文).** Switch anytime in **Settings → Interface Language**; by default it follows your system language.
+**Available in English, Simplified Chinese (简体中文), and Russian (Русский).** Switch anytime in **Settings → Interface Language**; by default it follows your system language.
 
 ## How Mac Sai compares
 
@@ -195,7 +195,7 @@ Download the latest DMG from [Releases](https://github.com/iliyami/MacSai/releas
 
 ```bash
 git clone https://github.com/iliyami/MacSai.git
-cd MacClean
+cd MacSai
 swift build
 swift test                     # run 486 tests
 bash scripts/build-dmg.sh      # build local DMG (unsigned)

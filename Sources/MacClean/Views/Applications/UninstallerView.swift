@@ -32,10 +32,10 @@ struct UninstallerView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(L10n.tr("卸载器", "Uninstaller"))
+                    Text(L10n.tr("卸载器", "Uninstaller", "Удаление приложений"))
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(.primary)
-                    Text(L10n.tr("彻底移除应用及其残留文件", "Completely remove apps and their leftover files"))
+                    Text(L10n.tr("彻底移除应用及其残留文件", "Completely remove apps and their leftover files", "Полностью удаляйте приложения и оставшиеся после них файлы"))
                         .font(.system(size: 12))
                         .foregroundStyle(.primary.opacity(0.6))
                 }
@@ -50,17 +50,17 @@ struct UninstallerView: View {
                     ProgressView()
                         .controlSize(.large)
                         .tint(.primary)
-                    Text(L10n.tr("正在发现已安装应用...", "Discovering installed apps..."))
+                    Text(L10n.tr("正在发现已安装应用...", "Discovering installed apps...", "Поиск установленных приложений..."))
                         .font(.system(size: 13))
                         .foregroundStyle(.primary.opacity(0.6))
                 }
                 Spacer()
             } else {
                 HStack(spacing: 10) {
-                    TextField(L10n.tr("搜索应用...", "Search apps..."), text: $searchText)
+                    TextField(L10n.tr("搜索应用...", "Search apps...", "Поиск приложений..."), text: $searchText)
                         .textFieldStyle(.roundedBorder)
 
-                    Picker(L10n.tr("筛选", "Filter"), selection: $filter) {
+                    Picker(L10n.tr("筛选", "Filter", "Фильтр"), selection: $filter) {
                         ForEach(AppFilter.allCases, id: \.self) { f in
                             Text(f.label).tag(f)
                         }
@@ -81,7 +81,7 @@ struct UninstallerView: View {
                     } else {
                         VStack {
                             Spacer()
-                            Text(L10n.tr("选择一个应用以查看相关文件", "Select an app to see its files"))
+                            Text(L10n.tr("选择一个应用以查看相关文件", "Select an app to see its files", "Выберите приложение, чтобы увидеть связанные с ним файлы"))
                                 .foregroundStyle(.primary.opacity(0.4))
                                 .font(.system(size: 13))
                             Spacer()
@@ -102,16 +102,16 @@ struct UninstallerView: View {
         // Attached to the top-level body (not the conditionally-rendered
         // detail pane) so the confirmation can't be torn down mid-present
         // when selectedApp changes. `appPendingUninstall` is the anchor.
-        .alert(L10n.tr("将 \(appPendingUninstall?.name ?? "此应用") 移到废纸篓？", "Move \(appPendingUninstall?.name ?? "this app") to the Trash?"),
+        .alert(L10n.tr("将 \(appPendingUninstall?.name ?? "此应用") 移到废纸篓？", "Move \(appPendingUninstall?.name ?? "this app") to the Trash?", "Переместить \(appPendingUninstall?.name ?? "это приложение") в Корзину?"),
                isPresented: Binding(get: { appPendingUninstall != nil },
                                     set: { if !$0 { appPendingUninstall = nil } }),
                presenting: appPendingUninstall) { app in
-            Button(L10n.tr("取消", "Cancel"), role: .cancel) { appPendingUninstall = nil }
-            Button(L10n.tr("移到废纸篓", "Move to Trash"), role: .destructive) {
+            Button(L10n.tr("取消", "Cancel", "Отмена"), role: .cancel) { appPendingUninstall = nil }
+            Button(L10n.tr("移到废纸篓", "Move to Trash", "Переместить в Корзину"), role: .destructive) {
                 let target = app; appPendingUninstall = nil; uninstall(target)
             }
         } message: { app in
-            Text(L10n.tr("\(app.name) 及其关联文件将被移到废纸篓。如有需要，你可以从废纸篓恢复。", "\(app.name) and its associated files will be moved to the Trash. You can restore them from the Trash if needed."))
+            Text(L10n.tr("\(app.name) 及其关联文件将被移到废纸篓。如有需要，你可以从废纸篓恢复。", "\(app.name) and its associated files will be moved to the Trash. You can restore them from the Trash if needed.", "Приложение \(app.name) и связанные с ним файлы будут перемещены в Корзину. При необходимости их можно восстановить."))
         }
     }
 
@@ -154,7 +154,7 @@ struct UninstallerView: View {
                         Spacer()
 
                         if app.isUnused {
-                            Text(L10n.tr("未使用", "Unused"))
+                            Text(L10n.tr("未使用", "Unused", "Не используется"))
                                 .font(.system(size: 10))
                                 .padding(.horizontal, 5)
                                 .padding(.vertical, 1)
@@ -189,7 +189,7 @@ struct UninstallerView: View {
                 Spacer()
 
                 if safetyGuard.isProtectedApp(app.bundleIdentifier) {
-                    Text(L10n.tr("受保护的系统应用——无法移除", "Protected system app — can't be removed"))
+                    Text(L10n.tr("受保护的系统应用——无法移除", "Protected system app — can't be removed", "Защищённое системное приложение — удалить нельзя"))
                         .font(.system(size: 12))
                         .foregroundStyle(.primary.opacity(0.6))
                 } else if isUninstalling {
@@ -197,16 +197,16 @@ struct UninstallerView: View {
                     // re-tapped) and a spinner shows the work is happening.
                     ProgressView()
                         .controlSize(.small)
-                    Text(L10n.tr("正在卸载…", "Uninstalling…"))
+                    Text(L10n.tr("正在卸载…", "Uninstalling…", "Удаление…"))
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 } else {
-                    Button(L10n.tr("卸载", "Uninstall")) { appPendingUninstall = app }
+                    Button(L10n.tr("卸载", "Uninstall", "Удалить")) { appPendingUninstall = app }
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
                         .controlSize(.small)
 
-                    Button(L10n.tr("重置", "Reset")) { resetSelection() }
+                    Button(L10n.tr("重置", "Reset", "Сбросить")) { resetSelection() }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                 }
@@ -215,13 +215,13 @@ struct UninstallerView: View {
 
             if isLoadingFiles {
                 Spacer()
-                ProgressView(L10n.tr("正在查找关联文件...", "Finding associated files..."))
+                ProgressView(L10n.tr("正在查找关联文件...", "Finding associated files...", "Поиск связанных файлов..."))
                     .tint(.secondary)
                     .font(.system(size: 12))
                 Spacer()
             } else if !associatedFiles.isEmpty {
                 let totalSize = associatedFiles.reduce(0 as UInt64) { $0 + $1.size }
-                Text(L10n.tr("\(associatedFiles.count) 个关联文件（\(FileSizeFormatter.format(totalSize))）", "\(associatedFiles.count) associated files (\(FileSizeFormatter.format(totalSize)))"))
+                Text(L10n.tr("\(associatedFiles.count) 个关联文件（\(FileSizeFormatter.format(totalSize))）", "\(associatedFiles.count) associated files (\(FileSizeFormatter.format(totalSize)))", "\(associatedFiles.count) \(L10n.russianPlural(associatedFiles.count, one: "связанный файл", few: "связанных файла", many: "связанных файлов")) (\(FileSizeFormatter.format(totalSize)))"))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -260,7 +260,7 @@ struct UninstallerView: View {
                 .listStyle(.inset)
             } else {
                 Spacer()
-                Text(L10n.tr("未找到关联文件", "No associated files found"))
+                Text(L10n.tr("未找到关联文件", "No associated files found", "Связанные файлы не найдены"))
                     .foregroundStyle(.secondary)
                     .font(.system(size: 12))
                 Spacer()

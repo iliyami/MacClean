@@ -10,7 +10,7 @@ public struct ScanButton: View {
     let action: () -> Void
 
     public init(
-        title: String = L10n.tr("扫描", "Scan"),
+        title: String = L10n.tr("扫描", "Scan", "Сканировать"),
         subtitle: String? = nil,
         theme: ModuleTheme = .smartScan,
         isScanning: Bool = false,

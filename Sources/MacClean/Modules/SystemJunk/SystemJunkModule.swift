@@ -4,7 +4,7 @@ import MacCleanKit
 
 public struct SystemJunkModule: ScanModule {
     public let id = "system_junk"
-    public var name: String { L10n.tr("系统垃圾", "System Junk") }
+    public var name: String { L10n.tr("系统垃圾", "System Junk", "Системный мусор") }
     public let category = ModuleCategory.cleanup
 
     private let scanner = TargetedScanner()

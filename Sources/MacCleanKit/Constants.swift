@@ -188,13 +188,14 @@ public enum MCConstants {
 
     // MARK: - Preserved Languages
 
-    // English (in every form) and Base are never offered for deletion. Apps
-    // ship both modern code folders ("en.lproj") and the legacy NeXT-era
-    // full-word "English.lproj", so both English spellings are listed.
+    // English, Chinese, Russian (in common modern and legacy forms), and Base
+    // are never offered for deletion. These include the interface languages
+    // Mac Sai supports plus the base resources many apps require.
     public static let preservedLanguages: Set<String> = [
         "en.lproj", "English.lproj", "Base.lproj", "en_US.lproj", "en_GB.lproj",
         "zh.lproj", "zh-Hans.lproj", "zh-Hant.lproj", "zh_CN.lproj", "zh_TW.lproj",
         "Chinese.lproj", "Simplified Chinese.lproj", "Traditional Chinese.lproj",
+        "ru.lproj", "ru-RU.lproj", "ru_RU.lproj", "Russian.lproj",
     ]
 
     // MARK: - Log File Path

@@ -62,14 +62,14 @@ struct DuplicateGroupsList: View {
             Image(systemName: "checkmark.shield.fill")
                 .foregroundStyle(.green)
             VStack(alignment: .leading, spacing: 2) {
-                Text(L10n.tr("每组都会保留一个副本，且永远不会被移除。", "One copy of every set is kept and can never be removed."))
+                Text(L10n.tr("每组都会保留一个副本，且永远不会被移除。", "One copy of every set is kept and can never be removed.", "В каждой группе сохраняется одна копия — удалить её нельзя."))
                     .font(.system(size: 12, weight: .medium))
-                Text(L10n.tr("标记为“保留”的行受保护，只会删除勾选的副本。", "Rows marked KEPT are protected. Only the checked copies are deleted."))
+                Text(L10n.tr("标记为“保留”的行受保护，只会删除勾选的副本。", "Rows marked KEPT are protected. Only the checked copies are deleted.", "Строки с меткой «ОСТАВЛЕНО» защищены. Удаляются только отмеченные копии."))
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button(allExpanded ? L10n.tr("全部折叠", "Collapse all") : L10n.tr("全部展开", "Expand all")) {
+            Button(allExpanded ? L10n.tr("全部折叠", "Collapse all", "Свернуть все") : L10n.tr("全部展开", "Expand all", "Развернуть все")) {
                 if allExpanded { expanded.removeAll() }
                 else { expanded = Set(groups.map(\.id)) }
             }
@@ -142,11 +142,11 @@ private struct DuplicateGroupHeaderRow: View {
 
             Spacer()
 
-            Text(L10n.tr("\(group.copyCount) 个副本", "\(group.copyCount) copies"))
+            Text(L10n.tr("\(group.copyCount) 个副本", "\(group.copyCount) copies", "\(group.copyCount) \(L10n.russianPlural(group.copyCount, one: "копия", few: "копии", many: "копий"))"))
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 
-            Text(L10n.tr("可节省 \(group.formattedWastedSpace)", "saves \(group.formattedWastedSpace)"))
+            Text(L10n.tr("可节省 \(group.formattedWastedSpace)", "saves \(group.formattedWastedSpace)", "можно освободить \(group.formattedWastedSpace)"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fontWeight(.medium)
@@ -172,7 +172,7 @@ private struct DuplicateOriginalRow: View {
                     Text(item.name)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                    Text(L10n.tr("保留", "KEPT"))
+                    Text(L10n.tr("保留", "KEPT", "ОСТАВЛЕНО"))
                         .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(.green)
                         .padding(.horizontal, 5)
@@ -196,7 +196,7 @@ private struct DuplicateOriginalRow: View {
         .padding(.vertical, 2)
         .opacity(0.85)
         .contextMenu {
-            Button(L10n.tr("在 Finder 中显示", "Reveal in Finder")) {
+            Button(L10n.tr("在 Finder 中显示", "Reveal in Finder", "Показать в Finder")) {
                 NSWorkspace.shared.activateFileViewerSelecting([item.url])
             }
         }
@@ -245,7 +245,7 @@ private struct DuplicateCopyRow: View {
         .contentShape(Rectangle())
         .onTapGesture { onToggle() }
         .contextMenu {
-            Button(L10n.tr("在 Finder 中显示", "Reveal in Finder")) {
+            Button(L10n.tr("在 Finder 中显示", "Reveal in Finder", "Показать в Finder")) {
                 NSWorkspace.shared.activateFileViewerSelecting([item.url])
             }
         }

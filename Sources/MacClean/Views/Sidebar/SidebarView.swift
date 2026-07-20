@@ -197,7 +197,7 @@ public struct SidebarView: View {
                 Image(systemName: "gearshape")
                     .font(.system(size: 13))
                     .foregroundStyle(selection == .settings ? Color.accentColor : Color.secondary)
-                Text(L10n.tr("设置", "Settings"))
+                Text(L10n.tr("设置", "Settings", "Настройки"))
                     .font(.system(size: 13, weight: .medium))
                 Spacer()
                 // Version lives here (not in the title bar); kept in sync
@@ -217,7 +217,7 @@ public struct SidebarView: View {
         )
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .accessibilityLabel(L10n.tr("设置", "Settings"))
+        .accessibilityLabel(L10n.tr("设置", "Settings", "Настройки"))
     }
 
     private func sidebarRow(_ item: SidebarItem) -> some View {

@@ -47,7 +47,7 @@ struct ContentView: View {
                 }
 
                 if appState.selectedSidebarItem == nil {
-                    Text(L10n.tr("请从侧边栏选择一个模块", "Select a module from the sidebar"))
+                    Text(L10n.tr("请从侧边栏选择一个模块", "Select a module from the sidebar", "Выберите модуль на боковой панели"))
                         .foregroundStyle(.secondary)
                 }
 
@@ -94,7 +94,7 @@ struct ContentView: View {
             }
         }
         .alert(
-            L10n.tr("发现新版本", "Update available"),
+            L10n.tr("发现新版本", "Update available", "Доступно обновление"),
             isPresented: Binding(
                 get: { updateCoordinator.pendingUpdate != nil },
                 set: { if !$0 { updateCoordinator.dismiss() } }
@@ -103,18 +103,18 @@ struct ContentView: View {
         ) { pending in
             switch pending.action {
             case .brewCommand:
-                Button(L10n.tr("复制升级命令", "Copy Upgrade Command")) {
+                Button(L10n.tr("复制升级命令", "Copy Upgrade Command", "Скопировать команду обновления")) {
                     updateCoordinator.performPrimaryAction()
                 }
             case .openRelease:
-                Button(L10n.tr("下载", "Download")) {
+                Button(L10n.tr("下载", "Download", "Загрузить")) {
                     updateCoordinator.performPrimaryAction()
                 }
             }
-            Button(L10n.tr("跳过此版本", "Skip This Version")) {
+            Button(L10n.tr("跳过此版本", "Skip This Version", "Пропустить эту версию")) {
                 updateCoordinator.skip(pending.version)
             }
-            Button(L10n.tr("稍后", "Later"), role: .cancel) {
+            Button(L10n.tr("稍后", "Later", "Позже"), role: .cancel) {
                 updateCoordinator.dismiss()
             }
         } message: { pending in
@@ -122,11 +122,13 @@ struct ContentView: View {
             case .brewCommand(let cmd):
                 Text(L10n.tr(
                     "Mac Sai \(pending.version) 已发布。使用 Homebrew 升级：\n\(cmd)",
-                    "Mac Sai \(pending.version) is available. Upgrade with Homebrew:\n\(cmd)"))
+                    "Mac Sai \(pending.version) is available. Upgrade with Homebrew:\n\(cmd)",
+                    "Доступна версия Mac Sai \(pending.version). Обновите через Homebrew:\n\(cmd)"))
             case .openRelease:
                 Text(L10n.tr(
                     "Mac Sai \(pending.version) 已发布。",
-                    "Mac Sai \(pending.version) is available."))
+                    "Mac Sai \(pending.version) is available.",
+                    "Доступна версия Mac Sai \(pending.version)."))
             }
         }
     }

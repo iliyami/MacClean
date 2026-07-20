@@ -1,4 +1,5 @@
 import Foundation
+import MacCleanKit
 
 public struct HandlerEntry: Identifiable, Equatable, Sendable {
     public let id: UUID
@@ -18,7 +19,7 @@ public struct HandlerEntry: Identifiable, Equatable, Sendable {
         } else if let scheme = urlScheme {
             return "\(scheme)://"
         }
-        return "Unknown"
+        return L10n.tr("未知", "Unknown", "Неизвестно")
     }
 
     public var appBundleIdentifier: String? { roleAll }

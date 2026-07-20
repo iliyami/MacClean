@@ -3,7 +3,7 @@ import MacCleanKit
 
 public struct ShredderModule: ScanModule {
     public let id = "shredder"
-    public var name: String { L10n.tr("文件粉碎", "Shredder") }
+    public var name: String { L10n.tr("文件粉碎", "Shredder", "Уничтожение файлов") }
     public let category = ModuleCategory.files
     public let includedInSmartScan = false
 

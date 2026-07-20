@@ -16,10 +16,10 @@ struct PrivacyView: View {
 
     var body: some View {
         ModuleContainerView(
-            title: L10n.tr("隐私清理", "Privacy"),
-            subtitle: L10n.tr("清理浏览器数据、历史记录、Cookie 和系统痕迹", "Clean browser data, history, cookies, and system traces"),
+            title: L10n.tr("隐私清理", "Privacy", "Конфиденциальность"),
+            subtitle: L10n.tr("清理浏览器数据、历史记录、Cookie 和系统痕迹", "Clean browser data, history, cookies, and system traces", "Удаление данных браузеров, истории, файлов cookie и системных следов"),
             theme: .protection,
-            emptyMessage: L10n.tr("未发现隐私痕迹", "No privacy traces found"),
+            emptyMessage: L10n.tr("未发现隐私痕迹", "No privacy traces found", "Следы активности не найдены"),
             results: results,
             selectedItems: $selectedItems,
             isScanning: isScanning,
@@ -57,27 +57,27 @@ struct PrivacyView: View {
         Task {
             let scanStart = Date()
 
-            scanPhase = L10n.tr("正在扫描 Safari 数据...", "Scanning Safari data...")
+            scanPhase = L10n.tr("正在扫描 Safari 数据...", "Scanning Safari data...", "Сканирование данных Safari...")
             scanProgress = 0.15
             try? await Task.sleep(for: .milliseconds(400))
 
-            scanPhase = L10n.tr("正在扫描 Chrome 数据...", "Scanning Chrome data...")
+            scanPhase = L10n.tr("正在扫描 Chrome 数据...", "Scanning Chrome data...", "Сканирование данных Chrome...")
             scanProgress = 0.35
 
             let module = PrivacyModule(timeFilter: timeFilter)
             async let scanTask = module.scan()
 
             try? await Task.sleep(for: .milliseconds(400))
-            scanPhase = L10n.tr("正在扫描 Firefox 数据...", "Scanning Firefox data...")
+            scanPhase = L10n.tr("正在扫描 Firefox 数据...", "Scanning Firefox data...", "Сканирование данных Firefox...")
             scanProgress = 0.55
 
             try? await Task.sleep(for: .milliseconds(400))
-            scanPhase = L10n.tr("正在检查系统痕迹...", "Checking system traces...")
+            scanPhase = L10n.tr("正在检查系统痕迹...", "Checking system traces...", "Проверка системных следов...")
             scanProgress = 0.75
 
             results = await scanTask
 
-            scanPhase = L10n.tr("正在分析结果...", "Analyzing results...")
+            scanPhase = L10n.tr("正在分析结果...", "Analyzing results...", "Анализ результатов...")
             scanProgress = 0.9
 
             let elapsed = Date().timeIntervalSince(scanStart)

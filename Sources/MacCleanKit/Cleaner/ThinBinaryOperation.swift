@@ -40,13 +40,25 @@ public actor ThinBinaryOperation {
         public var errorDescription: String? {
             switch self {
             case .notFat:
-                "input binary is not a fat (universal) Mach-O"
+                L10n.tr(
+                    "输入的二进制文件不是通用 Mach-O",
+                    "input binary is not a fat (universal) Mach-O",
+                    "Входной файл не является универсальным бинарным файлом Mach-O"
+                )
             case .raceDetected(let message):
-                "binary changed under us while thinning: \(message)"
+                L10n.tr(
+                    "精简期间二进制文件被其他进程修改：\(message)",
+                    "binary changed under us while thinning: \(message)",
+                    "Бинарный файл изменился во время обработки: \(message)"
+                )
             case .lipoFailed(let stderr):
-                "lipo failed: \(stderr)"
+                L10n.tr("lipo 执行失败：\(stderr)", "lipo failed: \(stderr)", "Ошибка lipo: \(stderr)")
             case .backupFailed(let message):
-                "atomic backup/promote failed: \(message)"
+                L10n.tr(
+                    "原子备份或替换失败：\(message)",
+                    "atomic backup/promote failed: \(message)",
+                    "Не удалось атомарно создать копию или заменить файл: \(message)"
+                )
             }
         }
     }
@@ -83,7 +95,11 @@ public actor ThinBinaryOperation {
             throw OpError.notFat
         }
         guard archs.contains(targetArch.lipoName) else {
-            throw OpError.lipoFailed(stderr: "target arch \(targetArch.lipoName) not present in \(archs)")
+            throw OpError.lipoFailed(stderr: L10n.tr(
+                "目标架构 \(targetArch.lipoName) 不在 \(archs) 中",
+                "target arch \(targetArch.lipoName) not present in \(archs)",
+                "Целевая архитектура \(targetArch.lipoName) отсутствует в \(archs)"
+            ))
         }
 
         let originalAttrs = try fm.attributesOfItem(atPath: path)
@@ -112,7 +128,11 @@ public actor ThinBinaryOperation {
         let preLipoInode = (preLipoAttrs[.systemFileNumber] as? NSNumber)?.uint64Value ?? 0
         if preLipoInode != originalInode || preLipoSize != originalSize {
             throw OpError.raceDetected(
-                "inode \(originalInode)→\(preLipoInode) or size \(originalSize)→\(preLipoSize) changed between start and lipo step"
+                L10n.tr(
+                    "inode \(originalInode)→\(preLipoInode) 或大小 \(originalSize)→\(preLipoSize) 在启动和 lipo 步骤之间发生了变化",
+                    "inode \(originalInode)→\(preLipoInode) or size \(originalSize)→\(preLipoSize) changed between start and lipo step",
+                    "Между началом операции и шагом lipo изменились inode \(originalInode)→\(preLipoInode) или размер \(originalSize)→\(preLipoSize)"
+                )
             )
         }
 
@@ -132,13 +152,21 @@ public actor ThinBinaryOperation {
         do {
             try fm.moveItem(at: binary, to: backupURL)
         } catch {
-            throw OpError.backupFailed("could not back up original: \(error.localizedDescription)")
+            throw OpError.backupFailed(L10n.tr(
+                "无法备份原文件：\(error.localizedDescription)",
+                "could not back up original: \(error.localizedDescription)",
+                "Не удалось создать копию исходного файла: \(error.localizedDescription)"
+            ))
         }
         do {
             try fm.moveItem(at: thinningURL, to: binary)
         } catch {
             try? fm.moveItem(at: backupURL, to: binary)
-            throw OpError.backupFailed("could not promote thinned file: \(error.localizedDescription)")
+            throw OpError.backupFailed(L10n.tr(
+                "无法替换精简后的文件：\(error.localizedDescription)",
+                "could not promote thinned file: \(error.localizedDescription)",
+                "Не удалось установить обработанный файл: \(error.localizedDescription)"
+            ))
         }
 
         let thinnedAttrs = try fm.attributesOfItem(atPath: path)

@@ -6,7 +6,7 @@ import MacCleanTestSupport
 
 // MARK: - HandlerEntry Tests
 
-final class HandlerEntryTests: XCTestCase {
+final class HandlerEntryTests: EnglishAppLanguageTestCase {
     func testFileTypeDescriptionWithContentType() {
         let entry = HandlerEntry(id: UUID(), contentType: "public.jpeg", contentTag: nil, contentTagClass: nil, roleAll: "com.apple.Preview", urlScheme: nil, modificationDate: nil)
         XCTAssertEqual(entry.fileTypeDescription, "public.jpeg")

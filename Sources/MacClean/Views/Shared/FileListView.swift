@@ -107,7 +107,7 @@ public struct FileListView: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
             Menu {
-                Picker(L10n.tr("排序方式", "Sort by"), selection: $sort) {
+                Picker(L10n.tr("排序方式", "Sort by", "Сортировать по"), selection: $sort) {
                     ForEach(FileListSort.allCases, id: \.self) { option in
                         Text(option.label).tag(option)
                     }

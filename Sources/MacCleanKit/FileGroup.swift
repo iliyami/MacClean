@@ -57,26 +57,26 @@ public enum FileGroup: Sendable {
     }
 
     public static func ageLabel(days: Int) -> String {
-        if days > 365 { return L10n.tr("超过 1 年", "Over 1 year") }
-        if days > 180 { return L10n.tr("6 个月 - 1 年", "6 months - 1 year") }
-        if days > 90 { return L10n.tr("3 - 6 个月", "3 - 6 months") }
-        if days > 30 { return L10n.tr("1 - 3 个月", "1 - 3 months") }
-        return L10n.tr("最近 1 个月", "Last month")
+        if days > 365 { return L10n.tr("超过 1 年", "Over 1 year", "Более 1 года") }
+        if days > 180 { return L10n.tr("6 个月 - 1 年", "6 months - 1 year", "6 месяцев — 1 год") }
+        if days > 90 { return L10n.tr("3 - 6 个月", "3 - 6 months", "3–6 месяцев") }
+        if days > 30 { return L10n.tr("1 - 3 个月", "1 - 3 months", "1–3 месяца") }
+        return L10n.tr("最近 1 个月", "Last month", "За последний месяц")
     }
 
     public static func fileTypeLabel(_ ext: String) -> String {
         switch ext {
-        case "mp4", "mov", "avi", "mkv", "wmv", "flv": L10n.tr("视频", "Videos")
-        case "mp3", "wav", "flac", "aac", "m4a", "ogg": L10n.tr("音频", "Audio")
-        case "jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic", "webp", "raw": L10n.tr("图片", "Images")
-        case "pdf": L10n.tr("PDF", "PDFs")
-        case "doc", "docx", "pages", "rtf", "txt": L10n.tr("文档", "Documents")
-        case "xls", "xlsx", "numbers", "csv": L10n.tr("表格", "Spreadsheets")
+        case "mp4", "mov", "avi", "mkv", "wmv", "flv": L10n.tr("视频", "Videos", "Видео")
+        case "mp3", "wav", "flac", "aac", "m4a", "ogg": L10n.tr("音频", "Audio", "Аудио")
+        case "jpg", "jpeg", "png", "gif", "bmp", "tiff", "heic", "webp", "raw": L10n.tr("图片", "Images", "Изображения")
+        case "pdf": L10n.tr("PDF", "PDFs", "PDF-файлы")
+        case "doc", "docx", "pages", "rtf", "txt": L10n.tr("文档", "Documents", "Документы")
+        case "xls", "xlsx", "numbers", "csv": L10n.tr("表格", "Spreadsheets", "Таблицы")
         case "zip", "gz", "tar", "rar", "7z", "bz2": L10n.tr("压缩包")
-        case "dmg", "iso", "img": L10n.tr("磁盘映像", "Disk Images")
-        case "app": L10n.tr("应用程序", "Applications")
-        case "pkg", "mpkg": L10n.tr("安装包", "Installers")
-        default: L10n.tr("其他", "Other")
+        case "dmg", "iso", "img": L10n.tr("磁盘映像", "Disk Images", "Образы дисков")
+        case "app": L10n.tr("应用程序", "Applications", "Приложения")
+        case "pkg", "mpkg": L10n.tr("安装包", "Installers", "Установщики")
+        default: L10n.tr("其他", "Other", "Другое")
         }
     }
 }

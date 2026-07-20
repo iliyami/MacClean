@@ -26,11 +26,11 @@ struct SpaceLensView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(L10n.tr("空间透视", "Space Lens"))
+                Text(L10n.tr("空间透视", "Space Lens", "Карта диска"))
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.primary)
                 HStack(spacing: 6) {
-                    Text(L10n.tr("可视化磁盘空间使用情况", "Visualize disk space usage"))
+                    Text(L10n.tr("可视化磁盘空间使用情况", "Visualize disk space usage", "Визуализация использования дискового пространства"))
                         .font(.system(size: 12))
                         .foregroundStyle(.primary.opacity(0.6))
                     if !totalFormattedSize.isEmpty {
@@ -44,7 +44,7 @@ struct SpaceLensView: View {
             }
             Spacer()
             if !isScanning {
-                Button(L10n.tr("扫描", "Scan")) { startScan() }
+                Button(L10n.tr("扫描", "Scan", "Сканировать")) { startScan() }
                     .buttonStyle(SuperEllipseButtonStyle(
                         gradient: ModuleTheme.files.buttonGradient,
                         size: CGSize(width: 90, height: 34)
@@ -63,11 +63,11 @@ struct SpaceLensView: View {
                         Button { nav.up(); startScan() } label: { Image(systemName: "chevron.up") }
                             .buttonStyle(.plain).foregroundStyle(.primary.opacity(0.8))
                             .disabled(!nav.canGoUp)
-                            .help(L10n.tr("上一级", "Up one level"))
+                            .help(L10n.tr("上一级", "Up one level", "На уровень выше"))
                         Button { nav.home(); startScan() } label: { Image(systemName: "house") }
                             .buttonStyle(.plain).foregroundStyle(.primary.opacity(0.8))
                             .disabled(!nav.canGoUp)
-                            .help(L10n.tr("返回起点", "Back to start"))
+                            .help(L10n.tr("返回起点", "Back to start", "Вернуться в начало"))
 
                         ForEach(nav.breadcrumbs, id: \.self) { url in
                             Button(url.lastPathComponent) {
@@ -96,8 +96,8 @@ struct SpaceLensView: View {
     private var content: some View {
         if isScanning {
             Spacer()
-            ScanProgressRing(progress: 0.5, phase: L10n.tr("正在扫描磁盘...", "Scanning disk..."), theme: .files)
-            Button(L10n.tr("取消", "Cancel")) {
+            ScanProgressRing(progress: 0.5, phase: L10n.tr("正在扫描磁盘...", "Scanning disk...", "Сканирование диска..."), theme: .files)
+            Button(L10n.tr("取消", "Cancel", "Отмена")) {
                 scanTask?.cancel()
                 isScanning = false
             }
@@ -118,7 +118,7 @@ struct SpaceLensView: View {
                 Image(systemName: "chart.pie")
                     .font(.system(size: 44))
                     .foregroundStyle(.primary.opacity(0.4))
-                Text(L10n.tr("点击“扫描”以可视化磁盘使用情况", "Click Scan to visualize disk usage"))
+                Text(L10n.tr("点击“扫描”以可视化磁盘使用情况", "Click Scan to visualize disk usage", "Нажмите «Сканировать», чтобы увидеть распределение места на диске"))
                     .font(.system(size: 14))
                     .foregroundStyle(.primary.opacity(0.55))
             }

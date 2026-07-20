@@ -2,7 +2,7 @@ import XCTest
 import Foundation
 @testable import MacCleanKit
 
-final class MaintenanceTaskTests: XCTestCase {
+final class MaintenanceTaskTests: EnglishAppLanguageTestCase {
 
     func testTenTasksExist() {
         // "Repair Disk Permissions" was removed (issue #82). pruneDocker was

@@ -1,7 +1,7 @@
 import XCTest
 @testable import MacCleanKit
 
-final class SharedAppStateTests: XCTestCase {
+final class SharedAppStateTests: AppLanguageTestCase {
 
     func testProtectionStatusFreshIsNotStale() {
         let p = SharedAppState.ProtectionStatus(
@@ -43,4 +43,18 @@ final class SharedAppStateTests: XCTestCase {
         let decoded = try JSONDecoder().decode(SharedAppState.ProtectionStatus.self, from: data)
         XCTAssertEqual(decoded, original)
     }
+    func testProtectionStatusLocalizesStableAndLegacyDepthValues() {
+        let values = ["quick", "Quick", "快速"]
+
+        AppLanguage.current = .ru
+        for value in values {
+            let status = SharedAppState.ProtectionStatus(
+                lastScanDate: Date(),
+                threatsFound: 0,
+                scanDepth: value
+            )
+            XCTAssertEqual(status.localizedScanDepth, "Быстро")
+        }
+    }
+
 }

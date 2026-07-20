@@ -6,6 +6,7 @@ import Foundation
 /// menu-bar helper switch languages together.
 public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     case system = "system"
+    case ru = "ru"
     case zhHans = "zh-Hans"
     case en = "en"
 
@@ -20,6 +21,8 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .system:
             Self.systemPreferred.localeIdentifierForResolvedLanguage
+        case .ru:
+            "ru"
         case .zhHans:
             "zh-Hans"
         case .en:
@@ -30,14 +33,22 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     public var resolved: AppLanguage {
         switch self {
         case .system: Self.systemPreferred
-        case .zhHans, .en: self
+        case .ru, .zhHans, .en: self
         }
     }
 
     public static var systemPreferred: AppLanguage {
         let preferred = Locale.preferredLanguages.first ?? Locale.current.identifier
-        let normalized = preferred.replacingOccurrences(of: "_", with: "-").lowercased()
-        return normalized.hasPrefix("zh") ? .zhHans : .en
+        return preferredLanguage(for: preferred)
+    }
+
+    static func preferredLanguage(for identifier: String) -> AppLanguage {
+        let normalized = identifier.replacingOccurrences(of: "_", with: "-").lowercased()
+        switch normalized.split(separator: "-", maxSplits: 1).first {
+        case "ru": return .ru
+        case "zh": return .zhHans
+        default: return .en
+        }
     }
 
     /// Label shown in the language picker. These are intentionally native names
@@ -45,7 +56,8 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     /// preferred language even if the current UI language is unfamiliar.
     public var pickerLabel: String {
         switch self {
-        case .system: L10n.tr("跟随系统", "System")
+        case .system: L10n.tr("跟随系统", "System", "Системный")
+        case .ru: "Русский"
         case .zhHans: "简体中文"
         case .en: "English"
         }
@@ -85,20 +97,60 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
 /// hard-coded. A full `.strings` migration would require touching almost every
 /// call site and packaging resource bundles for the custom app builder. This
 /// helper keeps the current no-resource build flow while still allowing instant
-/// Chinese/English switching at runtime.
+/// Chinese/English/Russian switching at runtime.
 public enum L10n {
+    /// Keeps newly added strings usable until a Russian translation is supplied.
+    /// Existing localized strings use the three-argument overload below.
     public static func tr(_ zhHans: String, _ english: @autoclosure () -> String) -> String {
-        AppLanguage.current.resolved == .en ? english() : zhHans
+        switch AppLanguage.current.resolved {
+        case .zhHans: zhHans
+        case .system, .en, .ru: english()
+        }
+    }
+
+    public static func tr(
+        _ zhHans: String,
+        _ english: @autoclosure () -> String,
+        _ russian: @autoclosure () -> String
+    ) -> String {
+        switch AppLanguage.current.resolved {
+        case .system, .en: english()
+        case .ru: russian()
+        case .zhHans: zhHans
+        }
     }
 
     public static func tr(_ zhHans: String) -> String {
-        guard AppLanguage.current.resolved == .en else { return zhHans }
-        return englishFallbacks[zhHans] ?? zhHans
+        switch AppLanguage.current.resolved {
+        case .system, .en:
+            englishFallbacks[zhHans] ?? zhHans
+        case .ru:
+            russianFallbacks[zhHans] ?? englishFallbacks[zhHans] ?? zhHans
+        case .zhHans:
+            zhHans
+        }
+    }
+
+    /// Selects the Russian noun form for a non-negative count.
+    /// Examples: 1 файл, 2 файла, 5 файлов, 11 файлов, 21 файл.
+    public static func russianPlural(
+        _ count: Int,
+        one: String,
+        few: String,
+        many: String
+    ) -> String {
+        let magnitude = count.magnitude
+        let mod10 = magnitude % 10
+        let mod100 = magnitude % 100
+
+        if mod10 == 1, mod100 != 11 { return one }
+        if (2...4).contains(mod10), !(12...14).contains(mod100) { return few }
+        return many
     }
 
     /// Small fallback table for values that are assembled dynamically or flow
-    /// through model properties. Most UI strings use the two-argument overload
-    /// so the original English expression can live beside the Chinese text.
+    /// through model properties. Most UI strings use the three-argument overload
+    /// so every supported translation lives beside the original expression.
     private static let englishFallbacks: [String: String] = [
         "智能扫描": "Smart Scan",
         "系统垃圾": "System Junk",
@@ -142,5 +194,50 @@ public enum L10n {
         "重建 Spotlight 索引": "Reindex Spotlight",
         "刷新 DNS 缓存": "Flush DNS Cache",
         "精简 Time Machine 快照": "Thin Time Machine Snapshots",
+    ]
+
+    private static let russianFallbacks: [String: String] = [
+        "智能扫描": "Умное сканирование",
+        "系统垃圾": "Системный мусор",
+        "邮件附件": "Почтовые вложения",
+        "废纸篓": "Корзины",
+        "恶意软件清理": "Удаление угроз",
+        "隐私清理": "Конфиденциальность",
+        "优化": "Оптимизация",
+        "维护": "Обслуживание",
+        "卸载器": "Удаление приложений",
+        "应用更新": "Обновления",
+        "空间透视": "Карта диска",
+        "大文件与旧文件": "Большие и старые файлы",
+        "重复文件": "Дубликаты",
+        "文件粉碎": "Уничтожение файлов",
+        "设置": "Настройки",
+        "清理": "Очистка",
+        "防护": "Защита",
+        "性能": "Производительность",
+        "应用": "Приложения",
+        "文件": "Файлы",
+        "全部": "Все",
+        "未使用": "Неиспользуемые",
+        "第三方": "Сторонние",
+        "快速": "Быстро",
+        "平衡": "Сбалансированно",
+        "深度": "Глубоко",
+        "开启": "включить",
+        "关闭": "отключить",
+        "压缩包": "Архивы",
+        "已选择": "Выбрано",
+        "运行中": "Работает",
+        "未知": "Неизвестно",
+        "进度": "Ход выполнения",
+        "释放内存": "Освободить оперативную память",
+        "释放可清除空间": "Освободить место, доступное для очистки",
+        "运行维护脚本": "Запустить скрипты обслуживания",
+        "验证启动磁盘": "Проверить загрузочный диск",
+        "加速邮件": "Ускорить Почту",
+        "重建启动服务": "Перестроить Launch Services",
+        "重建 Spotlight 索引": "Перестроить индекс Spotlight",
+        "刷新 DNS 缓存": "Очистить кэш DNS",
+        "精简 Time Machine 快照": "Проредить снимки Time Machine",
     ]
 }

@@ -138,7 +138,7 @@ struct MenuContentView: View {
                 Text(MCConstants.appName)
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(MenuPalette.textPrimary)
-                Text(L10n.tr("实时系统状态", "Live system stats"))
+                Text(L10n.tr("实时系统状态", "Live system stats", "Состояние системы"))
                     .font(.system(size: 10))
                     .foregroundStyle(MenuPalette.textSecondary)
             }
@@ -154,15 +154,15 @@ struct MenuContentView: View {
             ringCard(icon: "cpu", label: "CPU",
                      value: s.cpuUsage, center: "\(Int((s.cpuUsage*100).rounded()))%",
                      sub: nil)
-            ringCard(icon: "memorychip", label: L10n.tr("内存", "Memory"),
+            ringCard(icon: "memorychip", label: L10n.tr("内存", "Memory", "Память"),
                      value: s.memoryPressure, center: "\(Int((s.memoryPressure*100).rounded()))%",
                      sub: FileSizeFormatter.format(s.memoryUsed))
-            ringCard(icon: "internaldrive", label: L10n.tr("磁盘", "Disk"),
+            ringCard(icon: "internaldrive", label: L10n.tr("磁盘", "Disk", "Диск"),
                      value: diskUsed, center: "\(Int((diskUsed*100).rounded()))%",
-                     sub: L10n.tr("\(FileSizeFormatter.format(s.diskFree)) 可用", "\(FileSizeFormatter.format(s.diskFree)) free"))
+                     sub: L10n.tr("\(FileSizeFormatter.format(s.diskFree)) 可用", "\(FileSizeFormatter.format(s.diskFree)) free", "Свободно: \(FileSizeFormatter.format(s.diskFree))"))
             if let level = s.batteryLevel {
                 ringCard(icon: s.batteryIsCharging ? "battery.100.bolt" : "battery.75",
-                         label: s.batteryIsCharging ? L10n.tr("充电中", "Charging") : L10n.tr("电池", "Battery"),
+                         label: s.batteryIsCharging ? L10n.tr("充电中", "Charging", "Заряжается") : L10n.tr("电池", "Battery", "Аккумулятор"),
                          value: level, center: "\(Int((level*100).rounded()))%",
                          sub: nil, forceColor: level > 0.2 ? MenuPalette.teal : Color(red:0.98,green:0.42,blue:0.45))
             } else {
@@ -191,7 +191,7 @@ struct MenuContentView: View {
 
     private func uptimeCard(_ s: SystemStatsCollector.SystemStats) -> some View {
         VStack(spacing: 12) {
-            statHeader(icon: "clock", label: L10n.tr("运行时间", "Uptime"), tint: MenuPalette.teal)
+            statHeader(icon: "clock", label: L10n.tr("运行时间", "Uptime", "Время работы"), tint: MenuPalette.teal)
             Text(formatUptime(s.uptime))
                 .font(.system(size: 22, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
@@ -248,7 +248,7 @@ struct MenuContentView: View {
 
     private var recommendationsCard: some View {
         VStack(alignment: .leading, spacing: 9) {
-            sectionHeader(icon: "sparkles", title: L10n.tr("建议", "Recommendations"), tint: MenuPalette.yellow)
+            sectionHeader(icon: "sparkles", title: L10n.tr("建议", "Recommendations", "Рекомендации"), tint: MenuPalette.yellow)
             ForEach(tips.prefix(3)) { tip in
                 VStack(alignment: .leading, spacing: 7) {
                     HStack(alignment: .top, spacing: 8) {
@@ -262,7 +262,7 @@ struct MenuContentView: View {
                             Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
                                 .foregroundStyle(MenuPalette.textSecondary).padding(4)
                                 .background(Color.white.opacity(0.08), in: Circle())
-                        }.buttonStyle(.plain).help(L10n.tr("30 天内不再显示", "Dismiss for 30 days"))
+                        }.buttonStyle(.plain).help(L10n.tr("30 天内不再显示", "Dismiss for 30 days", "Скрыть на 30 дней"))
                     }
                     Button { TipAction.open(moduleID: MenuTipRouting.moduleID(forTipID: tip.id)) } label: {
                         Text(tipCTA(tip)).font(.system(size: 11, weight: .bold)).foregroundStyle(Color(red:0.16,green:0.10,blue:0.30))
@@ -278,9 +278,9 @@ struct MenuContentView: View {
 
     private func tipCTA(_ tip: TipsEngine.Tip) -> String {
         switch tip.id {
-        case "trash_large": return L10n.tr("清空废纸篓", "Empty Trash")
-        case "caches_large": return L10n.tr("释放空间", "Free Up Space")
-        default: return L10n.tr("打开 \(MCConstants.appName)", "Open \(MCConstants.appName)")
+        case "trash_large": return L10n.tr("清空废纸篓", "Empty Trash", "Очистить Корзину")
+        case "caches_large": return L10n.tr("释放空间", "Free Up Space", "Освободить место")
+        default: return L10n.tr("打开 \(MCConstants.appName)", "Open \(MCConstants.appName)", "Открыть \(MCConstants.appName)")
         }
     }
 
@@ -295,9 +295,13 @@ struct MenuContentView: View {
                     .font(.system(size: 14, weight: .semibold)).foregroundStyle(tint)
             }
             VStack(alignment: .leading, spacing: 1) {
-                Text(p.threatsFound > 0 ? L10n.tr("发现 \(p.threatsFound) 个威胁", "\(p.threatsFound) threat\(p.threatsFound == 1 ? "" : "s") found") : L10n.tr("已防护", "Protected"))
+                Text(p.threatsFound > 0 ? L10n.tr("发现 \(p.threatsFound) 个威胁", "\(p.threatsFound) threat\(p.threatsFound == 1 ? "" : "s") found", "\(p.threatsFound) \(L10n.russianPlural(p.threatsFound, one: "угроза обнаружена", few: "угрозы обнаружены", many: "угроз обнаружено"))") : L10n.tr("已防护", "Protected", "Под защитой"))
                     .font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
-                Text(L10n.tr("上次扫描：\(relativeTime(p.lastScanDate)) · \(p.scanDepth)", "Scanned \(relativeTime(p.lastScanDate)) · \(p.scanDepth)"))
+                Text(L10n.tr(
+                    "上次扫描：\(relativeTime(p.lastScanDate)) · \(p.localizedScanDepth)",
+                    "Scanned \(relativeTime(p.lastScanDate)) · \(p.localizedScanDepth)",
+                    "Проверено \(relativeTime(p.lastScanDate)) · \(p.localizedScanDepth)"
+                ))
                     .font(.system(size: 10)).foregroundStyle(MenuPalette.textSecondary)
             }
             Spacer()
@@ -309,19 +313,19 @@ struct MenuContentView: View {
 
     private func devicesCard(_ d: ConnectedDevices) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader(icon: "externaldrive.connected.to.line.below", title: L10n.tr("已连接", "Connected"), tint: MenuPalette.teal)
+            sectionHeader(icon: "externaldrive.connected.to.line.below", title: L10n.tr("已连接", "Connected", "Подключено"), tint: MenuPalette.teal)
             ForEach(d.externalVolumes) { v in
                 HStack(spacing: 7) {
                     Image(systemName: "externaldrive.fill").font(.system(size: 10)).foregroundStyle(MenuPalette.teal.opacity(0.8))
                     Text(v.name).font(.system(size: 11)).foregroundStyle(.white).lineLimit(1)
                     Spacer(minLength: 6)
-                    Text(L10n.tr("\(FileSizeFormatter.format(v.freeBytes)) 可用", "\(FileSizeFormatter.format(v.freeBytes)) free")).font(.system(size: 10, design: .monospaced)).foregroundStyle(MenuPalette.textSecondary)
+                    Text(L10n.tr("\(FileSizeFormatter.format(v.freeBytes)) 可用", "\(FileSizeFormatter.format(v.freeBytes)) free", "Свободно: \(FileSizeFormatter.format(v.freeBytes))")).font(.system(size: 10, design: .monospaced)).foregroundStyle(MenuPalette.textSecondary)
                 }
             }
             if d.externalDisplays > 0 {
                 HStack(spacing: 7) {
                     Image(systemName: "display").font(.system(size: 10)).foregroundStyle(MenuPalette.teal.opacity(0.8))
-                    Text(L10n.tr("\(d.externalDisplays) 台外接显示器", "\(d.externalDisplays) external display\(d.externalDisplays == 1 ? "" : "s")")).font(.system(size: 11)).foregroundStyle(.white)
+                    Text(L10n.tr("\(d.externalDisplays) 台外接显示器", "\(d.externalDisplays) external display\(d.externalDisplays == 1 ? "" : "s")", "\(d.externalDisplays) \(L10n.russianPlural(d.externalDisplays, one: "внешний дисплей", few: "внешних дисплея", many: "внешних дисплеев"))")).font(.system(size: 11)).foregroundStyle(.white)
                     Spacer()
                 }
             }
@@ -337,12 +341,12 @@ struct MenuContentView: View {
                 Image(systemName: "power").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
                     .frame(width: 34, height: 32)
                     .background(MenuPalette.red, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            }.buttonStyle(.plain).help(L10n.tr("退出监视器", "Quit Monitor"))
+            }.buttonStyle(.plain).help(L10n.tr("退出监视器", "Quit Monitor", "Закрыть виджет"))
 
             Button { TipAction.open() } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "leaf.fill").font(.system(size: 11, weight: .bold))
-                    Text(L10n.tr("打开 \(MCConstants.appName)", "Open \(MCConstants.appName)")).font(.system(size: 12, weight: .bold))
+                    Text(L10n.tr("打开 \(MCConstants.appName)", "Open \(MCConstants.appName)", "Открыть \(MCConstants.appName)")).font(.system(size: 12, weight: .bold))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity).padding(.vertical, 8)
@@ -363,16 +367,16 @@ struct MenuContentView: View {
 
     private func formatUptime(_ seconds: TimeInterval) -> String {
         let h = Int(seconds) / 3600, m = (Int(seconds) % 3600) / 60
-        if h > 24 { return L10n.tr("\(h/24)天 \(h%24)小时", "\(h/24)d \(h%24)h") }
-        return L10n.tr("\(h)小时 \(m)分", "\(h)h \(m)m")
+        if h > 24 { return L10n.tr("\(h/24)天 \(h%24)小时", "\(h/24)d \(h%24)h", "\(h/24) \(L10n.russianPlural(h/24, one: "день", few: "дня", many: "дней")) \(h%24) \(L10n.russianPlural(h%24, one: "час", few: "часа", many: "часов"))") }
+        return L10n.tr("\(h)小时 \(m)分", "\(h)h \(m)m", "\(h) \(L10n.russianPlural(h, one: "час", few: "часа", many: "часов")) \(m) \(L10n.russianPlural(m, one: "минута", few: "минуты", many: "минут"))")
     }
 
     private func relativeTime(_ date: Date) -> String {
         let i = Date().timeIntervalSince(date)
-        if i < 60 { return L10n.tr("刚刚", "just now") }
-        if i < 3600 { return L10n.tr("\(Int(i/60)) 分钟前", "\(Int(i/60)) min ago") }
-        if i < 86400 { return L10n.tr("\(Int(i/3600)) 小时前", "\(Int(i/3600)) hr ago") }
-        return L10n.tr("\(Int(i/86400)) 天前", "\(Int(i/86400)) day\(Int(i/86400) == 1 ? "" : "s") ago")
+        if i < 60 { return L10n.tr("刚刚", "just now", "только что") }
+        if i < 3600 { return L10n.tr("\(Int(i/60)) 分钟前", "\(Int(i/60)) min ago", "\(Int(i/60)) \(L10n.russianPlural(Int(i/60), one: "минуту", few: "минуты", many: "минут")) назад") }
+        if i < 86400 { return L10n.tr("\(Int(i/3600)) 小时前", "\(Int(i/3600)) hr ago", "\(Int(i/3600)) \(L10n.russianPlural(Int(i/3600), one: "час", few: "часа", many: "часов")) назад") }
+        return L10n.tr("\(Int(i/86400)) 天前", "\(Int(i/86400)) day\(Int(i/86400) == 1 ? "" : "s") ago", "\(Int(i/86400)) \(L10n.russianPlural(Int(i/86400), one: "день", few: "дня", many: "дней")) назад")
     }
 }
 

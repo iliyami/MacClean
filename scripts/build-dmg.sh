@@ -79,6 +79,12 @@ cat > "${APP_BUNDLE}/Contents/Info.plist" << PLIST
 <dict>
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>ru</string>
+        <string>zh-Hans</string>
+    </array>
     <key>CFBundleExecutable</key>
     <string>MacClean</string>
     <key>CFBundleIdentifier</key>
@@ -145,6 +151,12 @@ cat > "${MENU_APP}/Contents/Info.plist" << MENU_PLIST
 <dict>
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>ru</string>
+        <string>zh-Hans</string>
+    </array>
     <key>CFBundleExecutable</key>
     <string>MacCleanMenu</string>
     <key>CFBundleIdentifier</key>

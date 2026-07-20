@@ -3,7 +3,7 @@ import MacCleanKit
 
 public struct SpaceLensModule: ScanModule {
     public let id = "space_lens"
-    public var name: String { L10n.tr("空间透视", "Space Lens") }
+    public var name: String { L10n.tr("空间透视", "Space Lens", "Карта диска") }
     public let category = ModuleCategory.files
     public let includedInSmartScan = false
 

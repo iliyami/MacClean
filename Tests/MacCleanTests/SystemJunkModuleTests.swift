@@ -3,7 +3,7 @@ import Foundation
 @testable import MacClean
 import MacCleanKit
 
-final class SystemJunkModuleTests: XCTestCase {
+final class SystemJunkModuleTests: EnglishAppLanguageTestCase {
 
     func testRegistersAll20Categories() {
         XCTAssertEqual(SystemJunkModule.allCategories.count, 20)

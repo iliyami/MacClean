@@ -27,10 +27,10 @@ struct DuplicatesView: View {
                 scanningView
             } else if scanComplete && results.isEmpty {
                 ModuleContainerView(
-                    title: L10n.tr("重复文件", "Duplicates"),
+                    title: L10n.tr("重复文件", "Duplicates", "Дубликаты"),
                     subtitle: "",
                     theme: .files,
-                    emptyMessage: L10n.tr("未找到重复文件", "No duplicates found"),
+                    emptyMessage: L10n.tr("未找到重复文件", "No duplicates found", "Дубликаты не найдены"),
                     results: results,
                     selectedItems: $selectedItems,
                     isScanning: false,
@@ -43,7 +43,7 @@ struct DuplicatesView: View {
                 )
             } else if !results.isEmpty {
                 ModuleContainerView(
-                    title: L10n.tr("重复文件", "Duplicates"),
+                    title: L10n.tr("重复文件", "Duplicates", "Дубликаты"),
                     subtitle: "",
                     theme: .files,
                     results: results,
@@ -66,7 +66,7 @@ struct DuplicatesView: View {
                 )
             } else if completion != nil {
                 ModuleContainerView(
-                    title: L10n.tr("重复文件", "Duplicates"),
+                    title: L10n.tr("重复文件", "Duplicates", "Дубликаты"),
                     subtitle: "",
                     theme: .files,
                     results: [],
@@ -90,10 +90,10 @@ struct DuplicatesView: View {
             Spacer()
 
             VStack(spacing: 10) {
-                Text(L10n.tr("重复文件", "Duplicates"))
+                Text(L10n.tr("重复文件", "Duplicates", "Дубликаты"))
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(.primary)
-                Text(L10n.tr("使用渐进式 SHA-256 哈希检测\n查找重复文件", "Find duplicate files using progressive\nSHA-256 hash detection"))
+                Text(L10n.tr("使用渐进式 SHA-256 哈希检测\n查找重复文件", "Find duplicate files using progressive\nSHA-256 hash detection", "Поиск дубликатов с помощью поэтапного\nхеширования SHA-256"))
                     .font(.system(size: 14))
                     .foregroundStyle(.primary.opacity(0.65))
                     .multilineTextAlignment(.center)
@@ -103,7 +103,7 @@ struct DuplicatesView: View {
                 Image(systemName: "clock.fill")
                     .foregroundStyle(.yellow)
                     .font(.system(size: 13))
-                Text(L10n.tr("大型个人目录可能需要几分钟扫描", "This scan may take several minutes on large home folders"))
+                Text(L10n.tr("大型个人目录可能需要几分钟扫描", "This scan may take several minutes on large home folders", "Сканирование большой домашней папки может занять несколько минут"))
                     .font(.system(size: 12))
                     .foregroundStyle(.primary.opacity(0.8))
             }
@@ -112,7 +112,7 @@ struct DuplicatesView: View {
             .background(.primary.opacity(0.1))
             .clipShape(RoundedRectangle(cornerRadius: 10))
 
-            ScanButton(title: L10n.tr("扫描", "Scan"), subtitle: L10n.tr("重复文件", "Duplicates"), theme: .files, action: scan)
+            ScanButton(title: L10n.tr("扫描", "Scan", "Сканировать"), subtitle: L10n.tr("重复文件", "Duplicates", "Дубликаты"), theme: .files, action: scan)
 
             Spacer()
         }
@@ -134,12 +134,12 @@ struct DuplicatesView: View {
                     .contentTransition(.interpolate)
                     .animation(.easeInOut(duration: 0.2), value: scanPhase)
 
-                Text(L10n.tr("已用时：\(formatElapsed(elapsedSeconds))", "Elapsed: \(formatElapsed(elapsedSeconds))"))
+                Text(L10n.tr("已用时：\(formatElapsed(elapsedSeconds))", "Elapsed: \(formatElapsed(elapsedSeconds))", "Прошло: \(formatElapsed(elapsedSeconds))"))
                     .font(.system(size: 12, design: .monospaced))
                     .foregroundStyle(.primary.opacity(0.6))
             }
 
-            Text(L10n.tr("重复文件检测会使用 SHA-256 哈希每个候选文件。\n大型个人目录可能需要 5–15 分钟。", "Duplicate detection hashes every candidate file with SHA-256.\nLarge home folders can take 5–15 minutes."))
+            Text(L10n.tr("重复文件检测会使用 SHA-256 哈希每个候选文件。\n大型个人目录可能需要 5–15 分钟。", "Duplicate detection hashes every candidate file with SHA-256.\nLarge home folders can take 5–15 minutes.", "При поиске дубликатов для каждого файла вычисляется хеш SHA-256.\nОбработка больших домашних папок может занять 5–15 минут."))
                 .font(.system(size: 12))
                 .foregroundStyle(.primary.opacity(0.55))
                 .multilineTextAlignment(.center)
@@ -160,7 +160,7 @@ struct DuplicatesView: View {
         scanComplete = false
         scanProgress = 0
         elapsedSeconds = 0
-        scanPhase = L10n.tr("正在扫描个人目录...", "Scanning home folder...")
+        scanPhase = L10n.tr("正在扫描个人目录...", "Scanning home folder...", "Сканирование домашней папки...")
 
         // Elapsed timer
         let timerTask = Task {
@@ -171,18 +171,18 @@ struct DuplicatesView: View {
         }
 
         Task {
-            scanPhase = L10n.tr("正在扫描个人目录...", "Scanning home folder...")
+            scanPhase = L10n.tr("正在扫描个人目录...", "Scanning home folder...", "Сканирование домашней папки...")
             try? await Task.sleep(for: .milliseconds(400))
 
-            scanPhase = L10n.tr("正在按大小分组文件...", "Grouping files by size...")
+            scanPhase = L10n.tr("正在按大小分组文件...", "Grouping files by size...", "Группировка файлов по размеру...")
             try? await Task.sleep(for: .milliseconds(400))
 
-            scanPhase = L10n.tr("正在并行哈希候选文件...", "Hashing candidate files in parallel...")
+            scanPhase = L10n.tr("正在并行哈希候选文件...", "Hashing candidate files in parallel...", "Параллельное хеширование файлов-кандидатов...")
 
             let module = DuplicatesModule()
             let groups = await module.scanDisplayGroups()
 
-            scanPhase = L10n.tr("正在完成...", "Finalizing...")
+            scanPhase = L10n.tr("正在完成...", "Finalizing...", "Завершение...")
             try? await Task.sleep(for: .milliseconds(300))
 
             timerTask.cancel()

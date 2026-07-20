@@ -18,7 +18,7 @@ public final class LaunchAtLoginManager {
             switch self {
             case .updateFailed(let enabling, let message):
                 let action = enabling ? L10n.tr("开启") : L10n.tr("关闭")
-                return L10n.tr("无法\(action)开机自动启动：\(message)", "Couldn't \(action) launch at login: \(message)")
+                return L10n.tr("无法\(action)开机自动启动：\(message)", "Couldn't \(action) launch at login: \(message)", "Не удалось \(action) запуск при входе: \(message)")
             }
         }
     }

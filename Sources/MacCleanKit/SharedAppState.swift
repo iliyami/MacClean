@@ -30,6 +30,21 @@ public enum SharedAppState {
             self.scanDepth = scanDepth
         }
 
+        /// Localizes both the stable values written by current releases and
+        /// display strings persisted by older English/Chinese builds.
+        public var localizedScanDepth: String {
+            switch scanDepth.lowercased() {
+            case "quick", "快速", "быстро":
+                L10n.tr("快速", "Quick", "Быстро")
+            case "balanced", "平衡", "сбалансированно":
+                L10n.tr("平衡", "Balanced", "Сбалансированно")
+            case "deep", "深度", "глубоко":
+                L10n.tr("深度", "Deep", "Глубоко")
+            default:
+                scanDepth
+            }
+        }
+
         /// Stale = last scan was more than 7 days ago. The menu glyph
         /// goes yellow at this threshold so users notice they haven't
         /// run a malware scan in a while.

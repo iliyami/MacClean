@@ -62,7 +62,7 @@ struct MacCleanApp: App {
         // them to the in-app page (the separate Settings window is gone).
         .commands {
             CommandGroup(replacing: .appSettings) {
-                Button(L10n.tr("设置…", "Settings…")) {
+                Button(L10n.tr("设置…", "Settings…", "Настройки…")) {
                     appState.selectedSidebarItem = .settings
                 }
                 .keyboardShortcut(",", modifiers: .command)

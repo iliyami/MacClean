@@ -2,7 +2,7 @@ import XCTest
 import Foundation
 @testable import MacCleanKit
 
-final class FileTypeCategoryTests: XCTestCase {
+final class FileTypeCategoryTests: EnglishAppLanguageTestCase {
 
     // MARK: - Directory detection
 

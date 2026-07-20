@@ -110,13 +110,13 @@ public enum CleanActions {
                 savedBytes += r.bytesSaved
                 for (path, msg) in r.perBinaryErrors {
                     errors.append(CleaningEngine.CleanError(
-                        path: path, error: L10n.tr("二进制精简失败：\(msg)", "binary thin failed: \(msg)")
+                        path: path, error: L10n.tr("二进制精简失败：\(msg)", "binary thin failed: \(msg)", "Не удалось удалить лишние архитектуры из бинарного файла: \(msg)")
                     ))
                 }
             } catch {
                 errors.append(CleaningEngine.CleanError(
                     path: item.url.path(percentEncoded: false),
-                    error: L10n.tr("应用包精简失败：\(error.localizedDescription)", "bundle thin failed: \(error.localizedDescription)")
+                    error: L10n.tr("应用包精简失败：\(error.localizedDescription)", "bundle thin failed: \(error.localizedDescription)", "Не удалось удалить лишние архитектуры из пакета приложения: \(error.localizedDescription)")
                 ))
             }
         }

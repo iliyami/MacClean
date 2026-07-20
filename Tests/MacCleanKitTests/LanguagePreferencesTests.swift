@@ -1,7 +1,7 @@
 import XCTest
 @testable import MacCleanKit
 
-final class LanguagePreferencesTests: XCTestCase {
+final class LanguagePreferencesTests: EnglishAppLanguageTestCase {
 
     // MARK: - effectivePreserved (unchanged contract)
 
@@ -9,6 +9,8 @@ final class LanguagePreferencesTests: XCTestCase {
         let eff = LanguagePreferences.effectivePreserved(userKept: [])
         XCTAssertTrue(eff.contains("en.lproj"))
         XCTAssertTrue(eff.contains("Base.lproj"))
+        XCTAssertTrue(eff.contains("ru.lproj"))
+        XCTAssertTrue(eff.contains("Russian.lproj"))
         XCTAssertFalse(eff.isEmpty)
     }
 
@@ -66,6 +68,13 @@ final class LanguagePreferencesTests: XCTestCase {
     func testDisplayNameWorksWithoutLprojSuffix() {
         // Should still produce a name when the suffix is already stripped.
         XCTAssertEqual(LanguagePreferences.displayName(forLproj: "fr"), "French")
+    }
+
+    func testDisplayNameUsesRussianWhenRequested() {
+        XCTAssertEqual(
+            LanguagePreferences.displayName(forLproj: "fr.lproj", language: .ru),
+            "французский"
+        )
     }
 
     // MARK: - Legacy full-word lproj handling (#21.5 follow-up)
@@ -146,5 +155,18 @@ final class LanguagePreferencesTests: XCTestCase {
         // Only always-kept languages "discovered" → nothing selectable
         LanguagePreferences.discoveredLproj = Set(LanguagePreferences.alwaysKept)
         XCTAssertTrue(LanguagePreferences.selectableLanguages().isEmpty)
+    }
+
+    func testRussianNeverAppearsAsSelectable() {
+        let original = LanguagePreferences.discoveredLproj
+        defer { LanguagePreferences.discoveredLproj = original }
+
+        LanguagePreferences.discoveredLproj = [
+            "ru.lproj", "ru-RU.lproj", "ru_RU.lproj", "Russian.lproj", "fr.lproj",
+        ]
+        let lprojs = Set(LanguagePreferences.selectableLanguages().flatMap(\.lprojs))
+        XCTAssertFalse(lprojs.contains("ru.lproj"))
+        XCTAssertFalse(lprojs.contains("Russian.lproj"))
+        XCTAssertTrue(lprojs.contains("fr.lproj"))
     }
 }

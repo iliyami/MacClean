@@ -23,10 +23,14 @@ public enum LanguagePreferences {
     // MARK: - Display-name mapping
 
     /// Human-readable name for an lproj folder in the current interface
-    /// language, e.g. "fr.lproj" → "法语" / "French". Falls back to the raw code.
-    public static func displayName(forLproj lproj: String) -> String {
+    /// language, e.g. "fr.lproj" → "法语" / "French" / "французский".
+    /// Falls back to the raw code.
+    public static func displayName(
+        forLproj lproj: String,
+        language: AppLanguage = AppLanguage.current
+    ) -> String {
         let code = lproj.hasSuffix(".lproj") ? String(lproj.dropLast(6)) : lproj
-        let locale = Locale(identifier: AppLanguage.current.resolved == .en ? "en_US" : "zh_Hans")
+        let locale = Locale(identifier: language.localeIdentifier)
         // forIdentifier handles region/script variants (e.g. zh-Hans, pt-BR, en_GB).
         // forLanguageCode handles plain language codes (e.g. fr, de, ja).
         // Raw code is the final fallback for anything Locale doesn't recognise.
@@ -43,9 +47,11 @@ public enum LanguagePreferences {
     /// and legacy "French.lproj") — these collapse into one entry whose
     /// `lprojs` covers every variant, so one toggle keeps/removes them all and
     /// the list never shows duplicate rows. Sorted by display name.
-    public static func selectableLanguages() -> [(name: String, lprojs: [String])] {
+    public static func selectableLanguages(
+        language: AppLanguage = AppLanguage.current
+    ) -> [(name: String, lprojs: [String])] {
         let candidates = discoveredLproj.subtracting(alwaysKept)
-        return Dictionary(grouping: candidates) { displayName(forLproj: $0) }
+        return Dictionary(grouping: candidates) { displayName(forLproj: $0, language: language) }
             .map { (name: $0.key, lprojs: $0.value.sorted()) }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }

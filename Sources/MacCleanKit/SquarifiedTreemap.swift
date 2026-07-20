@@ -17,17 +17,17 @@ public enum FileTypeCategory: String, Sendable, CaseIterable {
 
     public var label: String {
         switch self {
-        case .folders: "Folders"
-        case .documents: "Documents"
-        case .images: "Images"
-        case .video: "Video"
-        case .audio: "Audio"
-        case .archives: "Archives"
-        case .code: "Code"
-        case .diskImages: "Disk Images"
-        case .applications: "Applications"
-        case .system: "System"
-        case .other: "Other"
+        case .folders: L10n.tr("文件夹", "Folders", "Папки")
+        case .documents: L10n.tr("文档", "Documents", "Документы")
+        case .images: L10n.tr("图片", "Images", "Изображения")
+        case .video: L10n.tr("视频", "Video", "Видео")
+        case .audio: L10n.tr("音频", "Audio", "Аудио")
+        case .archives: L10n.tr("压缩包", "Archives", "Архивы")
+        case .code: L10n.tr("代码", "Code", "Код")
+        case .diskImages: L10n.tr("磁盘映像", "Disk Images", "Образы дисков")
+        case .applications: L10n.tr("应用程序", "Applications", "Приложения")
+        case .system: L10n.tr("系统", "System", "Система")
+        case .other: L10n.tr("其他", "Other", "Другое")
         }
     }
 

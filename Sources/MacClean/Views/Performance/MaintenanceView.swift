@@ -18,10 +18,10 @@ struct MaintenanceView: View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(L10n.tr("维护", "Maintenance"))
+                    Text(L10n.tr("维护", "Maintenance", "Обслуживание"))
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(.primary)
-                    Text(L10n.tr("运行系统维护任务，让 Mac 保持健康", "Run system maintenance tasks to keep your Mac healthy"))
+                    Text(L10n.tr("运行系统维护任务，让 Mac 保持健康", "Run system maintenance tasks to keep your Mac healthy", "Выполняйте задачи обслуживания, чтобы поддерживать Mac в хорошем состоянии"))
                         .font(.system(size: 12))
                         .foregroundStyle(.primary.opacity(0.6))
                 }
@@ -30,7 +30,7 @@ struct MaintenanceView: View {
                 // module hides hours-long Spotlight/Launch-Services
                 // disruption behind a single click. Only fire-and-forget
                 // safe tasks now; advanced ones require per-task consent.
-                Button(L10n.tr("运行安全任务", "Run Safe Tasks")) { runSafeTasks() }
+                Button(L10n.tr("运行安全任务", "Run Safe Tasks", "Запустить безопасные задачи")) { runSafeTasks() }
                     .buttonStyle(SuperEllipseButtonStyle(
                         gradient: ModuleTheme.performance.buttonGradient,
                         size: CGSize(width: 120, height: 34)
@@ -50,17 +50,17 @@ struct MaintenanceView: View {
             }
         }
         .alert(
-            L10n.tr("运行 \(taskAwaitingConfirmation?.title ?? "")？", "Run \(taskAwaitingConfirmation?.title ?? "")?"),
+            L10n.tr("运行 \(taskAwaitingConfirmation?.title ?? "")？", "Run \(taskAwaitingConfirmation?.title ?? "")?", "Запустить \(taskAwaitingConfirmation?.title ?? "")?"),
             isPresented: Binding(
                 get: { taskAwaitingConfirmation != nil },
                 set: { if !$0 { taskAwaitingConfirmation = nil } }
             ),
             presenting: taskAwaitingConfirmation
         ) { task in
-            Button(L10n.tr("取消", "Cancel"), role: .cancel) {
+            Button(L10n.tr("取消", "Cancel", "Отмена"), role: .cancel) {
                 taskAwaitingConfirmation = nil
             }
-            Button(L10n.tr("仍要运行", "Run Anyway"), role: .destructive) {
+            Button(L10n.tr("仍要运行", "Run Anyway", "Всё равно запустить"), role: .destructive) {
                 let captured = task
                 taskAwaitingConfirmation = nil
                 runTask(captured)
@@ -83,7 +83,7 @@ struct MaintenanceView: View {
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.primary)
                     if task.severity == .advanced {
-                        Text(L10n.tr("高级", "ADVANCED"))
+                        Text(L10n.tr("高级", "ADVANCED", "РАСШИРЕННАЯ"))
                             .font(.system(size: 9, weight: .bold))
                             .foregroundStyle(.orange)
                             .padding(.horizontal, 5)
@@ -123,8 +123,8 @@ struct MaintenanceView: View {
             .buttonStyle(.plain)
             .disabled(isRunning(task))
             .help(task.severity == .advanced
-                  ? L10n.tr("可能带来持续数小时的影响——将打开确认窗口", "Has multi-hour side effects — opens a confirmation")
-                  : L10n.tr("运行此任务", "Run this task"))
+                  ? L10n.tr("可能带来持续数小时的影响——将打开确认窗口", "Has multi-hour side effects — opens a confirmation", "Может влиять на систему несколько часов — откроется окно подтверждения")
+                  : L10n.tr("运行此任务", "Run this task", "Запустить эту задачу"))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -173,7 +173,7 @@ struct MaintenanceView: View {
         if result.success {
             taskStates[task] = .completed(result.output)
         } else {
-            taskStates[task] = .failed(result.error ?? L10n.tr("未知错误", "Unknown error"))
+            taskStates[task] = .failed(result.error ?? L10n.tr("未知错误", "Unknown error", "Неизвестная ошибка"))
         }
     }
 
