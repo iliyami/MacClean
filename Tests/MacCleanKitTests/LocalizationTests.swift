@@ -41,6 +41,27 @@ final class LocalizationTests: AppLanguageTestCase {
         XCTAssertEqual(L10n.tr("新功能", "New feature"), "New feature")
     }
 
+    func testKnownTwoArgumentStringUsesRussianFallback() {
+        AppLanguage.current = .ru
+
+        let cases = [
+            ("可用磁盘空间", "Free disk space", "Свободное место на диске"),
+            ("GPU 使用率", "GPU usage", "Загрузка GPU"),
+            ("内存使用率", "Memory usage", "Использование памяти"),
+            ("电池温度", "Battery temperature", "Температура аккумулятора"),
+            ("菜单栏显示", "Menu bar display", "Показатель в строке меню"),
+            (
+                "选择应用图标旁显示的紧凑数值。GPU 或电池温度不可用时显示 --。",
+                "Choose the compact value shown next to the app icon. Unavailable GPU or battery sensors appear as --.",
+                "Выберите компактный показатель рядом со значком приложения. Если данные GPU или температуры аккумулятора недоступны, отображается --."
+            ),
+        ]
+
+        for (chinese, english, russian) in cases {
+            XCTAssertEqual(L10n.tr(chinese, english), russian)
+        }
+    }
+
     func testRussianPluralRules() {
         let cases: [(Int, String)] = [
             (0, "файлов"), (1, "файл"), (2, "файла"), (4, "файла"), (5, "файлов"),
