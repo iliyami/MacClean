@@ -13,6 +13,15 @@ final class LargeOldFilesSplitterTests: XCTestCase {
         )
     }
 
+    private func makeFile(at path: String, size: UInt64, mod: Date? = nil) -> FileItem {
+        FileItem(
+            url: URL(filePath: path),
+            name: URL(filePath: path).lastPathComponent,
+            size: size, allocatedSize: size,
+            isDirectory: false, modificationDate: mod
+        )
+    }
+
     func testSplitLargeAndOld_classifies() {
         let now = Date()
         let yearOld = now.addingTimeInterval(-365 * 24 * 3600)
@@ -55,5 +64,29 @@ final class LargeOldFilesSplitterTests: XCTestCase {
         let split = LargeOldFilesModule.splitLargeAndOld(items: items, minSize: 50 * 1024 * 1024)
         XCTAssertEqual(split.large.count, 1)
         XCTAssertEqual(split.old.count, 0)
+    }
+
+    func testMakeResultsPreservesBucketsWithoutAutoSelection() {
+        let documents = makeFile(at: "/Users/test/Documents/archive.mov", size: 200)
+        let desktop = makeFile(at: "/Users/test/Desktop/notes.txt", size: 20)
+        let pictures = makeFile(at: "/Users/test/Pictures/photo.raw", size: 100)
+
+        let results = LargeOldFilesModule.makeResults(
+            large: [documents, pictures],
+            old: [desktop, pictures]
+        )
+
+        XCTAssertEqual(results.map(\.category), [.largeFiles, .oldFiles])
+        XCTAssertEqual(results.map(\.items), [[documents, pictures], [desktop, pictures]])
+        XCTAssertEqual(results.map(\.autoSelect), [false, false])
+        XCTAssertTrue(LargeOldFilesModule.makeResults(large: [], old: []).isEmpty)
+        XCTAssertEqual(
+            LargeOldFilesModule.makeResults(large: [documents], old: []).map(\.category),
+            [.largeFiles]
+        )
+        XCTAssertEqual(
+            LargeOldFilesModule.makeResults(large: [], old: [desktop]).map(\.category),
+            [.oldFiles]
+        )
     }
 }
