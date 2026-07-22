@@ -209,6 +209,11 @@ public enum MCConstants {
     public static let issuesURL = URL(string: "https://github.com/iliyami/MacSai/issues/new/choose")!
     public static let releasesURL = URL(string: "https://github.com/iliyami/MacSai/releases")!
     public static let latestReleaseAPI = URL(string: "https://api.github.com/repos/iliyami/MacSai/releases/latest")!
+    /// Homebrew's public API for the official cask. Its `version` reflects what
+    /// `brew upgrade --cask mac-sai` can actually install right now (autobump
+    /// lags GitHub releases by a few days), so Homebrew installs check this
+    /// instead of the GitHub release to keep the update prompt in sync.
+    public static let homebrewCaskAPI = URL(string: "https://formulae.brew.sh/api/cask/mac-sai.json")!
 
     // MARK: - App version
     //
@@ -218,5 +223,5 @@ public enum MCConstants {
     // plugin was tried (commit history) but doesn't work under multi-arch
     // `swift build --arch arm64 --arch x86_64` because xcbuild doesn't
     // execute plugins.
-    public static let appVersion = "1.17.0"
+    public static let appVersion = "1.17.1"
 }

@@ -59,18 +59,56 @@ public enum UpdateChecker {
         caskroomPaths.contains { fileManager.fileExists(atPath: $0) }
     }
 
-    /// Query GitHub and classify the result. Failures are returned as
-    /// values, never thrown: the Settings UI renders them inline.
+    /// Where to look for the latest version, per install source. Homebrew
+    /// installs check the official cask API (what `brew upgrade` can deliver);
+    /// direct/DMG installs check the GitHub release (they get the DMG directly,
+    /// with no autobump lag).
+    public static func updateSourceURL(isHomebrew: Bool) -> URL {
+        isHomebrew ? MCConstants.homebrewCaskAPI : MCConstants.latestReleaseAPI
+    }
+
+    /// Parse the `version` from Homebrew's cask JSON (formulae.brew.sh).
+    /// Returns nil for malformed payloads or `:latest` casks (no comparable
+    /// version).
+    public static func parseCaskVersion(_ data: Data) -> String? {
+        struct Cask: Decodable { let version: String }
+        guard let cask = try? JSONDecoder().decode(Cask.self, from: data),
+              !cask.version.isEmpty, cask.version != ":latest" else { return nil }
+        return cask.version
+    }
+
+    /// Check for a newer version and classify the result. Homebrew installs
+    /// compare against the official cask version so the prompt matches what
+    /// `brew upgrade` can install; everyone else compares against the latest
+    /// GitHub release. Failures are returned as values, never thrown.
     public static func check(
         currentVersion: String = MCConstants.appVersion,
-        session: URLSession = .shared
+        session: URLSession = .shared,
+        isHomebrew: Bool = isHomebrewInstall()
     ) async -> CheckResult {
-        var request = URLRequest(url: MCConstants.latestReleaseAPI, timeoutInterval: 10)
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        let sourceURL = updateSourceURL(isHomebrew: isHomebrew)
+        var request = URLRequest(url: sourceURL, timeoutInterval: 10)
+        request.setValue(
+            isHomebrew ? "application/json" : "application/vnd.github+json",
+            forHTTPHeaderField: "Accept")
         do {
             let (data, _) = try await session.data(for: request)
-            guard let (version, url) = parseLatestRelease(data) else {
-                return .failed(message: L10n.tr("GitHub 返回了无法识别的响应。", "Unexpected response from GitHub.", "Неожиданный ответ от GitHub."))
+            let version: String
+            let url: URL
+            if isHomebrew {
+                guard let caskVersion = parseCaskVersion(data) else {
+                    return .failed(message: L10n.tr("Homebrew 返回了无法识别的响应。", "Unexpected response from Homebrew.", "Неожиданный ответ от Homebrew."))
+                }
+                version = caskVersion
+                // Brew installs act via `brew upgrade`, not a download link;
+                // the releases page is a sensible fallback URL.
+                url = MCConstants.releasesURL
+            } else {
+                guard let parsed = parseLatestRelease(data) else {
+                    return .failed(message: L10n.tr("GitHub 返回了无法识别的响应。", "Unexpected response from GitHub.", "Неожиданный ответ от GitHub."))
+                }
+                version = parsed.version
+                url = parsed.url
             }
             return isNewer(version, than: currentVersion)
                 ? .updateAvailable(version: version, url: url)
