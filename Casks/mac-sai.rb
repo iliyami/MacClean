@@ -21,6 +21,10 @@ cask "mac-sai" do
 
   app "Mac Sai.app"
 
+  # Quit a running Mac Sai before upgrading/uninstalling so the old copy is
+  # cleanly replaced instead of lingering (macOS can't swap a running app).
+  uninstall quit: "com.macclean.app"
+
   zap trash: [
     "~/Library/Application Support/MacClean",
     "~/Library/Caches/com.macclean.app",
