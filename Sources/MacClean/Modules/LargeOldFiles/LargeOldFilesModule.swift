@@ -48,6 +48,11 @@ public struct LargeOldFilesModule: ScanModule {
 
     /// Pure result builder for testability. Large and old files always require
     /// explicit user selection before cleaning.
+    ///
+    /// Returns the results *unfiltered*: callers must apply
+    /// `filteringUncleanable()` before showing them (see `scan()`). That step is
+    /// deliberately kept out here so this builder stays pure and can be tested
+    /// with synthetic items that don't exist on disk.
     internal static func makeResults(large: [FileItem], old: [FileItem]) -> [ScanResult] {
         var results: [ScanResult] = []
         if !large.isEmpty {
