@@ -57,14 +57,14 @@ echo ""
 
 # Step 1: Build release as a universal (arm64 + x86_64) binary
 BUILD_ARCHS="${BUILD_ARCHS:---arch arm64 --arch x86_64}"
-echo "[1/6] Building release binaries (${BUILD_ARCHS})..."
+echo "[1/7] Building release binaries (${BUILD_ARCHS})..."
 swift build -c release ${BUILD_ARCHS} --product MacClean
 swift build -c release ${BUILD_ARCHS} --product MacCleanMenu
 BUILD_DIR=$(swift build -c release ${BUILD_ARCHS} --product MacClean --show-bin-path)
 echo "  → Binaries: ${BUILD_DIR}"
 
 # Step 2: Create .app bundle
-echo "[2/6] Creating app bundle..."
+echo "[2/7] Creating app bundle..."
 APP_BUNDLE="${DMG_DIR}/${APP_NAME}.app"
 rm -rf "${DMG_DIR}"
 mkdir -p "${APP_BUNDLE}/Contents/MacOS"
@@ -137,7 +137,7 @@ fi
 # (Contents/Library/LoginItems/<helper>.app), and the helper's bundle id
 # is what gets passed to register(). LSUIElement=true keeps it off the
 # Dock; it lives in the menu bar only.
-echo "[2.5/6] Bundling MacCleanMenu widget..."
+echo "[2.5/7] Bundling MacCleanMenu widget..."
 MENU_APP="${APP_BUNDLE}/Contents/Library/LoginItems/MacCleanMenu.app"
 mkdir -p "${MENU_APP}/Contents/MacOS"
 mkdir -p "${MENU_APP}/Contents/Resources"
@@ -192,7 +192,7 @@ if [ -f "Resources/AppIcon.icns" ]; then
 fi
 
 # Step 3: Entitlements (needed for notarization with hardened runtime)
-echo "[3/6] Creating entitlements..."
+echo "[3/7] Creating entitlements..."
 cat > "${DMG_DIR}/entitlements.plist" << ENTITLEMENTS
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -205,7 +205,7 @@ cat > "${DMG_DIR}/entitlements.plist" << ENTITLEMENTS
 ENTITLEMENTS
 
 # Step 4: Sign the app
-echo "[4/6] Signing app bundle..."
+echo "[4/7] Signing app bundle..."
 if [[ "$NOTARIZE" == "true" ]]; then
     codesign --force --deep --options runtime \
         --entitlements "${DMG_DIR}/entitlements.plist" \
@@ -229,8 +229,29 @@ if [[ "$APP_ONLY" == "true" ]]; then
     exit 0
 fi
 
-# Step 5: Create DMG
-echo "[5/6] Creating DMG..."
+# Step 4.5: Notarize + STAPLE the app itself, BEFORE packaging it into the DMG.
+# Stapling embeds the notarization ticket in the app bundle, so the copied-out
+# app (Homebrew/DMG installs put a fresh copy in /Applications) verifies
+# OFFLINE. Previously only the DMG was stapled and the app relied on an online
+# Gatekeeper check on first launch; when that check didn't complete, macOS
+# showed "Apple could not verify Mac Sai..." and blocked it. Stapling the app
+# removes that online dependency. This is a separate submission from the DMG
+# below, but it is the only way to ship a DMG that contains a stapled app.
+if [[ "$NOTARIZE" == "true" ]]; then
+    echo "[5/7] Notarizing + stapling the app bundle..."
+    APP_ZIP="${DMG_DIR}/${APP_NAME}-notarize.zip"
+    ditto -c -k --keepParent "${APP_BUNDLE}" "${APP_ZIP}"
+    xcrun notarytool submit "${APP_ZIP}" \
+        --keychain-profile "${NOTARY_PROFILE}" \
+        --wait
+    rm -f "${APP_ZIP}"
+    xcrun stapler staple "${APP_BUNDLE}"
+    xcrun stapler validate "${APP_BUNDLE}"
+    echo "  → App notarized and stapled (verifies offline)"
+fi
+
+# Step 6: Create DMG (now containing the stapled app)
+echo "[6/7] Creating DMG..."
 hdiutil create -volname "${APP_NAME}" \
     -srcfolder "${DMG_DIR}" \
     -ov -format UDZO \
@@ -242,21 +263,19 @@ if [[ "$NOTARIZE" == "true" ]]; then
     echo "  → DMG signed with Developer ID"
 fi
 
-# Step 6: Notarize + staple the DMG ONLY. Notarizing the DMG also notarizes the
-# app inside it (Apple scans the contents), so one submission covers both. We do
-# not separately notarize the app: that doubled the Apple round-trips and was the
-# step that hung for ~1h. The copied-out app launches via a quick online
-# Gatekeeper check on first run, which is fine for Homebrew/DMG installs.
+# Step 7: Notarize + staple the DMG so opening the downloaded disk image itself
+# is clean. The app inside was already notarized AND stapled in Step 5, so it
+# verifies offline once copied out; this step just covers the DMG wrapper.
 if [[ "$NOTARIZE" == "true" ]]; then
-    echo "[6/6] Notarizing DMG..."
+    echo "[7/7] Notarizing DMG..."
     xcrun notarytool submit ".build/${DMG_NAME}" \
         --keychain-profile "${NOTARY_PROFILE}" \
         --wait
     xcrun stapler staple ".build/${DMG_NAME}"
     xcrun stapler validate ".build/${DMG_NAME}"
-    echo "  → Notarization complete (DMG stapled; app inside notarized)"
+    echo "  → Notarization complete (DMG stapled; app inside stapled too)"
 else
-    echo "[6/6] Skipping notarization (no --notarize flag)"
+    echo "[7/7] Skipping notarization (no --notarize flag)"
 fi
 
 # Compute SHA256 for Homebrew Cask
