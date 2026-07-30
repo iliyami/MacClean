@@ -28,7 +28,7 @@ public actor AppDiscovery {
 
     public func discoverApps() -> [AppInfo] {
         var apps: [AppInfo] = []
-        let fm = FileManager.default
+        var seen = Set<String>()
 
         let appDirs = [
             URL(filePath: "/Applications"),
@@ -36,19 +36,43 @@ public actor AppDiscovery {
         ]
 
         for dir in appDirs {
-            guard let contents = try? fm.contentsOfDirectory(
-                at: dir,
-                includingPropertiesForKeys: resourceKeys
-            ) else { continue }
-
-            for url in contents where url.pathExtension == "app" {
-                if let info = appInfo(from: url) {
+            for appURL in Self.appBundles(in: dir) {
+                let path = appURL.path(percentEncoded: false)
+                guard seen.insert(path).inserted else { continue }
+                if let info = appInfo(from: appURL) {
                     apps.append(info)
                 }
             }
         }
 
         return apps.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    /// All `.app` bundles under `dir`, including those nested in subfolders
+    /// (e.g. `/Applications/Adobe/Photoshop.app`, `/Applications/Utilities/`),
+    /// which the old top-level-only scan missed (issue #120).
+    ///
+    /// `.skipsPackageDescendants` stops the walk at each bundle so we never list
+    /// helper apps buried inside another app (`…/Contents/Library/…/Helper.app`),
+    /// and `maxDepth` bounds the recursion so a huge non-app folder can't stall
+    /// discovery. Real installs nest an app one or two folders deep at most.
+    static func appBundles(in dir: URL, maxDepth: Int = 4,
+                           fileManager: FileManager = .default) -> [URL] {
+        guard let enumerator = fileManager.enumerator(
+            at: dir,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else { return [] }
+
+        var found: [URL] = []
+        while let url = enumerator.nextObject() as? URL {
+            if enumerator.level >= maxDepth { enumerator.skipDescendants() }
+            if url.pathExtension == "app" {
+                found.append(url)
+                enumerator.skipDescendants()   // never recurse into a bundle
+            }
+        }
+        return found
     }
 
     private func appInfo(from url: URL) -> AppInfo? {
