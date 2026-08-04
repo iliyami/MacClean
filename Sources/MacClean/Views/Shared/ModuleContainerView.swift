@@ -131,6 +131,12 @@ struct ModuleContainerView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .respondsToModuleShortcuts(
+            onScan: onScan,
+            onClean: onClean,
+            canScan: cleaning == nil && !isScanning && completion == nil,
+            canClean: cleaning == nil && completion == nil && !results.isEmpty && selectedCount > 0
+        )
     }
 
     /// Renders the error summary on the post-clean screen. Single error

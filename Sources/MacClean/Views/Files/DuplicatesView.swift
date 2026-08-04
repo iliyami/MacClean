@@ -86,6 +86,15 @@ struct DuplicatesView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // Idle / scanning paths don't use ModuleContainerView; relay ⌘R here.
+        // When ModuleContainerView is shown it also listens to the same nonces —
+        // outer must NOT accept ⌘K (canClean: false), or clean() runs twice and
+        // the second pass can overwrite the completion summary with "0 freed".
+        .respondsToModuleShortcuts(
+            onScan: scan,
+            canScan: !isScanning && cleaning == nil && completion == nil && results.isEmpty && !scanComplete,
+            canClean: false
+        )
     }
 
     private var idleView: some View {

@@ -21,6 +21,10 @@ struct SpaceLensView: View {
             breadcrumbBar
             content
         }
+        .respondsToModuleShortcuts(
+            onScan: startScan,
+            canScan: !isScanning
+        )
     }
 
     private var header: some View {

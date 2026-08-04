@@ -39,6 +39,20 @@ struct SystemJunkView: View {
                 for: .systemJunk
             )
         }
+        .respondsToModuleShortcuts(
+            onScan: { viewModel.startScan() },
+            onClean: { viewModel.startCleaning(engine: appState.cleaningEngine) },
+            canScan: {
+                switch viewModel.state {
+                case .idle, .empty, .done, .results: true
+                case .scanning, .cleaning: false
+                }
+            }(),
+            canClean: {
+                if case .results = viewModel.state { return viewModel.selectedCount > 0 }
+                return false
+            }()
+        )
     }
 
     private var idleView: some View {

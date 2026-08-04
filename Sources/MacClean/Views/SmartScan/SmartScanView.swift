@@ -83,6 +83,20 @@ struct SmartScanView: View {
         .onChange(of: selectedItems.count) { _, _ in
             recomputeSelectedCleanSize()
         }
+        .respondsToModuleShortcuts(
+            onScan: startScan,
+            onClean: { showCleanConfirm = true },
+            canScan: {
+                switch scanState {
+                case .idle, .empty, .done, .results: true
+                case .scanning, .cleaning: false
+                }
+            }(),
+            canClean: {
+                if case .results = scanState { return !selectedItems.isEmpty }
+                return false
+            }()
+        )
     }
 
     // MARK: - Idle

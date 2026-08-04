@@ -67,6 +67,28 @@ struct MacCleanApp: App {
                 }
                 .keyboardShortcut(",", modifiers: .command)
             }
+            CommandGroup(after: .sidebar) {
+                Button(L10n.tr("扫描", "Scan", "Сканировать")) {
+                    appState.requestScanShortcut()
+                }
+                .keyboardShortcut("r", modifiers: .command)
+
+                Button(L10n.tr("清理所选项目", "Clean Selected", "Очистить выбранное")) {
+                    appState.requestCleanShortcut()
+                }
+                .keyboardShortcut("k", modifiers: .command)
+
+                Divider()
+
+                ForEach(1...9, id: \.self) { digit in
+                    if let item = SidebarItem.item(forShortcutDigit: digit) {
+                        Button(item.title) {
+                            appState.selectedSidebarItem = item
+                        }
+                        .keyboardShortcut(KeyEquivalent(Character(String(digit))), modifiers: .command)
+                    }
+                }
+            }
         }
     }
 

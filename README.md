@@ -127,6 +127,15 @@ A glassmorphism menu bar widget that puts your Mac's vitals one click away — a
 - **Health alerts** — background notifications when disk runs critically low or memory pressure stays high (throttled, opt-in)
 - **One click to the app** — jump straight into Mac Sai
 
+### Keyboard shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| **⌘R** | Start a scan in the current module |
+| **⌘K** | Clean the current selection (when results are showing) |
+| **⌘1–⌘9** | Jump to the first nine sidebar modules (Smart Scan → …) |
+| **⌘,** | Open Settings |
+
 ## Architecture
 
 ```

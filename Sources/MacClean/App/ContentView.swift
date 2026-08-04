@@ -43,6 +43,7 @@ struct ContentView: View {
                             .opacity(isSelected ? 1 : 0)
                             .allowsHitTesting(isSelected)
                             .accessibilityHidden(!isSelected)
+                            .environment(\.moduleIsSelected, isSelected)
                     }
                 }
 

@@ -8,6 +8,14 @@ public final class AppState {
     let cleaningEngine = CleaningEngine()
     let scanResultsStore = ScanResultsStore()
 
+    /// Bumped by the global ⌘R command; selected module views observe and scan.
+    private(set) var scanShortcutNonce: UInt64 = 0
+    /// Bumped by the global ⌘K command; selected module views observe and clean.
+    private(set) var cleanShortcutNonce: UInt64 = 0
+
+    func requestScanShortcut() { scanShortcutNonce &+= 1 }
+    func requestCleanShortcut() { cleanShortcutNonce &+= 1 }
+
     init() {
         registerModules()
         // 30-day log retention. Runs once at app launch. Best-effort —

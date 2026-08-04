@@ -103,6 +103,19 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         case .settings: .main
         }
     }
+
+    /// Modules jumpable via ⌘1…⌘9 (Settings excluded). Order matches
+    /// `CaseIterable` / sidebar listing.
+    public static var keyboardShortcutItems: [SidebarItem] {
+        Array(allCases.filter { $0 != .settings }.prefix(9))
+    }
+
+    /// 1-based digit → sidebar item for ⌘1…⌘9. Returns nil out of range.
+    public static func item(forShortcutDigit digit: Int) -> SidebarItem? {
+        let items = keyboardShortcutItems
+        guard digit >= 1, digit <= items.count else { return nil }
+        return items[digit - 1]
+    }
 }
 
 public enum SidebarSection: String, CaseIterable, Identifiable {
