@@ -85,4 +85,61 @@ public enum FileConsolidator {
         (try? url.resourceValues(forKeys: [.volumeSupportsFileCloningKey]))?
             .volumeSupportsFileCloning ?? false
     }
+
+    // MARK: Single-pair clone-swap
+
+    /// Replace `copy` with an APFS clone of `master`, in place and atomically.
+    /// Any failed precondition or error leaves the original `copy` untouched.
+    public static func consolidate(master: URL, copy: URL,
+                                   safetyGuard: SafetyGuard = SafetyGuard()) -> ConsolidationOutcome {
+        if let reason = ineligibilityReason(master: master, copy: copy, safetyGuard: safetyGuard) {
+            return .skipped(reason)
+        }
+        // Re-verify identical NOW (TOCTOU guard: the file may have changed since the scan).
+        guard let masterHash = FileHashing.sha256(master),
+              let copyHash = FileHashing.sha256(copy),
+              masterHash == copyHash else {
+            return .skipped(.contentChanged)
+        }
+
+        let fm = FileManager.default
+        let copyPath = copy.path(percentEncoded: false)
+
+        // Snapshot metadata + allocated size (the reclaimed figure).
+        let attrs = try? fm.attributesOfItem(atPath: copyPath)
+        let perms = attrs?[.posixPermissions] as? NSNumber
+        let mtime = attrs?[.modificationDate] as? Date
+        let reclaimed = UInt64((try? copy.resourceValues(
+            forKeys: [.totalFileAllocatedSizeKey]))?.totalFileAllocatedSize ?? 0)
+
+        // Clone master into a unique hidden temp in the copy's own directory
+        // (same volume, so the later rename is atomic).
+        let tempURL = copy.deletingLastPathComponent()
+            .appendingPathComponent(".\(copy.lastPathComponent).consolidate-\(UUID().uuidString)")
+        let tempPath = tempURL.path(percentEncoded: false)
+        let cloned = master.path(percentEncoded: false).withCString { src in
+            tempPath.withCString { dst in clonefile(src, dst, 0) == 0 }
+        }
+        guard cloned else { return .failed("clonefile failed for \(copyPath)") }
+
+        // Verify the clone byte-for-byte before we swap it in.
+        guard FileHashing.sha256(tempURL) == masterHash else {
+            try? fm.removeItem(at: tempURL)
+            return .failed("clone verification failed for \(copyPath)")
+        }
+
+        // Restore the copy's own permissions + mtime onto the clone.
+        var restore: [FileAttributeKey: Any] = [:]
+        if let perms { restore[.posixPermissions] = perms }
+        if let mtime { restore[.modificationDate] = mtime }
+        if !restore.isEmpty { try? fm.setAttributes(restore, ofItemAtPath: tempPath) }
+
+        // Atomic swap (same volume => rename is atomic). Original stays intact on failure.
+        let swapped = tempPath.withCString { t in copyPath.withCString { c in rename(t, c) == 0 } }
+        guard swapped else {
+            try? fm.removeItem(at: tempURL)
+            return .failed("atomic swap failed for \(copyPath)")
+        }
+        return .reclaimed(bytes: reclaimed)
+    }
 }
