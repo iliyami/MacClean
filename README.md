@@ -171,6 +171,7 @@ Mac Sai is designed to **never cause data loss**:
 - **TOCTOU prevention** — symlinks re-resolved immediately before deletion
 - **Chunked cleanup** — large selections (50k+) prompt a confirmation modal; the engine splits the work into 5k-item chunks honoring `Task.isCancelled` between chunks so cancellation is responsive
 - **Cancellable scans** — Smart Scan and Duplicates show a Cancel button while scanning; `ScanCoordinator.cancel()` returns the UI to idle within about a second without orphan tasks
+- **Duplicate consolidation** (reclaim space without deleting): on APFS, redundant copies are replaced with copy-on-write clones of a kept master, so every path keeps working and identical files stop costing N times their size
 - **Recursive byte accounting** — directory size is walked instead of stat'd, so the "X freed" count on the completion screen reflects reality
 - **Orphan safety policy** — orphan cleanup restricted to caches/logs only
 - **In-app activity log viewer** — every error during clean is logged with full path; the post-clean screen has a "View Log" button that opens an in-app sheet with errors-only filter and copy-to-clipboard so you can paste a bug report verbatim. Logs auto-prune after 30 days
