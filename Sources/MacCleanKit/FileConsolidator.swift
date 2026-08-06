@@ -142,4 +142,43 @@ public enum FileConsolidator {
         }
         return .reclaimed(bytes: reclaimed)
     }
+
+    // MARK: Batch + estimate
+
+    /// Consolidate every selected copy in each group (master = the kept copy),
+    /// aggregating results. Honours cancellation between items.
+    public static func consolidate(groups: [GroupConsolidation],
+                                   safetyGuard: SafetyGuard = SafetyGuard()) -> ConsolidationSummary {
+        var summary = ConsolidationSummary()
+        for group in groups {
+            for copy in group.copies {
+                if Task.isCancelled { return summary }
+                switch consolidate(master: group.master, copy: copy, safetyGuard: safetyGuard) {
+                case .reclaimed(let bytes):
+                    summary.reclaimedBytes += bytes
+                    summary.consolidatedCount += 1
+                case .skipped(let reason):
+                    summary.skipped.append(SkippedItem(url: copy, reason: reason))
+                case .failed(let message):
+                    summary.failed.append(FailedItem(url: copy, message: message))
+                }
+            }
+        }
+        return summary
+    }
+
+    /// Cheap dry-run: sum the allocated size of copies that pass the step-1
+    /// eligibility checks. Writes nothing; used for the confirmation preview.
+    public static func estimateReclaimable(groups: [GroupConsolidation],
+                                           safetyGuard: SafetyGuard = SafetyGuard()) -> UInt64 {
+        var total: UInt64 = 0
+        for group in groups {
+            for copy in group.copies
+            where ineligibilityReason(master: group.master, copy: copy, safetyGuard: safetyGuard) == nil {
+                total += UInt64((try? copy.resourceValues(
+                    forKeys: [.totalFileAllocatedSizeKey]))?.totalFileAllocatedSize ?? 0)
+            }
+        }
+        return total
+    }
 }

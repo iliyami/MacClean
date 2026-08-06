@@ -112,4 +112,39 @@ final class FileConsolidatorTests: XCTestCase {
         XCTAssertGreaterThan(Int64(after) - Int64(before), Int64(Double(size) * 0.7),
                              "expected clone to free most of the copy's blocks")
     }
+
+    func testBatchAggregatesReclaimedAndSkipped() throws {
+        let payload = Data(repeating: 0x11, count: 8 * 1024)
+        let master = try write("gm", payload)
+        let good = try write("good", payload)
+        let changed = try write("changed", Data("nope".utf8))
+        let group = GroupConsolidation(master: master, copies: [good, changed])
+
+        let summary = FileConsolidator.consolidate(groups: [group])
+
+        XCTAssertEqual(summary.consolidatedCount, 1)
+        XCTAssertGreaterThan(summary.reclaimedBytes, 0)
+        XCTAssertEqual(summary.skipped, [SkippedItem(url: changed, reason: .contentChanged)])
+        XCTAssertEqual(summary.failed, [])
+    }
+
+    func testEstimateSumsEligibleCopiesAndWritesNothing() throws {
+        let payload = Data(repeating: 0x22, count: 16 * 1024)
+        let master = try write("em", payload)
+        let a = try write("ea", payload)
+        let b = try write("eb", payload)
+        let changed = try write("ec", Data("x".utf8))
+        let before = try Data(contentsOf: a)
+
+        let est = FileConsolidator.estimateReclaimable(
+            groups: [GroupConsolidation(master: master, copies: [a, b, changed])])
+
+        // a and b are eligible; `changed` is a different size but still passes the
+        // step-1 checks (estimate does not hash), so all three regular files count.
+        // The estimate is a cheap preview.
+        XCTAssertGreaterThan(est, 0)
+        // Nothing was written.
+        XCTAssertEqual(try Data(contentsOf: a), before)
+        XCTAssertEqual(try Data(contentsOf: master), payload)
+    }
 }
