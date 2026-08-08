@@ -143,4 +143,40 @@ final class MaintenanceTaskTests: EnglishAppLanguageTestCase {
     func testResolveDockerPathNilWhenNoneExist() {
         XCTAssertNil(MaintenanceTask.resolveDockerPath { _ in false })
     }
+
+    // MARK: - Missing system tools (issue #129)
+
+    func testMaintenanceScriptsUnavailableWhenPeriodicIsMissing() {
+        // Apple removed /usr/sbin/periodic in macOS 26. The task must report
+        // the tool as unavailable rather than run and surface
+        // `/bin/sh: /usr/sbin/periodic: No such file or directory`.
+        let task = MaintenanceTask.runMaintenanceScripts
+        XCTAssertEqual(task.systemCommand?.executable, "/usr/sbin/periodic")
+        XCTAssertFalse(task.systemCommandIsAvailable { $0 != "/usr/sbin/periodic" })
+    }
+
+    func testSystemCommandIsAvailableWhenTheExecutableExists() {
+        XCTAssertTrue(MaintenanceTask.runMaintenanceScripts.systemCommandIsAvailable { _ in true })
+    }
+
+    func testEveryTaskWithACommandIsGatedOnThatCommand() {
+        // The check must consult each task's own executable, not a fixed path,
+        // so a future removal of any hard-coded tool is reported the same way.
+        for task in MaintenanceTask.allCases {
+            guard let command = task.systemCommand else { continue }
+            XCTAssertFalse(task.systemCommandIsAvailable { $0 != command.executable },
+                           "\(task) is not gated on \(command.executable)")
+            XCTAssertTrue(task.systemCommandIsAvailable { $0 == command.executable },
+                          "\(task) reports unavailable when \(command.executable) exists")
+        }
+    }
+
+    func testTasksWithoutASystemCommandAreNotGated() {
+        // Mail reindex and Docker prune have their own executor paths; a
+        // filesystem check must never block them.
+        for task in MaintenanceTask.allCases where task.systemCommand == nil {
+            XCTAssertTrue(task.systemCommandIsAvailable { _ in false },
+                          "\(task) has no system command and must not be gated")
+        }
+    }
 }

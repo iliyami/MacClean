@@ -204,4 +204,22 @@ public enum MaintenanceTask: String, CaseIterable, Identifiable, Sendable {
     public static func resolveDockerPath(existing: (String) -> Bool) -> String? {
         dockerCandidatePaths.first(where: existing)
     }
+
+    /// Whether this task's `systemCommand` executable is present on the running
+    /// system. `existing` is injected so tests don't touch the disk, matching
+    /// `resolveDockerPath(existing:)`.
+    ///
+    /// The paths in `systemCommand` are absolute and hard-coded, and Apple does
+    /// remove them: `/usr/sbin/periodic` is gone on macOS 26 (issue #129), just
+    /// as `diskutil repairPermissions` went earlier (issue #82). Without this
+    /// check the task runs anyway and the user sees the raw shell failure —
+    /// `/bin/sh: /usr/sbin/periodic: No such file or directory` — which reads
+    /// like a bug in the app rather than a tool the OS no longer ships.
+    ///
+    /// Tasks with no `systemCommand` (Mail reindex, Docker prune) are handled
+    /// by their own code paths and report `true` here.
+    public func systemCommandIsAvailable(existing: (String) -> Bool) -> Bool {
+        guard let command = systemCommand else { return true }
+        return existing(command.executable)
+    }
 }

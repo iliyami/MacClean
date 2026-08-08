@@ -35,6 +35,25 @@ public actor MaintenanceExecutor {
                               error: L10n.tr("该任务没有可执行的系统命令", "Task has no system command", "Для этой задачи нет системной команды"))
         }
 
+        // Report a missing system tool instead of running it and surfacing the
+        // raw shell error. Apple removed `/usr/sbin/periodic` in macOS 26, so
+        // Run Maintenance Scripts failed with
+        // `/bin/sh: /usr/sbin/periodic: No such file or directory` (issue #129)
+        // — which reads as an app bug rather than a tool the OS dropped. Gating
+        // here rather than per-task covers every hard-coded path in
+        // `systemCommand`, the same way `pruneDocker` already gates on the
+        // Docker CLI. Checked unprivileged, so an admin task fails before the
+        // password prompt rather than after it.
+        guard task.systemCommandIsAvailable(existing: {
+            FileManager.default.isExecutableFile(atPath: $0)
+        }) else {
+            return TaskResult(
+                task: task, success: false, output: "",
+                error: L10n.tr("\(command) 在当前 macOS 版本中不可用，无法执行该任务。",
+                               "\(command) isn't available on this version of macOS, so this task can't run.",
+                               "\(command) недоступно в этой версии macOS, поэтому эту задачу нельзя выполнить."))
+        }
+
         if task.requiresAdmin {
             return await runAdminProcess(task: task, command: command, args: args)
         }
