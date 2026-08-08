@@ -50,7 +50,8 @@ public actor MaintenanceExecutor {
             return TaskResult(
                 task: task, success: false, output: "",
                 error: L10n.tr("\(command) 在当前 macOS 版本中不可用，无法执行该任务。",
-                               "\(command) isn't available on this version of macOS, so this task can't run."))
+                               "\(command) isn't available on this version of macOS, so this task can't run.",
+                               "\(command) недоступно в этой версии macOS, поэтому эту задачу нельзя выполнить."))
         }
 
         if task.requiresAdmin {
