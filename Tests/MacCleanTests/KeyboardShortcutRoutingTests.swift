@@ -11,11 +11,12 @@ final class KeyboardShortcutRoutingTests: XCTestCase {
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 1), .smartScan)
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 2), .systemJunk)
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 7), .wifiNetworks)
+        XCTAssertEqual(SidebarItem.item(forShortcutDigit: 8), .appPermissions)
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 9), items[8])
-        // Saved Wi-Fi takes ⌘7, so Optimization/Maintenance shift down and ⌘9
-        // is Maintenance; Uninstaller (10th) and Extensions (11th) fall outside
-        // ⌘1–⌘9.
-        XCTAssertEqual(SidebarItem.item(forShortcutDigit: 9), .maintenance)
+        // Saved Wi-Fi stays ⌘7. Permissions overview is ⌘8, so Optimization
+        // becomes ⌘9; Maintenance/Uninstaller/Extensions fall outside ⌘1–⌘9.
+        XCTAssertEqual(SidebarItem.item(forShortcutDigit: 9), .optimization)
+        XCTAssertFalse(items.contains(.maintenance))
         XCTAssertFalse(items.contains(.uninstaller))
         XCTAssertFalse(items.contains(.extensions))
     }

@@ -14,6 +14,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
     case malwareRemoval = "恶意软件清理"
     case privacy = "隐私清理"
     case wifiNetworks = "已保存的 Wi-Fi"
+    case appPermissions = "应用权限"
 
     // Performance
     case optimization = "优化"
@@ -46,6 +47,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         case .malwareRemoval: "malware"
         case .privacy: "privacy"
         case .wifiNetworks: "wifi-networks"
+        case .appPermissions: "app-permissions"
         case .optimization: "optimization"
         case .maintenance: "maintenance"
         case .uninstaller: "uninstaller"
@@ -73,6 +75,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         case .malwareRemoval: "shield.lefthalf.filled"
         case .privacy: "hand.raised.fill"
         case .wifiNetworks: "wifi"
+        case .appPermissions: "lock.shield"
         case .optimization: "gauge.with.dots.needle.67percent"
         case .maintenance: "wrench.and.screwdriver"
         case .uninstaller: "xmark.app"
@@ -90,7 +93,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .smartScan: .smartScan
         case .systemJunk, .mailAttachments, .trashBins: .cleanup
-        case .malwareRemoval, .privacy, .wifiNetworks: .protection
+        case .malwareRemoval, .privacy, .wifiNetworks, .appPermissions: .protection
         case .optimization, .maintenance: .performance
         case .uninstaller, .extensions, .updater: .applications
         case .spaceLens, .largeOldFiles, .duplicates, .shredder: .files
@@ -102,7 +105,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .smartScan: .main
         case .systemJunk, .mailAttachments, .trashBins: .cleanup
-        case .malwareRemoval, .privacy, .wifiNetworks: .protection
+        case .malwareRemoval, .privacy, .wifiNetworks, .appPermissions: .protection
         case .optimization, .maintenance: .performance
         case .uninstaller, .extensions, .updater: .applications
         case .spaceLens, .largeOldFiles, .duplicates, .shredder: .files
