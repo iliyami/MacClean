@@ -12,8 +12,11 @@ struct UninstallerView: View {
     @State private var isLoading = true
     @State private var isLoadingFiles = false
     @State private var isUninstalling = false
+    @State private var isResetting = false
     @State private var appPendingUninstall: AppInfo?
+    @State private var appPendingReset: AppInfo?
     @State private var uninstallError: String?
+    @State private var resetError: String?
     @State private var filter: AppFilter = .all
     @State private var searchText = ""
 
@@ -121,6 +124,37 @@ struct UninstallerView: View {
         } message: {
             Text(uninstallError ?? "")
         }
+        .alert(
+            L10n.tr(
+                "将 \(appPendingReset?.name ?? "此应用") 恢复为默认设置？",
+                "Reset \(appPendingReset?.name ?? "this app") to defaults?",
+                "Сбросить \(appPendingReset?.name ?? "это приложение") к настройкам по умолчанию?"
+            ),
+            isPresented: Binding(get: { appPendingReset != nil },
+                                 set: { if !$0 { appPendingReset = nil } }),
+            presenting: appPendingReset
+        ) { app in
+            Button(L10n.tr("取消", "Cancel", "Отмена"), role: .cancel) { appPendingReset = nil }
+            Button(L10n.tr("恢复默认", "Reset to Defaults", "Сбросить настройки"), role: .destructive) {
+                let target = app; appPendingReset = nil; resetToDefaults(target)
+            }
+        } message: { app in
+            let plan = AppReset.plan(app: app, associatedFiles: associatedFiles, selectedFiles: selectedFiles)
+            let count = plan?.items.count ?? 0
+            let bytes = plan?.items.reduce(0 as UInt64) { $0 + $1.size } ?? 0
+            Text(L10n.tr(
+                "将把 \(app.name) 的缓存、偏好设置和保存的状态（\(count) 项，\(FileSizeFormatter.format(bytes))）移到废纸篓。应用本身会保留。若应用正在运行，请先退出，否则它可能会重新写入这些文件。",
+                "Caches, preferences, and saved state for \(app.name) (\(count) items, \(FileSizeFormatter.format(bytes))) will be moved to the Trash. The app stays installed. Quit the app first if it is running, or it may rewrite these files.",
+                "Кэш, настройки и сохранённое состояние \(app.name) (\(count) \(L10n.russianPlural(count, one: "объект", few: "объекта", many: "объектов")), \(FileSizeFormatter.format(bytes))) будут перемещены в Корзину. Само приложение останется. Если оно запущено, сначала закройте его — иначе файлы могут быть записаны заново."
+            ))
+        }
+        .alert(L10n.tr("恢复默认", "Reset to Defaults", "Сброс настроек"),
+               isPresented: Binding(get: { resetError != nil },
+                                    set: { if !$0 { resetError = nil } })) {
+            Button(L10n.tr("好", "OK"), role: .cancel) { resetError = nil }
+        } message: {
+            Text(resetError ?? "")
+        }
     }
 
     private var filteredApps: [AppInfo] {
@@ -196,27 +230,39 @@ struct UninstallerView: View {
                 }
                 Spacer()
 
-                if safetyGuard.isProtectedApp(app.bundleIdentifier) {
-                    Text(L10n.tr("受保护的系统应用——无法移除", "Protected system app — can't be removed", "Защищённое системное приложение — удалить нельзя"))
-                        .font(.system(size: 12))
-                        .foregroundStyle(.primary.opacity(0.6))
-                } else if isUninstalling {
+                if isUninstalling || isResetting {
                     // In-progress feedback: the button is gone (can't be
                     // re-tapped) and a spinner shows the work is happening.
                     ProgressView()
                         .controlSize(.small)
-                    Text(L10n.tr("正在卸载…", "Uninstalling…", "Удаление…"))
+                    Text(isResetting
+                         ? L10n.tr("正在恢复默认…", "Resetting…", "Сброс…")
+                         : L10n.tr("正在卸载…", "Uninstalling…", "Удаление…"))
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 } else {
-                    Button(L10n.tr("卸载", "Uninstall", "Удалить")) { appPendingUninstall = app }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .controlSize(.small)
+                    if safetyGuard.isProtectedApp(app.bundleIdentifier) {
+                        Text(L10n.tr("受保护的系统应用——无法移除", "Protected system app — can't be removed", "Защищённое системное приложение — удалить нельзя"))
+                            .font(.system(size: 12))
+                            .foregroundStyle(.primary.opacity(0.6))
+                    } else {
+                        Button(L10n.tr("卸载", "Uninstall", "Удалить")) { appPendingUninstall = app }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .controlSize(.small)
+                    }
 
-                    Button(L10n.tr("重置", "Reset", "Сбросить")) { resetSelection() }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
+                    Button(L10n.tr("恢复默认", "Reset to Defaults", "Сбросить настройки")) {
+                        appPendingReset = app
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(AppReset.plan(app: app, associatedFiles: associatedFiles, selectedFiles: selectedFiles) == nil)
+                    .help(L10n.tr(
+                        "清除缓存、偏好设置和保存的状态，保留应用本身。",
+                        "Clears caches, preferences, and saved state. The app stays installed.",
+                        "Очищает кэш, настройки и сохранённое состояние. Само приложение остаётся."
+                    ))
                 }
             }
             .padding()
@@ -276,11 +322,31 @@ struct UninstallerView: View {
         }
     }
 
-    private func resetSelection() {
-        selectedApp = nil
-        associatedFiles = []
-        selectedFiles = []
-        isLoadingFiles = false
+    private func resetToDefaults(_ app: AppInfo) {
+        guard !isResetting, !isUninstalling else { return }
+        guard let plan = AppReset.plan(
+            app: app,
+            associatedFiles: associatedFiles,
+            selectedFiles: selectedFiles
+        ) else { return }
+
+        isResetting = true
+        Task {
+            let result = await CleanActions.executeUserClean(
+                items: plan.items,
+                selectedItems: plan.selection,
+                engine: appState.cleaningEngine
+            )
+            if !result.errors.isEmpty {
+                resetError = L10n.tr(
+                    "恢复 \(app.name) 的默认设置时部分项目失败（\(result.errors.count) 个）。请确认应用已退出后重试。",
+                    "Some items couldn't be reset for \(app.name) (\(result.errors.count)). Quit the app if it is running and try again.",
+                    "Не удалось сбросить часть данных \(app.name) (\(result.errors.count)). Закройте приложение, если оно запущено, и повторите попытку."
+                )
+            }
+            loadAssociatedFiles(for: app)
+            isResetting = false
+        }
     }
 
     private func loadApps() async {
