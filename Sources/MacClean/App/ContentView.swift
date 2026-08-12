@@ -183,6 +183,8 @@ struct ContentView: View {
             MalwareView()
         case .privacy:
             PrivacyView()
+        case .wifiNetworks:
+            WiFiNetworksView()
         case .optimization:
             OptimizationView()
         case .maintenance:
