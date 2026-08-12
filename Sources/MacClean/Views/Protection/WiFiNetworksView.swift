@@ -132,9 +132,9 @@ struct WiFiNetworksView: View {
             }
         } message: { nets in
             Text(L10n.tr(
-                "将从这台 Mac 移除 \(nets.count) 个已保存的 Wi-Fi 网络。macOS 会要求管理员密码。正在使用的网络被移除后可能断开连接。",
-                "\(nets.count) saved Wi-Fi \(nets.count == 1 ? "network" : "networks") will be removed from this Mac. macOS will ask for an administrator password. Forgetting the network you are on may disconnect you.",
-                "С этого Mac будет удалено \(nets.count) \(L10n.russianPlural(nets.count, one: "сохранённая сеть Wi-Fi", few: "сохранённые сети Wi-Fi", many: "сохранённых сетей Wi-Fi")). macOS запросит пароль администратора. Если забыть текущую сеть, соединение может оборваться."
+                "将从这台 Mac 移除 \(nets.count) 个已保存的 Wi-Fi 网络。macOS 会要求管理员权限。正在使用的网络被移除后可能断开连接。",
+                "\(nets.count) saved Wi-Fi \(nets.count == 1 ? "network" : "networks") will be removed from this Mac. macOS will ask for administrator access. Forgetting the network you are on may disconnect you.",
+                "С этого Mac будет удалено \(nets.count) \(L10n.russianPlural(nets.count, one: "сохранённая сеть Wi-Fi", few: "сохранённые сети Wi-Fi", many: "сохранённых сетей Wi-Fi")). macOS запросит права администратора. Если забыть текущую сеть, соединение может оборваться."
             ))
         }
         .alert(L10n.tr("已保存的 Wi-Fi", "Saved Wi-Fi", "Сохранённые сети Wi-Fi"),
