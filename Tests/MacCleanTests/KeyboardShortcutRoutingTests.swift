@@ -12,6 +12,10 @@ final class KeyboardShortcutRoutingTests: XCTestCase {
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 2), .systemJunk)
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 7), .wifiNetworks)
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 9), items[8])
+        // Extensions sits after Uninstaller as the 10th module, so ⌘1–⌘9
+        // stay put (⌘9 remains Uninstaller).
+        XCTAssertEqual(SidebarItem.item(forShortcutDigit: 9), .uninstaller)
+        XCTAssertFalse(items.contains(.extensions))
     }
 
     func testShortcutDigitsRejectOutOfRange() {

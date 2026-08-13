@@ -8,6 +8,8 @@ final class DeepLinkRoutingTests: XCTestCase {
         XCTAssertEqual(SidebarItem(deepLinkID: "trash-bins"), .trashBins)
         XCTAssertEqual(SidebarItem.wifiNetworks.deepLinkID, "wifi-networks")
         XCTAssertEqual(SidebarItem(deepLinkID: "wifi-networks"), .wifiNetworks)
+        XCTAssertEqual(SidebarItem.extensions.deepLinkID, "extensions")
+        XCTAssertEqual(SidebarItem(deepLinkID: "extensions"), .extensions)
         XCTAssertNil(SidebarItem(deepLinkID: "nonsense"))
     }
 }

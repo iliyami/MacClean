@@ -21,6 +21,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
 
     // Applications
     case uninstaller = "卸载器"
+    case extensions = "扩展"
     case updater = "应用更新"
 
     // Files
@@ -48,6 +49,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         case .optimization: "optimization"
         case .maintenance: "maintenance"
         case .uninstaller: "uninstaller"
+        case .extensions: "extensions"
         case .updater: "updater"
         case .spaceLens: "space-lens"
         case .largeOldFiles: "large-old-files"
@@ -74,6 +76,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         case .optimization: "gauge.with.dots.needle.67percent"
         case .maintenance: "wrench.and.screwdriver"
         case .uninstaller: "xmark.app"
+        case .extensions: "puzzlepiece.extension"
         case .updater: "arrow.triangle.2.circlepath"
         case .spaceLens: "chart.pie"
         case .largeOldFiles: "doc.richtext"
@@ -89,7 +92,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         case .systemJunk, .mailAttachments, .trashBins: .cleanup
         case .malwareRemoval, .privacy, .wifiNetworks: .protection
         case .optimization, .maintenance: .performance
-        case .uninstaller, .updater: .applications
+        case .uninstaller, .extensions, .updater: .applications
         case .spaceLens, .largeOldFiles, .duplicates, .shredder: .files
         case .settings: .settings
         }
@@ -101,7 +104,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         case .systemJunk, .mailAttachments, .trashBins: .cleanup
         case .malwareRemoval, .privacy, .wifiNetworks: .protection
         case .optimization, .maintenance: .performance
-        case .uninstaller, .updater: .applications
+        case .uninstaller, .extensions, .updater: .applications
         case .spaceLens, .largeOldFiles, .duplicates, .shredder: .files
         case .settings: .main
         }
