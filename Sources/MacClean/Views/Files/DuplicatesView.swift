@@ -27,6 +27,10 @@ struct DuplicatesView: View {
     @State private var actionMode: DuplicatesActionMode = .remove
     @State private var consolidateConfirm = false
     @State private var consolidateTask: Task<Void, Never>?
+    /// Reclaim estimate for the confirm dialog, computed once (in memory) when
+    /// the user taps Consolidate. Never computed in the body: the disk-touching
+    /// estimate there re-ran on every checkbox toggle and froze the UI (#128).
+    @State private var consolidateEstimate: UInt64 = 0
 
     var body: some View {
         Group {
@@ -59,7 +63,17 @@ struct DuplicatesView: View {
                     completion: completion,
                     cleaning: cleaning,
                     onScan: scan,
-                    onClean: { actionMode == .consolidate ? (consolidateConfirm = true) : clean() },
+                    onClean: {
+                        if actionMode == .consolidate {
+                            // Compute the estimate once, here, from in-memory
+                            // sizes — never in the dialog's message builder (#128).
+                            consolidateEstimate = DuplicatesConsolidation.estimatedReclaim(
+                                from: displayGroups, selection: selectedItems)
+                            consolidateConfirm = true
+                        } else {
+                            clean()
+                        }
+                    },
                     onCancelClean: { cleanTask?.cancel() },
                     onReset: reset,
                     resultsContent: {
@@ -119,12 +133,11 @@ struct DuplicatesView: View {
             Button(L10n.tr("合并", "Consolidate", "Объединить")) { consolidate() }
             Button(L10n.tr("取消", "Cancel", "Отмена"), role: .cancel) {}
         } message: {
-            let est = FileConsolidator.estimateReclaimable(
-                groups: DuplicatesConsolidation.groups(from: displayGroups, selection: selectedItems))
+            // Reads a cached value only — no disk I/O, no per-toggle work (#128).
             Text(L10n.tr(
-                "保留所有副本，预计释放 \(FileSizeFormatter.format(est))",
-                "Keeps every copy, frees about \(FileSizeFormatter.format(est))",
-                "Сохраняет все копии, освободит примерно \(FileSizeFormatter.format(est))"))
+                "保留所有副本，预计释放 \(FileSizeFormatter.format(consolidateEstimate))",
+                "Keeps every copy, frees about \(FileSizeFormatter.format(consolidateEstimate))",
+                "Сохраняет все копии, освободит примерно \(FileSizeFormatter.format(consolidateEstimate))"))
         }
     }
 
@@ -339,6 +352,7 @@ struct DuplicatesView: View {
         scanTimerTask = nil
         consolidateTask?.cancel()
         consolidateTask = nil
+        consolidateEstimate = 0
         actionMode = .remove
         results = []; displayGroups = []; expandedGroups = []; selectedItems = []
         completion = nil; cleaning = nil; cleanTask = nil
