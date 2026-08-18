@@ -51,6 +51,9 @@ struct ExtensionsView: View {
                             .foregroundStyle(.primary.opacity(0.6))
                         Spacer()
                     }
+                    // Fill the card like the list does; otherwise the container
+                    // shrinks to the text width instead of the fixed page width.
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     list
                 }

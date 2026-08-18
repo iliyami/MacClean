@@ -274,4 +274,16 @@ final class ManagedExtensionsClientTests: XCTestCase {
             reveal: { _ in }
         )
     }
+
+    // Regression: capturing a command whose output exceeds the ~64KB pipe
+    // buffer must not deadlock. Before the fix, waitUntilExit ran before the
+    // pipe was drained and the Extensions page hung on "Looking for extensions…".
+    func testCaptureStandardOutputDoesNotDeadlockOnLargeOutput() {
+        // ~205 KB of stdout, well past the pipe buffer.
+        let script = "for i in $(seq 1 5000); do echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; done"
+        let out = ManagedExtensionsClient.captureStandardOutput(
+            of: URL(filePath: "/bin/sh"), arguments: ["-c", script])
+        XCTAssertEqual(out.filter { $0 == "\n" }.count, 5000)
+        XCTAssertGreaterThan(out.count, 200_000)
+    }
 }

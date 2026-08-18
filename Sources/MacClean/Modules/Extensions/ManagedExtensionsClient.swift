@@ -163,19 +163,26 @@ struct ManagedExtensionsClient: Sendable {
     }
 
     private static func runPluginKit() async -> String {
+        captureStandardOutput(of: URL(filePath: "/usr/bin/pluginkit"), arguments: ["-m", "-v"])
+    }
+
+    /// Run a process and return its stdout, draining the pipe BEFORE
+    /// `waitUntilExit`. Reading after waiting deadlocks: a command with more
+    /// output than the ~64KB pipe buffer (pluginkit lists hundreds of plug-ins)
+    /// blocks writing while we block waiting, and the load never completes.
+    /// stderr is discarded to /dev/null so it can't fill and deadlock either.
+    static func captureStandardOutput(of executable: URL, arguments: [String]) -> String {
         let process = Process()
         let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        process.executableURL = URL(filePath: "/usr/bin/pluginkit")
-        process.arguments = ["-m", "-v"]
+        process.executableURL = executable
+        process.arguments = arguments
         process.standardOutput = outputPipe
-        process.standardError = errorPipe
+        process.standardError = FileHandle.nullDevice
         do {
             try process.run()
+            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
-            let stdout = String(data: outputPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-            if process.terminationStatus == 0, !stdout.isEmpty { return stdout }
-            return stdout
+            return String(data: data, encoding: .utf8) ?? ""
         } catch {
             return ""
         }
