@@ -10,6 +10,7 @@ final class KeyboardShortcutRoutingTests: XCTestCase {
         XCTAssertEqual(items.first, .smartScan)
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 1), .smartScan)
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 2), .systemJunk)
+        XCTAssertEqual(SidebarItem.item(forShortcutDigit: 7), .wifiNetworks)
         XCTAssertEqual(SidebarItem.item(forShortcutDigit: 9), items[8])
     }
 

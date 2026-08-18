@@ -13,6 +13,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
     // Protection
     case malwareRemoval = "恶意软件清理"
     case privacy = "隐私清理"
+    case wifiNetworks = "已保存的 Wi-Fi"
 
     // Performance
     case optimization = "优化"
@@ -43,6 +44,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         case .trashBins: "trash-bins"
         case .malwareRemoval: "malware"
         case .privacy: "privacy"
+        case .wifiNetworks: "wifi-networks"
         case .optimization: "optimization"
         case .maintenance: "maintenance"
         case .uninstaller: "uninstaller"
@@ -68,6 +70,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         case .trashBins: "trash"
         case .malwareRemoval: "shield.lefthalf.filled"
         case .privacy: "hand.raised.fill"
+        case .wifiNetworks: "wifi"
         case .optimization: "gauge.with.dots.needle.67percent"
         case .maintenance: "wrench.and.screwdriver"
         case .uninstaller: "xmark.app"
@@ -84,7 +87,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .smartScan: .smartScan
         case .systemJunk, .mailAttachments, .trashBins: .cleanup
-        case .malwareRemoval, .privacy: .protection
+        case .malwareRemoval, .privacy, .wifiNetworks: .protection
         case .optimization, .maintenance: .performance
         case .uninstaller, .updater: .applications
         case .spaceLens, .largeOldFiles, .duplicates, .shredder: .files
@@ -96,7 +99,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
         switch self {
         case .smartScan: .main
         case .systemJunk, .mailAttachments, .trashBins: .cleanup
-        case .malwareRemoval, .privacy: .protection
+        case .malwareRemoval, .privacy, .wifiNetworks: .protection
         case .optimization, .maintenance: .performance
         case .uninstaller, .updater: .applications
         case .spaceLens, .largeOldFiles, .duplicates, .shredder: .files
