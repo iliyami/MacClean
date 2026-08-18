@@ -171,6 +171,44 @@ final class AppMatchingTests: XCTestCase {
                                                     patterns: ["chrome", "google"]))
     }
 
+    // MARK: - Empty / over-broad pattern hardening
+
+    // An app with an empty CFBundleIdentifier must never produce the empty
+    // pattern "": filenameMatches uses `contains`, and "x".contains("") is
+    // always true, so an empty pattern matches EVERY file and the uninstaller /
+    // reset would sweep up unrelated apps' caches and preferences.
+    func testEmptyBundleIDDoesNotProduceAnEmptyPattern() {
+        let app = AppInfo(
+            bundleIdentifier: "",
+            name: "Weird",
+            path: URL(filePath: "/Applications/Weird.app")
+        )
+        let patterns = AppMatching.generatePatterns(for: app)
+        XCTAssertFalse(patterns.contains(""),
+                       "empty bundle id must not yield a match-everything pattern")
+        XCTAssertFalse(patterns.contains(where: \.isEmpty))
+    }
+
+    func testEmptyBundleIDAppDoesNotOverMatchUnrelatedFiles() {
+        let app = AppInfo(
+            bundleIdentifier: "",
+            name: "Weird",
+            path: URL(filePath: "/Applications/Weird.app")
+        )
+        let patterns = AppMatching.generatePatterns(for: app)
+        // Files owned by unrelated apps must not match.
+        XCTAssertFalse(AppMatching.filenameMatches("com.google.chrome.plist", patterns: patterns))
+        XCTAssertFalse(AppMatching.filenameMatches("com.apple.finder.plist", patterns: patterns))
+        // Its own name still matches.
+        XCTAssertTrue(AppMatching.filenameMatches("weird-cache.db", patterns: patterns))
+    }
+
+    func testFilenameMatchesIgnoresEmptyPattern() {
+        // Defense in depth: even if an empty pattern is present it must never
+        // match everything.
+        XCTAssertFalse(AppMatching.filenameMatches("anything.plist", patterns: ["", "zzz"]))
+    }
+
     // MARK: - Library subdirectories list
 
     func testLibrarySubdirectoriesIncludesEssentials() {

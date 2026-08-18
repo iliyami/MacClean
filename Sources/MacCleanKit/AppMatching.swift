@@ -118,12 +118,20 @@ public enum AppMatching {
             }
         }
 
-        return patterns
+        // Never emit an empty pattern (e.g. an app with no CFBundleIdentifier
+        // inserts "" at the bundle-ID levels). An empty token is useless and,
+        // if the matcher ever stops relying on Foundation's contains semantics,
+        // would match every file.
+        return patterns.filter { !$0.isEmpty }
     }
 
     /// Returns true if `fileName` (lowercased) matches any of the patterns.
     public static func filenameMatches(_ fileName: String, patterns: Set<String>) -> Bool {
         let lower = fileName.lowercased()
-        return patterns.contains(where: { lower.contains($0) })
+        // Skip empty patterns defensively: a "" token would match every file.
+        // It is currently neutralised by Foundation's `String.contains("")`
+        // returning false, but this must not rely on that, since these patterns
+        // drive file deletion.
+        return patterns.contains(where: { !$0.isEmpty && lower.contains($0) })
     }
 }
