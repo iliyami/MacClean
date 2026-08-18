@@ -191,6 +191,8 @@ struct ContentView: View {
             MaintenanceView()
         case .uninstaller:
             UninstallerView()
+        case .extensions:
+            ExtensionsView()
         case .updater:
             UpdaterView()
         case .spaceLens:
