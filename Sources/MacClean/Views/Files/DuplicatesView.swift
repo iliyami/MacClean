@@ -23,6 +23,14 @@ struct DuplicatesView: View {
     @State private var scanTask: Task<Void, Never>?
     @State private var scanTimerTask: Task<Void, Never>?
     @State private var elapsedSeconds: Int = 0
+    /// Remove (delete) vs Consolidate (replace copies with APFS clones) (#65).
+    @State private var actionMode: DuplicatesActionMode = .remove
+    @State private var consolidateConfirm = false
+    @State private var consolidateTask: Task<Void, Never>?
+    /// Reclaim estimate for the confirm dialog, computed once (in memory) when
+    /// the user taps Consolidate. Never computed in the body: the disk-touching
+    /// estimate there re-ran on every checkbox toggle and froze the UI (#128).
+    @State private var consolidateEstimate: UInt64 = 0
 
     var body: some View {
         Group {
@@ -54,16 +62,39 @@ struct DuplicatesView: View {
                     isScanning: false,
                     completion: completion,
                     cleaning: cleaning,
-                    onScan: scan, onClean: clean,
+                    onScan: scan,
+                    onClean: {
+                        if actionMode == .consolidate {
+                            // Compute the estimate once, here, from in-memory
+                            // sizes — never in the dialog's message builder (#128).
+                            consolidateEstimate = DuplicatesConsolidation.estimatedReclaim(
+                                from: displayGroups, selection: selectedItems)
+                            consolidateConfirm = true
+                        } else {
+                            clean()
+                        }
+                    },
                     onCancelClean: { cleanTask?.cancel() },
                     onReset: reset,
                     resultsContent: {
                         AnyView(
-                            DuplicateGroupsList(
-                                groups: displayGroups,
-                                selectedItems: $selectedItems,
-                                expanded: $expandedGroups
-                            )
+                            VStack(spacing: 12) {
+                                Picker("", selection: $actionMode) {
+                                    Text(L10n.tr("删除重复项", "Remove duplicates", "Удалить дубликаты"))
+                                        .tag(DuplicatesActionMode.remove)
+                                    Text(L10n.tr("合并", "Consolidate", "Объединить"))
+                                        .tag(DuplicatesActionMode.consolidate)
+                                }
+                                .pickerStyle(.segmented)
+                                .labelsHidden()
+                                .padding(.horizontal, 20)
+
+                                DuplicateGroupsList(
+                                    groups: displayGroups,
+                                    selectedItems: $selectedItems,
+                                    expanded: $expandedGroups
+                                )
+                            }
                         )
                     }
                 )
@@ -95,6 +126,19 @@ struct DuplicatesView: View {
             canScan: !isScanning && cleaning == nil && completion == nil && results.isEmpty && !scanComplete,
             canClean: false
         )
+        .confirmationDialog(
+            L10n.tr("合并所选副本？", "Consolidate selected copies?", "Объединить выбранные копии?"),
+            isPresented: $consolidateConfirm, titleVisibility: .visible
+        ) {
+            Button(L10n.tr("合并", "Consolidate", "Объединить")) { consolidate() }
+            Button(L10n.tr("取消", "Cancel", "Отмена"), role: .cancel) {}
+        } message: {
+            // Reads a cached value only — no disk I/O, no per-toggle work (#128).
+            Text(L10n.tr(
+                "保留所有副本，预计释放 \(FileSizeFormatter.format(consolidateEstimate))",
+                "Keeps every copy, frees about \(FileSizeFormatter.format(consolidateEstimate))",
+                "Сохраняет все копии, освободит примерно \(FileSizeFormatter.format(consolidateEstimate))"))
+        }
     }
 
     private var idleView: some View {
@@ -266,11 +310,50 @@ struct DuplicatesView: View {
         }
     }
 
+    /// Replace the selected copies with APFS clones of each group's kept master,
+    /// keeping every path in place (#65). Reuses the shared done-screen via
+    /// `completion`; the filesystem work runs off the main actor.
+    private func consolidate() {
+        let groups = DuplicatesConsolidation.groups(from: displayGroups, selection: selectedItems)
+        let planned = groups.reduce(0) { $0 + $1.copies.count }
+        cleaning = CleaningEngine.Progress(
+            totalItems: planned,
+            processedItems: 0, removedSoFar: 0, freedBytesSoFar: 0
+        )
+        consolidateTask?.cancel()
+        consolidateTask = Task {
+            let summary = await Task.detached { FileConsolidator.consolidate(groups: groups) }.value
+            cleaning = nil
+            completion = CleanSummary(
+                selectedCount: summary.consolidatedCount + summary.skipped.count + summary.failed.count,
+                removedCount: summary.consolidatedCount,
+                freedBytes: summary.reclaimedBytes,
+                errorMessages: summary.failed.map(\.message)
+                    + summary.skipped.map { "\($0.url.lastPathComponent): \(skipLabel($0.reason))" }
+            )
+        }
+    }
+
+    private func skipLabel(_ reason: SkipReason) -> String {
+        switch reason {
+        case .contentChanged: L10n.tr("内容已更改", "content changed", "содержимое изменилось")
+        case .notSameVolume: L10n.tr("跨卷", "different volume", "другой том")
+        case .cloningUnsupported: L10n.tr("非 APFS 卷", "not an APFS volume", "не том APFS")
+        case .notRegularFile: L10n.tr("非普通文件", "not a regular file", "не обычный файл")
+        case .notWritable: L10n.tr("不可写", "not writable", "недоступно для записи")
+        case .protectedPath: L10n.tr("受保护路径", "protected path", "защищённый путь")
+        }
+    }
+
     private func reset() {
         scanTask?.cancel()
         scanTimerTask?.cancel()
         scanTask = nil
         scanTimerTask = nil
+        consolidateTask?.cancel()
+        consolidateTask = nil
+        consolidateEstimate = 0
+        actionMode = .remove
         results = []; displayGroups = []; expandedGroups = []; selectedItems = []
         completion = nil; cleaning = nil; cleanTask = nil
         scanComplete = false; elapsedSeconds = 0; isScanning = false
