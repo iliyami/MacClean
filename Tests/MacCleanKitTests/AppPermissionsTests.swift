@@ -77,4 +77,33 @@ final class AppPermissionsTests: XCTestCase {
         let grants = TCCAccessParser.grants(from: [row, row])
         XCTAssertEqual(grants.count, 1)
     }
+
+    func testOverviewGroupsGrantsByAppAndSortsPermissions() {
+        let grants = [
+            AppPermissionGrant(permission: .microphone, client: "com.z.last", clientIsPath: false, isLimited: false, indirectObjectIdentifier: nil),
+            AppPermissionGrant(permission: .camera, client: "com.a.first", clientIsPath: false, isLimited: true, indirectObjectIdentifier: nil),
+            AppPermissionGrant(permission: .fullDiskAccess, client: "com.a.first", clientIsPath: false, isLimited: false, indirectObjectIdentifier: nil),
+            AppPermissionGrant(permission: .automation, client: "com.a.first", clientIsPath: false, isLimited: false, indirectObjectIdentifier: "com.apple.finder"),
+        ]
+        let apps = AppPermissionOverview.apps(from: grants)
+        XCTAssertEqual(apps.map(\.client), ["com.a.first", "com.z.last"])
+        XCTAssertEqual(apps[0].permissions, [.camera, .fullDiskAccess, .automation])
+        XCTAssertEqual(apps[0].grants.count, 3)
+        XCTAssertTrue(apps[0].grants.contains { $0.permission == .camera && $0.isLimited })
+        XCTAssertEqual(apps[1].permissions, [.microphone])
+    }
+
+    func testOverviewKeepsPathClientsDistinctFromBundleIDs() {
+        let grants = [
+            AppPermissionGrant(permission: .fullDiskAccess, client: "/usr/bin/rsync", clientIsPath: true, isLimited: false, indirectObjectIdentifier: nil),
+            AppPermissionGrant(permission: .fullDiskAccess, client: "com.rsync.gui", clientIsPath: false, isLimited: false, indirectObjectIdentifier: nil),
+        ]
+        let apps = AppPermissionOverview.apps(from: grants)
+        XCTAssertEqual(apps.count, 2)
+        XCTAssertEqual(Set(apps.map(\.clientIsPath)), [true, false])
+    }
+
+    func testOverviewEmpty() {
+        XCTAssertTrue(AppPermissionOverview.apps(from: []).isEmpty)
+    }
 }

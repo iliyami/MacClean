@@ -1,116 +1,53 @@
-# App permissions manager (#49)
+# App permissions overview (#49)
 
 Date: 2026-08-12
-Status: Design (ready for implementation after user approval)
+Status: Design (reframed 2026-08-19 after review on PR #133)
 
 ## Problem
 
 macOS remembers which apps may use Camera, Microphone, Full Disk Access, Screen
 Recording, and Automation. Users currently have to hunt those lists inside
-System Settings. Issue #49 asks for CleanMyMac-style parity: see which apps hold
-which grants, then review/revoke them.
+System Settings. Issue #49 asked for a manager that could review/revoke them.
 
-There is **no supported Apple API** to list other apps' TCC grants. Apple DTS
-treats `TCC.db` location and schema as an implementation detail
-([forums/thread/740055](https://developer.apple.com/forums/thread/740055)).
-WWDC26 Privacy Q&A states direct `TCC.db` access **will be restricted**
-([forums/thread/833806](https://developer.apple.com/forums/thread/833806));
-framework APIs only report **this** app's own permission.
-
-The supported revoke path is the Privacy & Security pane. `tccutil reset`
-([QA1906](https://developer.apple.com/library/archive/qa/qa1906/_index.html))
-resets a whole service for **every** app unless a bundle id is passed; even
-then it is a blunt reset, not a Settings toggle. Iliya's issue already forbids
-in-app revoke: *“revoke by deep-linking the relevant Privacy & Security pane”*.
-
-`PermissionManager` today only opens Full Disk Access
-(`Privacy_AllFiles`). Privacy module cleans browser traces — it is not a TCC
-manager. Current state: not implemented.
+There is **no supported Apple API** to list other apps' TCC grants, and a
+third-party app **cannot revoke** a grant. The supported change path is the
+Privacy & Security pane.
 
 ## Goal
 
-A Protection sidebar module **App Permissions**:
+A Protection sidebar module **Permissions** (read-only overview):
 
-1. Always show the five issue categories, each with **Open in System Settings**.
-2. Best-effort list of granted apps when user/system `TCC.db` is readable
-   (typically requires Full Disk Access for Mac Sai).
-3. If the DB is unreadable (no FDA, sandbox, or macOS 26 lock-down), keep the
-   five category cards and show the existing FDA empty-state CTA. The module
-   must never be a dead end.
+1. Primary view: **by-app aggregation** — which app holds which grants, at a
+   glance. System Settings lists by category; it does not do this well.
+2. Every action is **Open in System Settings** for that category. Copy never
+   says revoke/turn off/manage.
+3. Best-effort list when user/system `TCC.db` is readable (typically Full Disk
+   Access). If unreadable, keep category deep-links so the module is not a dead
+   end, and explain that the by-app list needs FDA.
 
 Not a `ScanModule`. Not in Smart Scan.
 
 ## Non-goals
 
 - Do not write `TCC.db`. Do not disable SIP. Do not add a privileged helper.
-- Do not call `tccutil reset` (too blunt; official docs reset *all* apps for a
-  service).
+- Do not call `tccutil reset`.
 - Do not claim we can toggle a grant inside Mac Sai.
 - Accessibility, Input Monitoring, Files & Folders, Photos, Contacts — follow-up.
-- No Smart Scan / `registerModules`.
 - No `Localizable.strings` migration; `L10n.tr` only.
-- No telemetry.
 
-## Approach (recommended: hybrid hub)
+## Approach
 
-### Kit (pure)
+Kit: `PrivacyPermission`, `TCCAccessParser`, `AppPermissionOverview.apps(from:)`
+groups grants by client. MacClean: injected `AppPermissionsClient` (GRDB
+read-only). UI: app sections with per-grant "Open in System Settings", plus a
+footer of category deep-links.
 
-`PrivacyPermission` — the five services, TCC service id(s), Settings URL
-fragment. URL builder returns the same scheme already used in
-`PermissionManager`:
-
-`x-apple.systempreferences:com.apple.preference.security?<fragment>`
-
-Fragments: `Privacy_Camera`, `Privacy_Microphone`, `Privacy_AllFiles`,
-`Privacy_ScreenCapture`, `Privacy_Automation`.
-
-`TCCAccessRow` + `TCCAccessParser.grants(from:)` — map sqlite rows to
-`AppPermissionGrant`. Keep `auth_value` 2 (allowed) and 3 (limited); drop 0
-(denied) and unknown services. Automation keeps `indirect_object_identifier`
-(controller → target). `client_type` 0 = bundle id, 1 = path.
-
-### MacClean (I/O)
-
-`AppPermissionsClient` with injected `readRows: (URL) throws -> [TCCAccessRow]`
-and `openURL: (URL) -> Void`. Live reader: GRDB read-only on
-
-- `~/Library/Application Support/com.apple.TCC/TCC.db` (camera, mic, automation)
-- `/Library/Application Support/com.apple.TCC/TCC.db` (FDA, screen recording)
-
-EPERM/EACCES → `needsFullDiskAccess`. Other open/schema failures →
-`listingUnavailable`. Merge rows; never sudo.
-
-Display name/icon via injected `NSWorkspace` lookup (bundle id or path). Missing
-app → show the client string, subtitle “App not found”.
-
-### UI
-
-`AppPermissionsView` under Protection, patterned on `WiFiNetworksView` (not
-`ModuleContainerView`). Header + Refresh. Five sections. Each section: count,
-Open Settings, granted-app rows (or “None listed”). Banner when listing failed.
-⌘R reloads. Deep link `macclean://module/app-permissions`.
-
-Sidebar: after Privacy, before Saved Wi-Fi. Icon `lock.shield`. Title
-`应用权限` / App Permissions / Разрешения приложений.
-
-⌘1–⌘9: inserting after Privacy shifts digits 7–9 (⌘7 becomes App Permissions).
-Document in the PR. Branch from upstream `main`, not from #132, so the PRs stay
-independent; merge order may need a one-line sidebar conflict resolve.
+Sidebar after Saved Wi-Fi (so ⌘7 stays Wi-Fi). Slug `app-permissions`. Title
+`权限总览` / Permissions / Обзор разрешений.
 
 ## Testing
 
-- Kit: URL per service; parser fixtures (allowed/denied/limited, unknown
-  service, path client, automation target, empty).
-- Client: injected reader — EPERM maps to FDA; rows map to grants; `openURL`
-  called with the Kit URL (never live System Settings in CI).
-- Deep link round-trip `app-permissions`.
-- Keyboard digit 7 after insert (update `KeyboardShortcutRoutingTests`).
+- Kit: URL per service; parser fixtures; by-app grouping (sort, path vs bundle).
+- Client: injected reader; view source must not contain revoke wording.
+- Deep link `app-permissions`. ⌘8 is Permissions; ⌘7 stays Saved Wi-Fi.
 - Never open the live `TCC.db` in unit tests.
-
-## Sources
-
-- Issue: https://github.com/iliyami/MacSai/issues/49
-- QA1906 `tccutil reset`: https://developer.apple.com/library/archive/qa/qa1906/_index.html
-- DTS: TCC.db is not public API: https://developer.apple.com/forums/thread/740055
-- WWDC26: TCC.db access restricted: https://developer.apple.com/forums/thread/833806
-- Existing opener: `Sources/MacClean/Services/PermissionManager.swift`

@@ -14,7 +14,7 @@ public enum SidebarItem: String, CaseIterable, Identifiable {
     case malwareRemoval = "恶意软件清理"
     case privacy = "隐私清理"
     case wifiNetworks = "已保存的 Wi-Fi"
-    case appPermissions = "应用权限"
+    case appPermissions = "权限总览"
 
     // Performance
     case optimization = "优化"

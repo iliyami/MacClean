@@ -8,17 +8,21 @@ struct AppPermissionsView: View {
     @State private var isLoading = true
     private let client = AppPermissionsClient.live()
 
+    private var apps: [AppPermissionApp] {
+        AppPermissionOverview.apps(from: snapshot.grants)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(L10n.tr("应用权限", "App Permissions", "Разрешения приложений"))
+                    Text(L10n.tr("权限总览", "Permissions", "Обзор разрешений"))
                         .font(.system(size: 22, weight: .bold))
                         .foregroundStyle(.primary)
                     Text(L10n.tr(
-                        "查看哪些应用获得了隐私权限。撤销在“系统设置”中完成。",
-                        "See which apps hold privacy permissions. Revoke them in System Settings.",
-                        "Смотрите, каким приложениям выданы разрешения. Отзывать их нужно в Системных настройках."
+                        "按应用查看持有哪些隐私权限。这是只读列表——按钮会打开系统设置。本应用无法关闭权限。",
+                        "See which privacy grants each app holds. This list is read-only — buttons open System Settings. Mac Sai cannot turn a permission off.",
+                        "Смотрите, какие разрешения есть у каждого приложения. Список только для чтения — кнопки открывают Системные настройки. Это приложение не может выключить разрешение."
                     ))
                     .font(.system(size: 12))
                     .foregroundStyle(.primary.opacity(0.6))
@@ -68,59 +72,135 @@ struct AppPermissionsView: View {
             if snapshot.listing != .loaded {
                 listingBanner
             }
-            ForEach(PrivacyPermission.allCases) { permission in
-                let grants = snapshot.grants.filter { $0.permission == permission }
-                Section {
-                    if grants.isEmpty {
-                        Text(L10n.tr("未列出任何应用", "No apps listed", "Приложения не показаны"))
-                            .font(.system(size: 13))
-                            .foregroundStyle(.primary.opacity(0.4))
-                    } else {
-                        ForEach(grants) { grant in
-                            grantRow(grant)
-                        }
-                    }
-                } header: {
-                    HStack {
-                        Label(permissionTitle(permission), systemImage: permissionIcon(permission))
-                            .font(.system(size: 13, weight: .semibold))
-                        Spacer()
-                        Button(L10n.tr("打开设置", "Open Settings", "Открыть настройки")) {
-                            client.openSettings(for: permission)
-                        }
-                        .buttonStyle(.borderless)
+
+            if snapshot.listing == .loaded {
+                if apps.isEmpty {
+                    Text(L10n.tr(
+                        "未列出任何应用。",
+                        "No apps listed.",
+                        "Приложения не показаны."
+                    ))
+                    .font(.system(size: 13))
+                    .foregroundStyle(.primary.opacity(0.4))
+                    .listRowSeparator(.hidden)
+                } else {
+                    ForEach(apps) { app in
+                        appSection(app)
                     }
                 }
             }
+
+            settingsJumpSection
         }
         .listStyle(.inset)
+    }
+
+    private func appSection(_ app: AppPermissionApp) -> some View {
+        Section {
+            ForEach(app.grants) { grant in
+                grantRow(grant)
+            }
+        } header: {
+            HStack(spacing: 8) {
+                Image(nsImage: icon(for: app))
+                    .resizable()
+                    .frame(width: 18, height: 18)
+                Text(displayName(for: app))
+                    .font(.system(size: 13, weight: .semibold))
+                Spacer()
+                Text(grantCountLabel(app.grants.count))
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func grantRow(_ grant: AppPermissionGrant) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: permissionIcon(grant.permission))
+                .foregroundStyle(.secondary)
+                .frame(width: 16)
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 6) {
+                    Text(permissionTitle(grant.permission))
+                        .font(.system(size: 13, weight: .medium))
+                    if grant.isLimited {
+                        Text(L10n.tr("受限", "Limited", "Ограничено"))
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if let target = grant.indirectObjectIdentifier, !target.isEmpty {
+                    Text(L10n.tr("控制 \(target)", "Controls \(target)", "Управляет \(target)"))
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            Spacer()
+            Button(L10n.tr("在系统设置中打开", "Open in System Settings", "Открыть в Системных настройках")) {
+                client.openSettings(for: grant.permission)
+            }
+            .buttonStyle(.borderless)
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var settingsJumpSection: some View {
+        Section {
+            ForEach(PrivacyPermission.allCases) { permission in
+                Button {
+                    client.openSettings(for: permission)
+                } label: {
+                    HStack {
+                        Label(permissionTitle(permission), systemImage: permissionIcon(permission))
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Text(L10n.tr("在系统设置中打开", "Open in System Settings", "Открыть в Системных настройках"))
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        } header: {
+            Text(L10n.tr("在系统设置中打开类别", "Open a category in System Settings", "Открыть категорию в Системных настройках"))
+                .font(.system(size: 13, weight: .semibold))
+        } footer: {
+            Text(L10n.tr(
+                "更改权限只能在系统设置中完成。",
+                "Changing a grant can only be done in System Settings.",
+                "Изменить разрешение можно только в Системных настройках."
+            ))
+            .font(.system(size: 11))
+            .foregroundStyle(.secondary)
+        }
     }
 
     private var listingBanner: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(
                 snapshot.listing == .needsFullDiskAccess
-                    ? L10n.tr("需要完全磁盘访问权限", "Full Disk Access needed", "Требуется полный доступ к диску")
+                    ? L10n.tr("需要完全磁盘访问权限才能列出应用", "Full Disk Access needed to list apps", "Чтобы показать приложения, нужен полный доступ к диску")
                     : L10n.tr("无法读取权限数据库", "Couldn't read the permission database", "Не удалось прочитать базу разрешений")
             )
             .font(.system(size: 13, weight: .semibold))
             Text(
                 snapshot.listing == .needsFullDiskAccess
                     ? L10n.tr(
-                        "macOS 正在阻止读取列表。请为 \(MCConstants.appName) 授予完全磁盘访问权限，然后刷新。类别按钮仍可打开系统设置。",
-                        "macOS is blocking the list. Grant \(MCConstants.appName) Full Disk Access, then refresh. Category buttons still open System Settings.",
-                        "macOS блокирует список. Предоставьте \(MCConstants.appName) полный доступ к диску и обновите. Кнопки категорий по-прежнему открывают Системные настройки."
+                        "macOS 正在阻止按应用汇总。请为 \(MCConstants.appName) 授予完全磁盘访问权限，然后刷新。下方按钮仍会打开系统设置。",
+                        "macOS is blocking the by-app overview. Grant \(MCConstants.appName) Full Disk Access, then refresh. The buttons below still open System Settings.",
+                        "macOS блокирует сводку по приложениям. Предоставьте \(MCConstants.appName) полный доступ к диску и обновите. Кнопки ниже по-прежнему открывают Системные настройки."
                     )
                     : L10n.tr(
-                        "macOS 不允许列出 приложения。仍可通过各类别打开系统设置并在那里撤销权限。",
-                        "macOS won't let this app list grants. You can still open System Settings for each category and revoke there.",
-                        "macOS не даёт показать список. По-прежнему можно открыть Системные настройки по категориям и отозвать разрешения там."
+                        "无法列出哪些应用持有哪些权限。仍可通过下方按钮打开系统设置。",
+                        "This app can't list which apps hold which grants. You can still open System Settings with the buttons below.",
+                        "Не получается показать, какие приложения какими разрешениями владеют. По-прежнему можно открыть Системные настройки кнопками ниже."
                     )
             )
             .font(.system(size: 12))
             .foregroundStyle(.primary.opacity(0.7))
             if snapshot.listing == .needsFullDiskAccess {
-                Button(L10n.tr("打开设置", "Open Settings", "Открыть настройки")) {
+                Button(L10n.tr("在系统设置中打开", "Open in System Settings", "Открыть в Системных настройках")) {
                     client.openFullDiskAccessSettings()
                 }
                 .buttonStyle(.borderedProminent)
@@ -131,38 +211,18 @@ struct AppPermissionsView: View {
         .padding(.vertical, 6)
     }
 
-    private func grantRow(_ grant: AppPermissionGrant) -> some View {
-        HStack(spacing: 10) {
-            Image(nsImage: icon(for: grant))
-                .resizable()
-                .frame(width: 22, height: 22)
-            VStack(alignment: .leading, spacing: 1) {
-                HStack(spacing: 6) {
-                    Text(displayName(for: grant))
-                        .font(.system(size: 13, weight: .medium))
-                    if grant.isLimited {
-                        Text(L10n.tr("受限", "Limited", "Ограничено"))
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                Text(subtitle(for: grant))
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-            }
-            Spacer()
-            Button(L10n.tr("打开设置", "Open Settings", "Открыть настройки")) {
-                client.openSettings(for: grant.permission)
-            }
-            .buttonStyle(.borderless)
-        }
-        .padding(.vertical, 2)
-    }
-
     private func reload() async {
         isLoading = true
         snapshot = await client.load()
         isLoading = false
+    }
+
+    private func grantCountLabel(_ count: Int) -> String {
+        L10n.tr(
+            "\(count) 项权限",
+            count == 1 ? "1 grant" : "\(count) grants",
+            "\(count) \(L10n.russianPlural(count, one: "разрешение", few: "разрешения", many: "разрешений"))"
+        )
     }
 
     private func permissionTitle(_ permission: PrivacyPermission) -> String {
@@ -185,34 +245,21 @@ struct AppPermissionsView: View {
         }
     }
 
-    private func displayName(for grant: AppPermissionGrant) -> String {
-        if grant.clientIsPath {
-            return URL(filePath: grant.client).deletingPathExtension().lastPathComponent
+    private func displayName(for app: AppPermissionApp) -> String {
+        if app.clientIsPath {
+            return URL(filePath: app.client).deletingPathExtension().lastPathComponent
         }
-        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: grant.client) {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: app.client) {
             return FileManager.default.displayName(atPath: url.path(percentEncoded: false))
         }
-        return grant.client
+        return app.client
     }
 
-    private func subtitle(for grant: AppPermissionGrant) -> String {
-        if let target = grant.indirectObjectIdentifier, !target.isEmpty {
-            return "\(grant.client) → \(target)"
+    private func icon(for app: AppPermissionApp) -> NSImage {
+        if app.clientIsPath {
+            return NSWorkspace.shared.icon(forFile: app.client)
         }
-        if grant.clientIsPath {
-            return grant.client
-        }
-        if NSWorkspace.shared.urlForApplication(withBundleIdentifier: grant.client) == nil {
-            return L10n.tr("未找到应用", "App not found", "Приложение не найдено")
-        }
-        return grant.client
-    }
-
-    private func icon(for grant: AppPermissionGrant) -> NSImage {
-        if grant.clientIsPath {
-            return NSWorkspace.shared.icon(forFile: grant.client)
-        }
-        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: grant.client) {
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: app.client) {
             return NSWorkspace.shared.icon(forFile: url.path(percentEncoded: false))
         }
         return NSWorkspace.shared.icon(forFileType: "app")

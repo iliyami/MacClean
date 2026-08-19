@@ -123,3 +123,47 @@ public enum TCCAccessParser {
         return raw
     }
 }
+
+public struct AppPermissionApp: Equatable, Hashable, Sendable, Identifiable {
+    public var id: String { "\(clientIsPath ? "path" : "bundle")|\(client)" }
+
+    public let client: String
+    public let clientIsPath: Bool
+    public let grants: [AppPermissionGrant]
+
+    public init(client: String, clientIsPath: Bool, grants: [AppPermissionGrant]) {
+        self.client = client
+        self.clientIsPath = clientIsPath
+        self.grants = grants
+    }
+
+    /// Unique permissions on this app, in `PrivacyPermission.allCases` order.
+    public var permissions: [PrivacyPermission] {
+        PrivacyPermission.allCases.filter { permission in
+            grants.contains { $0.permission == permission }
+        }
+    }
+}
+
+/// Groups TCC grants by app so the UI can show a by-app overview
+/// (the view System Settings does not provide).
+public enum AppPermissionOverview {
+    public static func apps(from grants: [AppPermissionGrant]) -> [AppPermissionApp] {
+        var buckets: [String: [AppPermissionGrant]] = [:]
+        var meta: [String: (client: String, isPath: Bool)] = [:]
+        for grant in grants {
+            let key = "\(grant.clientIsPath ? "path" : "bundle")|\(grant.client)"
+            buckets[key, default: []].append(grant)
+            meta[key] = (grant.client, grant.clientIsPath)
+        }
+        let order = Dictionary(
+            uniqueKeysWithValues: PrivacyPermission.allCases.enumerated().map { ($0.element, $0.offset) }
+        )
+        return buckets.keys.compactMap { key -> AppPermissionApp? in
+            guard let info = meta[key], var list = buckets[key] else { return nil }
+            list.sort { (order[$0.permission] ?? 99) < (order[$1.permission] ?? 99) }
+            return AppPermissionApp(client: info.client, clientIsPath: info.isPath, grants: list)
+        }
+        .sorted { $0.client.localizedCaseInsensitiveCompare($1.client) == .orderedAscending }
+    }
+}

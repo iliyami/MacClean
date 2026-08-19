@@ -86,4 +86,23 @@ final class AppPermissionsClientTests: XCTestCase {
         client.openSettings(for: .camera)
         XCTAssertEqual(capture.url, AppPermissionsSettings.url(for: .camera))
     }
+
+    func testViewDoesNotPromiseRevoke() throws {
+        let url = URL(filePath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appending(path: "Sources/MacClean/Views/Protection/AppPermissionsView.swift")
+        let src = try String(contentsOf: url, encoding: .utf8)
+        for banned in ["Revoke", "revoke", "撤销", "отозвать", "отзыв"] {
+            XCTAssertFalse(
+                src.contains(banned),
+                "AppPermissionsView still promises \(banned); Iliya asked for a read-only overview"
+            )
+        }
+        XCTAssertTrue(
+            src.contains("Open in System Settings") || src.contains("Open Settings"),
+            "Buttons must say they open System Settings"
+        )
+    }
 }
