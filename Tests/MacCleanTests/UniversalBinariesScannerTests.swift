@@ -62,6 +62,20 @@ final class UniversalBinariesScannerTests: XCTestCase {
         return appURL
     }
 
+    /// Adds a real fat Mach-O at `Contents/Frameworks/<frameworkName>` to an
+    /// already-created app bundle, simulating a third-party framework
+    /// (Sparkle, Electron/CEF, ffmpeg, …) that stayed universal even though
+    /// the app's own main executable is thin/native.
+    @discardableResult
+    private func embedFatFramework(
+        in appURL: URL,
+        named frameworkName: String = "Sparkle",
+        archs: [String] = ["x86_64", "arm64"]
+    ) throws -> Bool {
+        let binary = appURL.appending(path: "Contents/Frameworks/\(frameworkName)")
+        return try UniversalBinaryFixture.build(at: binary, architectures: archs)
+    }
+
     func testScanner_picksUpFatNonAppleApp() throws {
         let appURL = try makeFakeApp(name: "AcmeChat", bundleID: "com.acme.chat")
 
@@ -98,6 +112,84 @@ final class UniversalBinariesScannerTests: XCTestCase {
         _ = try makeFakeApp(name: "NativeOnly", bundleID: "com.example.native", archs: [onlyHost])
         let items = UniversalBinariesScanner.scan(in: root)
         XCTAssertTrue(items.isEmpty, "single-arch app already matches host — nothing to thin")
+    }
+
+    /// Regression test for the bug where eligibility was decided from the
+    /// main executable alone: an app whose main exec is already thin/native
+    /// but that still bundles a fat third-party framework (Sparkle,
+    /// Electron/CEF, ffmpeg, …) must still be offered for thinning — there's
+    /// real space to reclaim inside the framework even though the main exec
+    /// itself has nothing to do.
+    func testScanner_picksUpFatEmbeddedFrameworkEvenWhenMainExecIsThin() throws {
+        let onlyHost = BundleHostInfo.current.hostArch.lipoName
+        let appURL = try makeFakeApp(
+            name: "ThinMainFatFramework", bundleID: "com.example.thinmain", archs: [onlyHost]
+        )
+        let embedded = try embedFatFramework(in: appURL)
+        try XCTSkipUnless(embedded, "cc not available")
+
+        let items = UniversalBinariesScanner.scan(in: root)
+        XCTAssertEqual(
+            items.count, 1,
+            "app must still be offered: its embedded framework is fat even though the main exec is thin"
+        )
+        XCTAssertGreaterThan(items[0].size, 0, "estimated savings must reflect the fat framework")
+    }
+
+    /// A genuinely fully-thin app (main exec AND every embedded binary
+    /// single-arch) has nothing to reclaim anywhere and must stay skipped.
+    func testScanner_skipsAppWithNoFatBinariesAnywhere() throws {
+        let onlyHost = BundleHostInfo.current.hostArch.lipoName
+        let appURL = try makeFakeApp(
+            name: "FullyThin", bundleID: "com.example.fullythin", archs: [onlyHost]
+        )
+        try XCTSkipUnless(
+            try embedFatFramework(in: appURL, archs: [onlyHost]),
+            "cc not available"
+        )
+        let items = UniversalBinariesScanner.scan(in: root)
+        XCTAssertTrue(items.isEmpty, "nothing anywhere in the bundle is fat — nothing to thin")
+    }
+
+    /// Regression test: the scanner used to only look at `/Applications`,
+    /// silently missing every app installed under `~/Applications`.
+    func testScanAllApplicationsDirectories_mergesSystemAndUserApplications() throws {
+        let systemApplications = root.appending(path: "Applications")
+        let userHome = root.appending(path: "Home")
+        let userApplications = userHome.appending(path: "Applications")
+        try FileManager.default.createDirectory(at: systemApplications, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: userApplications, withIntermediateDirectories: true)
+
+        // Build directly into each root instead of reusing makeFakeApp
+        // (which always targets `root` itself).
+        func makeApp(in dir: URL, name: String, bundleID: String) throws {
+            let appURL = dir.appending(path: "\(name).app")
+            let macOS = appURL.appending(path: "Contents/MacOS")
+            try FileManager.default.createDirectory(at: macOS, withIntermediateDirectories: true)
+            let exec = macOS.appending(path: name)
+            let built = try UniversalBinaryFixture.build(at: exec, architectures: ["x86_64", "arm64"])
+            try XCTSkipUnless(built, "cc not available")
+            let plist: [String: Any] = [
+                "CFBundleIdentifier": bundleID, "CFBundleExecutable": name,
+                "CFBundleName": name, "CFBundleVersion": "1",
+                "CFBundleShortVersionString": "1.0", "CFBundlePackageType": "APPL",
+            ]
+            let plistData = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+            try plistData.write(to: appURL.appending(path: "Contents/Info.plist"))
+        }
+
+        try makeApp(in: systemApplications, name: "SystemWideApp", bundleID: "com.acme.systemwide")
+        try makeApp(in: userApplications, name: "UserOnlyApp", bundleID: "com.acme.useronly")
+
+        let items = UniversalBinariesScanner.scanAllApplicationsDirectories(
+            systemApplications: systemApplications,
+            home: userHome
+        )
+        let names = Set(items.map { $0.url.lastPathComponent })
+        XCTAssertEqual(
+            names, ["SystemWideApp.app", "UserOnlyApp.app"],
+            "both the system-wide and the per-user Applications folder must be scanned"
+        )
     }
 
     /// End-to-end: scan a synthetic app, take its FileItem, hand to

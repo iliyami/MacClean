@@ -47,7 +47,7 @@ public struct SystemJunkModule: ScanModule {
                     // .app bundles, shells out to lipo, asks the policy)
                     // rather than the targeted path enumerator.
                     if cat.scanCategory == .universalBinaries {
-                        let items = UniversalBinariesScanner.scan()
+                        let items = UniversalBinariesScanner.scanAllApplicationsDirectories()
                         guard !items.isEmpty else { return nil }
                         return ScanResult(
                             category: .universalBinaries,
@@ -62,6 +62,19 @@ public struct SystemJunkModule: ScanModule {
                         guard !items.isEmpty else { return nil }
                         return ScanResult(
                             category: .appLeftovers,
+                            items: items,
+                            autoSelect: cat.scanCategory.autoSelect
+                        )
+                    }
+                    // Deleted users: /Users folders that no longer match an
+                    // active account per `dscl`. Its own scanner (not
+                    // TargetedScanner) cross-checks against the live user
+                    // list rather than a static path target.
+                    if cat.scanCategory == .deletedUsers {
+                        let items = DeletedUsersScanner.scanForDeletedUserFolders()
+                        guard !items.isEmpty else { return nil }
+                        return ScanResult(
+                            category: .deletedUsers,
                             items: items,
                             autoSelect: cat.scanCategory.autoSelect
                         )

@@ -43,6 +43,35 @@ public enum UniversalBinariesScanner {
         return results.compactMap { $0 }
     }
 
+    /// Scans every directory macOS actually installs `.app` bundles into —
+    /// `/Applications` AND the current user's `~/Applications` — and merges
+    /// the results. `scan(in:)` alone only ever covered the system-wide
+    /// folder; an app installed only under the user's own Applications
+    /// folder (a common outcome of a drag-install or a non-admin install)
+    /// was silently invisible to this scanner even though `AppDiscovery`
+    /// (the Uninstaller's app lister) has always covered both.
+    public static func scanAllApplicationsDirectories(
+        systemApplications: URL = URL(filePath: "/Applications"),
+        home: URL = MCConstants.home,
+        host: BundleHostInfo = .current,
+        policy: UniversalBinariesPolicy = UniversalBinariesPolicy()
+    ) -> [FileItem] {
+        let roots = [
+            systemApplications,
+            home.appending(path: "Applications"),
+        ]
+        var seen = Set<String>()
+        var results: [FileItem] = []
+        for root in roots {
+            for item in scan(in: root, host: host, policy: policy) {
+                let path = item.url.path(percentEncoded: false)
+                guard seen.insert(path).inserted else { continue }
+                results.append(item)
+            }
+        }
+        return results
+    }
+
     /// Gathers info for one bundle, asks the policy, and returns the
     /// associated `FileItem` (representing the whole .app to thin) if the
     /// policy says to thin.
@@ -75,8 +104,8 @@ public enum UniversalBinariesScanner {
         )
 
         // Use the main exec's archs as the canonical set for the policy
-        // decision. (Embedded frameworks/XPCs may have slightly different
-        // arch sets in pathological cases; for v1 we trust the main exec.)
+        // decision (SIP / Apple-system / App Store / arm64e checks are all
+        // path- or bundleID-driven and don't need anything more).
         let lipoArchs = runLipoInfo(at: executableURL)
         let archSet: Set<BinaryArch> = Set(lipoArchs.compactMap(BinaryArch.init(lipoName:)))
         guard !archSet.isEmpty else { return nil }
@@ -88,14 +117,57 @@ public enum UniversalBinariesScanner {
             architectures: archSet
         )
 
-        guard case .thin(_, let dropping) = policy.decideThinning(for: info, host: host) else {
+        let decision = policy.decideThinning(for: info, host: host)
+
+        let fatBinaries: [URL]
+        let dropping: Set<BinaryArch>
+        // Number of architecture slices the *fat binaries we're actually
+        // about to sum bytes for* carry — NOT necessarily `archSet.count`
+        // (the main exec's count), since the fallback branch below sums
+        // bytes across embedded binaries whose slice count can differ from
+        // the main exec's.
+        let originalArchCount: Int
+
+        switch decision {
+        case .thin(_, let d):
+            fatBinaries = MachOWalker.fatBinaries(in: appURL)
+            dropping = d
+            originalArchCount = archSet.count
+
+        case .skip(.alreadyThin):
+            // The main executable already runs natively on this Mac, but
+            // that says nothing about the rest of the bundle. Modern
+            // Apple-Silicon-native apps routinely ship a thin arm64 main
+            // exec alongside third-party frameworks (Sparkle, Electron/CEF
+            // helpers, ffmpeg, …) that were never rebuilt thin — those can
+            // be 10s to 100s of MB, and the old main-exec-only check
+            // skipped every one of these apps as "nothing to do" without
+            // ever looking. Walk the bundle for any OTHER fat Mach-O and
+            // only bail out for real if none exists.
+            let embeddedFat = MachOWalker.fatBinaries(in: appURL)
+                .filter { $0.standardizedFileURL != executableURL.standardizedFileURL }
+            var embeddedArchs: Set<BinaryArch> = []
+            for binary in embeddedFat {
+                embeddedArchs.formUnion(runLipoInfo(at: binary).compactMap(BinaryArch.init(lipoName:)))
+            }
+            let extraArchs = embeddedArchs.subtracting([host.hostArch])
+            guard !extraArchs.isEmpty else { return nil }
+            fatBinaries = embeddedFat
+            dropping = extraArchs
+            // Use the embedded binaries' own slice count (host + extras),
+            // not the main exec's (which is 1 here by definition of this
+            // branch) — otherwise the estimate divides by 1 and reports
+            // ~100% of the framework's fat size as "savings" instead of
+            // the actual ~1/N.
+            originalArchCount = embeddedArchs.count
+
+        default:
             return nil
         }
 
         // Sum sizes across every fat binary in the bundle for a meaningful
         // "you'll save X MB" estimate. Frameworks/XPC services often
         // contribute as much as the main exec.
-        let fatBinaries = MachOWalker.fatBinaries(in: appURL)
         let totalFatBytes = fatBinaries.reduce(UInt64(0)) { sum, url in
             let attrs = try? FileManager.default
                 .attributesOfItem(atPath: url.path(percentEncoded: false))
@@ -103,7 +175,7 @@ public enum UniversalBinariesScanner {
         }
         let savings = UniversalBinariesPolicy.estimatedSavings(
             originalSize: totalFatBytes,
-            originalArchCount: archSet.count,
+            originalArchCount: originalArchCount,
             droppingCount: dropping.count
         )
 
