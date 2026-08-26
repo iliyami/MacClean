@@ -112,6 +112,7 @@ struct MacCleanApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppearanceManager.applyStored()
+        MenuBarLauncher.shared.startWatchingHelperTermination()
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
     }
