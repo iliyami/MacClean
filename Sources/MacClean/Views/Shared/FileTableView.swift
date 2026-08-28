@@ -289,6 +289,9 @@ private final class HeaderCellView: NSTableCellView {
         )
         title.stringValue = header.category.displayName
         subtitle.stringValue = header.category.subtitle
+        // Both labels truncate to one line, so a narrow window can hide what a
+        // category actually contains. Hovering the header row shows both in full.
+        toolTip = header.category.tooltip
         count.stringValue = L10n.tr("已选择 \(header.selectedCount)/\(header.fileCount)", "\(header.selectedCount)/\(header.fileCount) selected", "Выбрано \(header.selectedCount) из \(header.fileCount)")
         size.attributedStringValue = Self.sizeText(
             selected: header.selectedSize, total: header.totalSize

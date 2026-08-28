@@ -108,6 +108,17 @@ public enum ScanCategory: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// Full hover explanation for a category header.
+    ///
+    /// The header row renders the name and the subtitle on one truncating line
+    /// each, so a narrow window (or a long localization) hides the end of
+    /// either. The tooltip always carries both in full, which is the only place
+    /// a user can read what a category like "Broken Login Items" actually
+    /// contains before deciding to clean it.
+    public var tooltip: String {
+        "\(displayName)\n\(subtitle)"
+    }
+
     public var systemImage: String {
         switch self {
         case .userCaches, .systemCaches: "folder.badge.gearshape"
