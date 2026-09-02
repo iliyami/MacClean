@@ -46,6 +46,10 @@ struct ModuleContainerView: View {
     /// it to show a grouped, keep-the-original layout while reusing everything
     /// else. The closure should read/write the same `selectedItems` binding.
     let resultsContent: (() -> AnyView)?
+    /// Overrides the primary action button's label (default "Clean"). The
+    /// Duplicates module sets "Consolidate" when in consolidate mode so the
+    /// button reflects that it clones rather than deletes.
+    let actionLabel: String?
 
     init(
         title: String,
@@ -67,7 +71,8 @@ struct ModuleContainerView: View {
         onReset: @escaping () -> Void,
         onGrantAccess: (() -> Void)? = nil,
         confirmEmptyTrash: Bool = false,
-        resultsContent: (() -> AnyView)? = nil
+        resultsContent: (() -> AnyView)? = nil,
+        actionLabel: String? = nil
     ) {
         self.title = title
         self.subtitle = subtitle
@@ -89,6 +94,7 @@ struct ModuleContainerView: View {
         self.onGrantAccess = onGrantAccess
         self.confirmEmptyTrash = confirmEmptyTrash
         self.resultsContent = resultsContent
+        self.actionLabel = actionLabel
     }
 
     @State private var showLargeSelectionConfirm = false
@@ -303,7 +309,7 @@ struct ModuleContainerView: View {
                 SizeDisplay(size: totalSelected, label: L10n.tr("已选择"))
                     .foregroundStyle(.primary)
                 Spacer()
-                Button(L10n.tr("清理", "Clean", "Очистить")) {
+                Button(actionLabel ?? L10n.tr("清理", "Clean", "Очистить")) {
                     if confirmEmptyTrash {
                         // Trash Bins: permanent + irreversible — always confirm.
                         showEmptyTrashConfirm = true

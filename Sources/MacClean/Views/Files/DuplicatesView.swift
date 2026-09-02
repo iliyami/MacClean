@@ -89,6 +89,23 @@ struct DuplicatesView: View {
                                 .labelsHidden()
                                 .padding(.horizontal, 20)
 
+                                // Spell out how the two modes differ, otherwise
+                                // the list looks identical and it's unclear what
+                                // Consolidate does versus Remove.
+                                Text(actionMode == .consolidate
+                                    ? L10n.tr(
+                                        "所选副本会保留在原位并转为克隆，仅释放重复占用的空间，不删除任何文件。",
+                                        "Selected copies stay in place as clones. Only the wasted duplicate space is freed, nothing is deleted.",
+                                        "Выбранные копии остаются на месте как клоны. Освобождается только место, занятое дубликатами, ничего не удаляется.")
+                                    : L10n.tr(
+                                        "所选副本会被移到废纸篓，每组保留一个原件。",
+                                        "Selected copies are moved to the Trash, one original is kept per group.",
+                                        "Выбранные копии перемещаются в Корзину, в каждой группе остаётся один оригинал."))
+                                    .font(.system(size: 12))
+                                    .foregroundStyle(.primary.opacity(0.6))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 20)
+
                                 DuplicateGroupsList(
                                     groups: displayGroups,
                                     selectedItems: $selectedItems,
@@ -96,7 +113,10 @@ struct DuplicatesView: View {
                                 )
                             }
                         )
-                    }
+                    },
+                    actionLabel: actionMode == .consolidate
+                        ? L10n.tr("合并", "Consolidate", "Объединить")
+                        : nil
                 )
             } else if completion != nil {
                 ModuleContainerView(
