@@ -117,17 +117,26 @@ struct ExtensionsView: View {
                 .foregroundStyle(.primary.opacity(0.4))
                 .listRowSeparator(.hidden)
             } else {
-                section(
-                    kind: .preferencePane,
-                    title: L10n.tr("偏好设置面板", "Preference Panes", "Панели настроек"),
-                    icon: "slider.horizontal.3"
-                )
-                section(
-                    kind: .internetPlugin,
-                    title: L10n.tr("Internet 插件", "Internet Plug-Ins", "Интернет-плагины"),
-                    icon: "puzzlepiece.extension"
-                )
-                safariSection
+                // Only show a section that actually has items, so empty
+                // categories don't read as "the feature found nothing / is
+                // broken". The whole-empty case is handled above.
+                if items.contains(where: { $0.kind == .preferencePane }) {
+                    section(
+                        kind: .preferencePane,
+                        title: L10n.tr("偏好设置面板", "Preference Panes", "Панели настроек"),
+                        icon: "slider.horizontal.3"
+                    )
+                }
+                if items.contains(where: { $0.kind == .internetPlugin }) {
+                    section(
+                        kind: .internetPlugin,
+                        title: L10n.tr("Internet 插件", "Internet Plug-Ins", "Интернет-плагины"),
+                        icon: "puzzlepiece.extension"
+                    )
+                }
+                if items.contains(where: { $0.kind == .safariExtension }) {
+                    safariSection
+                }
             }
         }
         .listStyle(.inset)
