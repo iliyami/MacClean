@@ -185,6 +185,8 @@ struct ContentView: View {
             PrivacyView()
         case .wifiNetworks:
             WiFiNetworksView()
+        case .appPermissions:
+            AppPermissionsView()
         case .optimization:
             OptimizationView()
         case .maintenance:
