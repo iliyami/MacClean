@@ -257,13 +257,37 @@ final class SafetyGuardTests: XCTestCase {
         }
     }
 
+    // MARK: - User-excluded folders (issue #141)
+
+    func testUserExcludedFolderIsRefused() {
+        let excluded = "/Users/tester/Library/Caches/com.example"
+        let inside = URL(filePath: "\(excluded)/offline.db")
+        XCTAssertThrowsError(try sg.validatePath(inside, excludedFolders: [excluded])) {
+            guard case SafetyGuard.SafetyError.userExcluded = $0 else {
+                return XCTFail("Expected userExcluded, got \($0)")
+            }
+        }
+    }
+
+    func testPathOutsideExcludedFoldersStillValidates() {
+        let url = MCConstants.userCaches.appending(path: "ok.cache")
+        XCTAssertNoThrow(
+            try sg.validatePath(url, excludedFolders: ["/Users/tester/OtherApp"])
+        )
+    }
+
+    func testEmptyExcludedListDoesNotAffectValidation() {
+        let url = MCConstants.userCaches.appending(path: "ok.cache")
+        XCTAssertNoThrow(try sg.validatePath(url, excludedFolders: []))
+    }
+
     // MARK: - Idempotence
 
     func testValidatePathIsIdempotent() throws {
         let url = MCConstants.userCaches.appending(path: "test.cache")
-        XCTAssertNoThrow(try sg.validatePath(url))
-        XCTAssertNoThrow(try sg.validatePath(url))
-        XCTAssertNoThrow(try sg.validatePath(url))
+        XCTAssertNoThrow(try sg.validatePath(url, excludedFolders: []))
+        XCTAssertNoThrow(try sg.validatePath(url, excludedFolders: []))
+        XCTAssertNoThrow(try sg.validatePath(url, excludedFolders: []))
     }
 
     // MARK: - isProtectedApp

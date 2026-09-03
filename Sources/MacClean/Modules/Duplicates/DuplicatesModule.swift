@@ -51,7 +51,7 @@ public struct DuplicatesModule: ScanModule {
         let files = items.filter { !$0.isDirectory }
         let duplicateGroups = await findDuplicates(files)
         let cleanableGroups = duplicateGroups.map { group in
-            group.filter { CleanFilter.isCleanableByCurrentProcess($0.url) }
+            group.filter { CleanFilter.isActionable($0.url) }
         }
         return DuplicateDetection.displayGroups(cleanableGroups)
     }

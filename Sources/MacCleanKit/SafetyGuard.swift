@@ -14,6 +14,7 @@ public struct SafetyGuard: Sendable {
         case sipProtected(String)
         case outsideUserScope(String)
         case invalidPath(String)
+        case userExcluded(String)
 
         public var errorDescription: String? {
             switch self {
@@ -29,6 +30,8 @@ public struct SafetyGuard: Sendable {
                 L10n.tr("路径不在允许的用户范围内：\(path)", "Path is outside the allowed user scope: \(path)", "Путь находится за пределами разрешённой области пользователя: \(path)")
             case .invalidPath(let path):
                 L10n.tr("路径无效或包含非法字符：\(path)", "Path is invalid or contains illegal characters: \(path)", "Путь недействителен или содержит недопустимые символы: \(path)")
+            case .userExcluded(let path):
+                L10n.tr("路径位于排除文件夹中：\(path)", "Path is inside an excluded folder: \(path)", "Путь находится в исключённой папке: \(path)")
             }
         }
     }
@@ -57,9 +60,15 @@ public struct SafetyGuard: Sendable {
     /// 2. After resolving symlinks, the path does not fall inside any protected
     ///    prefix (`/System`, `/usr`, `/bin`, `/sbin`, etc.).
     /// 3. After resolving symlinks, the path does not fall inside `/System/` (SIP).
-    /// 4. If symlink resolution changed the first 3 path components, the symlink
+    /// 4. After resolving symlinks, the path is not under a user-excluded folder
+    ///    (issue #141). Inject `excludedFolders` in tests; production defaults
+    ///    to `FolderExclusionPreferences.paths`.
+    /// 5. If symlink resolution changed the first 3 path components, the symlink
     ///    is treated as suspicious (TOCTOU prevention).
-    public func validatePath(_ url: URL) throws {
+    public func validatePath(
+        _ url: URL,
+        excludedFolders: [String] = FolderExclusionPreferences.paths
+    ) throws {
         let original = url.path(percentEncoded: false)
 
         if original.isEmpty {
@@ -91,6 +100,11 @@ public struct SafetyGuard: Sendable {
             if resolvedCanonical.hasPrefix(protected + "/") || resolvedCanonical == protected {
                 throw SafetyError.protectedPath(resolvedPath)
             }
+        }
+
+        if PathExclusion.isExcluded(path: resolvedCanonical, by: excludedFolders)
+            || PathExclusion.isExcluded(path: originalCanonical, by: excludedFolders) {
+            throw SafetyError.userExcluded(resolvedPath)
         }
 
         if originalCanonical != resolvedCanonical {
