@@ -10,7 +10,8 @@ import MacCleanKit
 /// plant a login item on every test run. See the comparable LaunchAgent
 /// guidance: tests must not pollute the user's macOS state. The surface
 /// we can safely exercise is the read-only side: identity, initial
-/// state, status readability.
+/// state, status readability, plus source guards for the #138 keep-alive
+/// wiring. Decision logic lives in `MenuBarHelperPolicyTests`.
 @MainActor
 final class MenuBarLauncherTests: XCTestCase {
 
@@ -80,5 +81,53 @@ final class MenuBarLauncherTests: XCTestCase {
         // Reaching this line at all proves we survived the off-main hop.
         XCTAssertNotNil(launcher.lastError,
                         "A failed helper launch should surface via lastError")
+    }
+
+    func testHelperUsesKeepOneInstancePolicyNotMutualExit() throws {
+        let src = try String(contentsOf: sourceURL("Sources/MacCleanMenu/MacCleanMenuApp.swift"), encoding: .utf8)
+        XCTAssertTrue(
+            src.contains("MenuBarInstancePolicy.shouldExitAsDuplicate"),
+            "Helper must keep exactly one instance (issue #138), not exit whenever any sibling exists"
+        )
+        XCTAssertFalse(
+            src.contains("let duplicate = NSWorkspace"),
+            "The mutual-exit check must not come back"
+        )
+    }
+
+    func testQuitMonitorSetsSharedUserQuitFlag() throws {
+        let src = try String(contentsOf: sourceURL("Sources/MacCleanMenu/MacCleanMenuApp.swift"), encoding: .utf8)
+        XCTAssertTrue(
+            src.contains("MenuBarKeepAlive.setUserQuit(true"),
+            "Quit Monitor must set the shared user-quit flag so the watchdog does not immediately relaunch"
+        )
+    }
+
+    func testLauncherReconcilesThroughKeepAlivePolicy() throws {
+        let src = try String(contentsOf: sourceURL("Sources/MacClean/Services/MenuBarLauncher.swift"), encoding: .utf8)
+        XCTAssertTrue(src.contains("MenuBarKeepAlivePolicy.action"))
+        XCTAssertTrue(src.contains("didTerminateApplicationNotification"))
+        XCTAssertTrue(
+            src.contains("Task { @MainActor in"),
+            "Terminate observer must hop to the main actor; do not reintroduce an off-main completion handler (issue #58)"
+        )
+        XCTAssertTrue(src.contains("ensureHelperRunningIfPreferred"))
+        XCTAssertFalse(
+            src.contains("launchHelperIfNotRunning"),
+            "Direct open-without-wait must not race SMAppService"
+        )
+        let appSrc = try String(contentsOf: sourceURL("Sources/MacClean/App/MacCleanApp.swift"), encoding: .utf8)
+        XCTAssertTrue(
+            appSrc.contains("startWatchingHelperTermination"),
+            "Main app must start the helper-termination watchdog at launch"
+        )
+    }
+
+    private func sourceURL(_ relative: String) -> URL {
+        URL(filePath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appending(path: relative)
     }
 }

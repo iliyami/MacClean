@@ -10,10 +10,11 @@ import MacCleanKit
 /// looks at that exact path to find the helper, so the bundling in
 /// `scripts/build-dmg.sh` must match.
 ///
-/// On registration the system launches the helper immediately (no need
-/// to call NSWorkspace.open). On unregister the helper is also stopped.
-/// State is queryable via `status` so the Settings toggle can reflect
-/// the truth of "is the widget actually running right now."
+/// On registration the system *may* launch the helper; with ad-hoc signed
+/// builds it often does not. `setEnabled(true)` therefore waits a short
+/// grace and opens via NSWorkspace if the helper is still missing. On
+/// unregister the helper is stopped. A terminate observer relaunches it
+/// if the Settings toggle is still on and the user did not quit the extra.
 @MainActor
 @Observable
 public final class MenuBarLauncher {
@@ -48,6 +49,8 @@ public final class MenuBarLauncher {
     public internal(set) var statusSnapshot: SMAppService.Status = .notRegistered
 
     private let service = SMAppService.loginItem(identifier: MCConstants.menuBundleIdentifier)
+    private var helperTerminationObserver: NSObjectProtocol?
+    private var isLaunchingHelper = false
 
     public var isRegistered: Bool {
         service.status == .enabled
@@ -59,6 +62,41 @@ public final class MenuBarLauncher {
 
     private init() {
         statusSnapshot = service.status
+        startWatchingHelperTermination()
+    }
+
+    /// Relaunch the helper if it dies unexpectedly while the Settings toggle
+    /// is on. Idempotent. The observer hops onto the main actor with
+    /// `Task { @MainActor in }` — do not replace that with a completion
+    /// handler that touches `@MainActor` state (issue #58).
+    public func startWatchingHelperTermination() {
+        guard helperTerminationObserver == nil else { return }
+        helperTerminationObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didTerminateApplicationNotification,
+            object: nil,
+            queue: .main
+        ) { note in
+            guard
+                let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
+                app.bundleIdentifier == MCConstants.menuBundleIdentifier
+            else { return }
+            Task { @MainActor in
+                await MenuBarLauncher.shared.ensureHelperRunningIfPreferred()
+            }
+        }
+    }
+
+    /// Watchdog entry: launch the helper if the preference is on, it is not
+    /// running, and the user did not quit it from the extra. Does **not**
+    /// call `SMAppService.register()` — that stays on the enable path so a
+    /// crash cannot spam backgroundtaskmanagementd.
+    public func ensureHelperRunningIfPreferred() async {
+        let enabled = UserDefaults.standard.object(forKey: MenuBarKeepAlive.preferenceKey) as? Bool ?? true
+        await reconcileHelper(
+            preferenceEnabled: enabled,
+            afterRegister: false,
+            honorUserQuit: true
+        )
     }
 
     public func register() throws {
@@ -127,10 +165,13 @@ public final class MenuBarLauncher {
             enabled ? .registrationFailed($0) : .unregisterFailed($0)
         }
         if enabled {
-            launchHelperIfNotRunning()
-        } else {
-            terminateRunningHelper()
+            MenuBarKeepAlive.setUserQuit(false, defaults: SharedAppState.defaults)
         }
+        await reconcileHelper(
+            preferenceEnabled: enabled,
+            afterRegister: enabled,
+            honorUserQuit: false
+        )
         statusSnapshot = service.status
         // Pad sub-minimum operations so the spinner doesn't flash for a
         // single frame (see minimumBusyDuration).
@@ -160,9 +201,41 @@ public final class MenuBarLauncher {
         }
     }
 
-    private func launchHelperIfNotRunning() {
-        guard !isHelperRunning(), let url = helperAppURL() else { return }
-        Task { @MainActor in await openHelper(at: url) }
+    /// Align the running helper with the preference. `afterRegister` waits
+    /// once so SMAppService can spawn before we open a second copy.
+    /// `honorUserQuit` is true for the watchdog (don't undo Quit Monitor)
+    /// and false for the Settings toggle / launch re-sync.
+    func reconcileHelper(
+        preferenceEnabled: Bool,
+        afterRegister: Bool,
+        honorUserQuit: Bool
+    ) async {
+        var waited = !afterRegister
+        let userQuit = honorUserQuit && MenuBarKeepAlive.isUserQuit(SharedAppState.defaults)
+        while true {
+            switch MenuBarKeepAlivePolicy.action(
+                preferenceEnabled: preferenceEnabled,
+                helperIsRunning: isHelperRunning(),
+                userQuit: userQuit,
+                alreadyWaitedAfterRegister: waited,
+                launchInFlight: isLaunchingHelper
+            ) {
+            case .none:
+                return
+            case .waitThenRecheck:
+                try? await Task.sleep(for: MenuBarKeepAlivePolicy.smAppServiceLaunchGrace)
+                waited = true
+            case .launch:
+                guard let url = helperAppURL() else { return }
+                isLaunchingHelper = true
+                defer { isLaunchingHelper = false }
+                await openHelper(at: url)
+                return
+            case .terminate:
+                terminateRunningHelper()
+                return
+            }
+        }
     }
 
     /// Launch the bundled helper at `url`, recording any failure in `lastError`.

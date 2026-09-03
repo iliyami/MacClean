@@ -8,19 +8,32 @@ struct MacCleanMenuApp: App {
         AppLanguage.registerDefault(.system)
         // Single-instance enforcement. macOS does NOT auto-deduplicate
         // LSUIElement apps by bundle id the way it does for regular apps,
-        // and we have two launch paths (SMAppService + NSWorkspace). If a
-        // sibling instance is already running, terminate self immediately
-        // so the user never sees two icons in the menu bar.
+        // and we have two launch paths (SMAppService + NSWorkspace). Keep
+        // the oldest copy; never `exit(0)` from every sibling — that took
+        // the extra down when both copies started at once (issue #138).
         // Only enforce when we have a real bundle id (i.e. running from
         // the .app). Under `swift run` the bare executable has no bundle
         // id, and matching against other nil-bundle processes would make
         // the dev build exit immediately.
         if let myBundleID = Bundle.main.bundleIdentifier {
             let myPID = ProcessInfo.processInfo.processIdentifier
-            let duplicate = NSWorkspace.shared.runningApplications.contains {
-                $0.bundleIdentifier == myBundleID && $0.processIdentifier != myPID
+            let running = NSWorkspace.shared.runningApplications
+            let me = running.first { $0.processIdentifier == myPID }
+            let siblings = running.compactMap { app -> MenuBarInstance? in
+                guard app.bundleIdentifier == myBundleID,
+                      app.processIdentifier != myPID else { return nil }
+                return MenuBarInstance(pid: app.processIdentifier, launchDate: app.launchDate)
             }
-            if duplicate { exit(0) }
+            // Keep-one, never both-exit. The old any-sibling check killed
+            // every copy when SMAppService and NSWorkspace raced
+            // (issue #138).
+            if MenuBarInstancePolicy.shouldExitAsDuplicate(
+                selfPID: myPID,
+                selfLaunchDate: me?.launchDate,
+                siblings: siblings
+            ) {
+                exit(0)
+            }
         }
     }
 
@@ -346,7 +359,10 @@ struct MenuContentView: View {
 
     private var footer: some View {
         HStack(spacing: 8) {
-            Button { NSApplication.shared.terminate(nil) } label: {
+            Button {
+                MenuBarKeepAlive.setUserQuit(true, defaults: SharedAppState.defaults)
+                NSApplication.shared.terminate(nil)
+            } label: {
                 Image(systemName: "power").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
                     .frame(width: 34, height: 32)
                     .background(MenuPalette.red, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
