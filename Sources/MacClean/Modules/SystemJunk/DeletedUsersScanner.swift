@@ -17,13 +17,28 @@ public enum DeletedUsersScanner {
 
         let activeUsers = readActiveUsernames()
 
+        // `dscl` failing, being sandboxed away, or genuinely returning
+        // nothing is indistinguishable from "no active users" — and an
+        // empty `activeUsers` set would make `isResidualHomeFolder` say
+        // yes to EVERY folder under /Users, including the account that's
+        // running this scan right now. A real Mac always has at least one
+        // active user, so treat empty as "couldn't determine" and refuse
+        // to flag anything rather than risk offering someone's own home
+        // folder for deletion.
+        guard !activeUsers.isEmpty else { return [] }
+
+        // Defense in depth on top of the dscl-based check: never flag the
+        // account actually running this process, no matter what dscl said.
+        let currentUser = NSUserName()
+
         var results: [FileItem] = []
         for folder in userFolders {
             let values = try? folder.resourceValues(forKeys: [.isDirectoryKey])
             guard values?.isDirectory == true else { continue }
 
             let name = folder.lastPathComponent
-            guard DeletedUsersCategory.isResidualHomeFolder(name: name, activeUsers: activeUsers)
+            guard name != currentUser,
+                  DeletedUsersCategory.isResidualHomeFolder(name: name, activeUsers: activeUsers)
             else { continue }
 
             let size = directorySize(folder)

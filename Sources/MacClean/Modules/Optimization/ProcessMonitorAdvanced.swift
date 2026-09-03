@@ -75,22 +75,23 @@ public actor ProcessStatsCollector {
         return 0
     }
 
+    /// `task_for_pid` (the previous implementation here) requires the
+    /// `com.apple.security.get-task-allow` entitlement — or root — to
+    /// obtain another process's task port. Neither applies to a normal,
+    /// hardened-runtime GUI app querying sibling apps, so it failed with
+    /// KERN_FAILURE for essentially every process but our own, and every
+    /// app in the "heavy consumers" / memory list silently showed 0 bytes.
+    /// `proc_pid_rusage` goes through libproc instead (the same family of
+    /// call already used for `cpuUsage` above via `proc_pidinfo`), which
+    /// only needs to see the target process, not open its task port.
     private nonisolated func memoryUsage(for pid: Int32) -> UInt64 {
-        var taskInfo = mach_task_basic_info()
-        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size / MemoryLayout<natural_t>.size)
-
-        var task: mach_port_t = 0
-        let kr = task_for_pid(mach_task_self_, pid, &task)
-        guard kr == KERN_SUCCESS else { return 0 }
-        defer { mach_port_deallocate(mach_task_self_, task) }
-
-        let result = withUnsafeMutablePointer(to: &taskInfo) { ptr in
-            ptr.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { intPtr in
-                task_info(task, task_flavor_t(MACH_TASK_BASIC_INFO), intPtr, &count)
+        var info = rusage_info_v2()
+        let result = withUnsafeMutablePointer(to: &info) { ptr -> Int32 in
+            ptr.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) { rawPtr in
+                proc_pid_rusage(pid, RUSAGE_INFO_V2, rawPtr)
             }
         }
-
-        guard result == KERN_SUCCESS else { return 0 }
-        return UInt64(taskInfo.resident_size)
+        guard result == 0 else { return 0 }
+        return info.ri_resident_size
     }
 }
