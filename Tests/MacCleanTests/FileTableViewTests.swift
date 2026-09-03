@@ -80,6 +80,19 @@ final class FileTableViewTests: XCTestCase {
         )
     }
 
+    /// A category header truncates its name and explanation to one line each,
+    /// so the tooltip is the only way to read them in full. Assert the cell the
+    /// table actually materializes carries it.
+    func testHeaderCellExposesTheCategoryTooltip() {
+        let coordinator = FileTableView.Coordinator()
+        coordinator.rows = makeRows(2)
+        let table = makeTable(coordinator: coordinator)
+        table.reloadData()
+
+        let headerCell = table.view(atColumn: 0, row: 0, makeIfNecessary: true)
+        XCTAssertEqual(headerCell?.toolTip, ScanCategory.userCaches.tooltip)
+    }
+
     func testRowHeightsAreFixedPerKind() {
         let coordinator = FileTableView.Coordinator()
         coordinator.rows = makeRows(2)
