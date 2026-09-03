@@ -30,6 +30,8 @@ struct SettingsPageView: View {
     @State private var keptLanguages: Set<String> = []
     @State private var selectable: [(name: String, lprojs: [String])] = []
     @State private var languageSearch: String = ""
+    @State private var excludedFolders: [String] = FolderExclusionPreferences.paths
+    @State private var exclusionError: String?
 
     /// Selectable languages filtered by the search field (case-insensitive).
     private var filteredLanguages: [(name: String, lprojs: [String])] {
@@ -44,6 +46,7 @@ struct SettingsPageView: View {
             interfaceLanguageSection
             appearanceSection
             languageSection
+            excludedFoldersSection
             aboutSection
         }
         .formStyle(.grouped)
@@ -53,6 +56,7 @@ struct SettingsPageView: View {
         .onAppear {
             keptLanguages = LanguagePreferences.userKept
             selectable = LanguagePreferences.selectableLanguages()
+            excludedFolders = FolderExclusionPreferences.paths
             Task.detached(priority: .userInitiated) {
                 let found = LanguageScanner().discoverLproj(in: LanguageScanner.defaultRoots)
                 await MainActor.run {
@@ -360,6 +364,101 @@ struct SettingsPageView: View {
                 }
                 .frame(height: 250)
             }
+        }
+    }
+
+    // MARK: - Excluded Folders (issue #141)
+
+    private var excludedFoldersSection: some View {
+        Section(L10n.tr("排除文件夹", "Excluded Folders", "Исключённые папки")) {
+            Text(L10n.tr(
+                "这些文件夹及其子项不会出现在清理扫描结果中，也无法被 \(MCConstants.appName) 删除（包括粉碎器）。仅限主目录或 /Volumes 下的路径。",
+                "These folders and their contents are hidden from cleanup scans and cannot be deleted by \(MCConstants.appName) (including Shredder). Only paths under your home folder or /Volumes.",
+                "Эти папки и их содержимое не показываются в сканах очистки и не могут быть удалены \(MCConstants.appName) (включая Шредер). Только пути в домашней папке или /Volumes."
+            ))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
+            if excludedFolders.isEmpty {
+                Text(L10n.tr("尚未排除任何文件夹。", "No folders excluded yet.", "Пока нет исключённых папок."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(excludedFolders, id: \.self) { path in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(path)
+                            .font(.system(.body, design: .monospaced))
+                            .lineLimit(2)
+                            .textSelection(.enabled)
+                        Spacer(minLength: 8)
+                        Button(L10n.tr("移除", "Remove", "Удалить"), role: .destructive) {
+                            FolderExclusionPreferences.remove(path)
+                            excludedFolders = FolderExclusionPreferences.paths
+                            exclusionError = nil
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                }
+            }
+
+            Button(L10n.tr("添加文件夹…", "Add Folder…", "Добавить папку…")) {
+                addExcludedFolder()
+            }
+
+            if let exclusionError {
+                Label(exclusionError, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+            }
+        }
+    }
+
+    private func addExcludedFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = L10n.tr("排除", "Exclude", "Исключить")
+        panel.message = L10n.tr(
+            "选择要从清理中排除的文件夹。",
+            "Choose a folder to exclude from cleanup.",
+            "Выберите папку, которую нужно исключить из очистки."
+        )
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let path = url.path(percentEncoded: false)
+        if FolderExclusionPreferences.add(path) {
+            excludedFolders = FolderExclusionPreferences.paths
+            exclusionError = nil
+        } else {
+            exclusionError = rejectionMessage(for: path)
+        }
+    }
+
+    private func rejectionMessage(for path: String) -> String {
+        switch PathExclusion.candidateDecision(
+            for: path,
+            home: NSHomeDirectory(),
+            maxCount: FolderExclusionPreferences.defaultMaxCount,
+            existing: FolderExclusionPreferences.paths
+        ) {
+        case .allow:
+            return L10n.tr("无法添加该文件夹。", "Couldn't add that folder.", "Не удалось добавить эту папку.")
+        case .reject(.notAbsolute):
+            return L10n.tr("请选择绝对路径。", "Choose an absolute path.", "Выберите абсолютный путь.")
+        case .reject(.entireHome):
+            return L10n.tr("不能排除整个主目录。", "You can't exclude your entire home folder.", "Нельзя исключить всю домашнюю папку.")
+        case .reject(.entireVolumesRoot):
+            return L10n.tr("不能排除整个 /Volumes。", "You can't exclude all of /Volumes.", "Нельзя исключить весь /Volumes.")
+        case .reject(.outsideAllowedRoots):
+            return L10n.tr("只能排除主目录或 /Volumes 下的文件夹。", "Only folders under your home directory or /Volumes can be excluded.", "Можно исключать только папки в домашнем каталоге или /Volumes.")
+        case .reject(.atCapacity):
+            return L10n.tr(
+                "最多可排除 \(FolderExclusionPreferences.defaultMaxCount) 个文件夹。",
+                "You can exclude at most \(FolderExclusionPreferences.defaultMaxCount) folders.",
+                "Можно исключить не больше \(FolderExclusionPreferences.defaultMaxCount) папок."
+            )
+        case .reject(.alreadyCovered):
+            return L10n.tr("该路径已被现有排除项覆盖。", "That path is already covered by an existing exclusion.", "Этот путь уже покрыт существующим исключением.")
         }
     }
 

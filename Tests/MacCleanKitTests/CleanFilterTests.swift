@@ -109,6 +109,25 @@ final class CleanFilterTests: XCTestCase {
             [.posixPermissions: 0o755], ofItemAtPath: locked.path)
     }
 
+    func testFilteringUncleanableDropsUserExcludedFolders() throws {
+        let excludedRoot = tmpRoot.appending(path: "keep-me")
+        try FileManager.default.createDirectory(at: excludedRoot, withIntermediateDirectories: true)
+        let inside = excludedRoot.appending(path: "offline.db")
+        FileManager.default.createFile(atPath: inside.path, contents: Data([1]))
+
+        let okRoot = tmpRoot.appending(path: "other")
+        try FileManager.default.createDirectory(at: okRoot, withIntermediateDirectories: true)
+        let okFile = okRoot.appending(path: "junk.cache")
+        FileManager.default.createFile(atPath: okFile.path, contents: Data([2]))
+
+        let keep = FileItem(url: inside, name: "offline.db", size: 1, allocatedSize: 1, isDirectory: false)
+        let droppable = FileItem(url: okFile, name: "junk.cache", size: 1, allocatedSize: 1, isDirectory: false)
+        let input = [ScanResult(category: .userCaches, items: [keep, droppable])]
+
+        let filtered = input.filteringUncleanable(excludedFolders: [excludedRoot.path])
+        XCTAssertEqual(filtered[0].items.map(\.name), ["junk.cache"])
+    }
+
     // MARK: Selected-size estimate (must match what Clean actually frees)
 
     func testSelectedSizeCountsEachURLOnce() {

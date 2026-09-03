@@ -52,21 +52,35 @@ public enum CleanFilter {
 
         return true
     }
+
+    /// True when the item is both writable by this process and outside
+    /// every user-excluded folder (issue #141).
+    public static func isActionable(
+        _ url: URL,
+        excludedFolders: [String] = FolderExclusionPreferences.paths
+    ) -> Bool {
+        isCleanableByCurrentProcess(url) && !PathExclusion.isExcluded(url, by: excludedFolders)
+    }
 }
 
 public extension Array where Element == ScanResult {
     /// Drops items the current process couldn't trash, per
-    /// `CleanFilter.isCleanableByCurrentProcess`. Producing modules
-    /// call this on their results before returning — that way every
-    /// caller (ScanCoordinator, each per-module ViewModel/View that
-    /// invokes `module.scan()` directly) sees a filtered set without
-    /// needing to know about the filter. The contract is: a
-    /// `ScanModule.scan()` only returns items the user can act on.
-    func filteringUncleanable() -> [ScanResult] {
+    /// `CleanFilter.isCleanableByCurrentProcess`, and items under user-
+    /// excluded folders (issue #141). Producing modules call this on their
+    /// results before returning — that way every caller (ScanCoordinator,
+    /// each per-module ViewModel/View that invokes `module.scan()` directly)
+    /// sees a filtered set without needing to know about the filter. The
+    /// contract is: a `ScanModule.scan()` only returns items the user can
+    /// act on.
+    func filteringUncleanable(
+        excludedFolders: [String] = FolderExclusionPreferences.paths
+    ) -> [ScanResult] {
         map { result in
             ScanResult(
                 category: result.category,
-                items: result.items.filter { CleanFilter.isCleanableByCurrentProcess($0.url) },
+                items: result.items.filter {
+                    CleanFilter.isActionable($0.url, excludedFolders: excludedFolders)
+                },
                 autoSelect: result.autoSelect
             )
         }
